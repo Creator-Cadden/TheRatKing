@@ -67,21 +67,12 @@ public class PlayerMovement : MonoBehaviour
         aimCamera.Priority      = defaultPriority;
 
         _aimYaw = transform.eulerAngles.y;
-        animator = GetComponent<Animator>();
+        animator = GetComponentInChildren<Animator>(); // Animator was in the rat model which was a child of player so have to change GetComponent to GetComponentInChildren / and there were 2 animatior both in rat and Player so i was grabbing the player one which dident work
+        Debug.Log("Animator found: " + (animator != null ? animator.gameObject.name : "NULL"));
     }
 
     void Update()
     {
-        
-        if (_currentMoveVelocity == Vector3.zero)
-        {
-            animator.SetFloat("Running", 0);
-        }
-        else {
-            animator.SetFloat("Running", 1);
-        }
-       
-        
         _isGrounded = _controller.isGrounded;
 
         HandleMovement();
@@ -90,6 +81,12 @@ public class PlayerMovement : MonoBehaviour
 
         if (_isAiming)
             DriveAimLook();
+
+        // Animation — reads AFTER movement is calculated this frame
+        if (_currentMoveVelocity == Vector3.zero)
+            animator.SetFloat("Running", 0);
+        else
+            animator.SetFloat("Running", 1);
     }
 
     
