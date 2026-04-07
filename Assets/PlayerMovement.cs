@@ -205,7 +205,7 @@ public class PlayerMovement : MonoBehaviour
 
         if (_isAiming)
         {
-            _aimYaw   = transform.eulerAngles.y;
+            _aimYaw   = freeLookCamera.transform.eulerAngles.y;
             _aimPitch = cameraPitch.localEulerAngles.x;
             if (_aimPitch > 180f) _aimPitch -= 360f;
 
