@@ -6,6 +6,7 @@ using Unity.Cinemachine;
 [RequireComponent(typeof(CharacterController))]
 public class PlayerMovement : MonoBehaviour
 {
+   
     [Header("Movement")]
     public float walkSpeed     = 6f;
     public float sprintSpeed   = 10f;
@@ -35,9 +36,13 @@ public class PlayerMovement : MonoBehaviour
     public int defaultPriority = 10;
     public int activePriority  = 20;
 
+    //Animation
+    private Animator animator;
+
     // ── Private State ──
     private CharacterController _controller;
     private CinemachineInputAxisController _freeLookInput;
+    
 
     private Vector2 _moveInput;
     private Vector3 _velocity;
@@ -62,10 +67,21 @@ public class PlayerMovement : MonoBehaviour
         aimCamera.Priority      = defaultPriority;
 
         _aimYaw = transform.eulerAngles.y;
+        animator = GetComponent<Animator>();
     }
 
     void Update()
     {
+        
+        if (_currentMoveVelocity == Vector3.zero)
+        {
+            animator.SetFloat("Running", 0);
+        }
+        else {
+            animator.SetFloat("Running", 1);
+        }
+       
+        
         _isGrounded = _controller.isGrounded;
 
         HandleMovement();
@@ -75,6 +91,8 @@ public class PlayerMovement : MonoBehaviour
         if (_isAiming)
             DriveAimLook();
     }
+
+    
 
     private void HandleMovement()
     {
