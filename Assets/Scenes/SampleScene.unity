@@ -895,7 +895,7 @@ MonoBehaviour:
   acceleration: 8
   deceleration: 10
   sprintDrag: 2
-  gravity: -25.1
+  gravity: -35
   jumpForce: 3
   rotationSpeed: 10
   freeLookCamera: {fileID: 1240517820}

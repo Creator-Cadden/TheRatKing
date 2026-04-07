@@ -156,14 +156,33 @@ public class PlayerMovement : MonoBehaviour
         if (_isGrounded && _velocity.y < 0f)
             _velocity.y = -2f;
 
+        animator.SetBool("Grounded", true);
+
+        animator.SetBool("Jump", false);
+
+        animator.SetBool("Falling", false);
+
         if (_jumpPressed && _isGrounded)
         {
             _velocity.y  = Mathf.Sqrt(jumpForce * -2f * gravity);
             _jumpPressed = false;
+
+            animator.SetBool("Jump", true);
         }
 
+        else
+        {
+            animator.SetBool("Grounded", false);
+            if (_velocity.y < 0 )
+            {
+                animator.SetBool("Falling", true);
+            }
+        }
         _velocity.y += gravity * Time.deltaTime;
         _controller.Move(_velocity * Time.deltaTime);
+
+
+
     }
 
     private void DriveAimLook()
