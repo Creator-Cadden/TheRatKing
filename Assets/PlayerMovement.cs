@@ -38,6 +38,10 @@ public class PlayerMovement : MonoBehaviour
 
     //Animation
     private Animator animator;
+    private bool jump;
+    private bool fall;
+    private bool contact;
+    private bool ground;
 
     // ── Private State ──
     private CharacterController _controller;
@@ -153,35 +157,47 @@ public class PlayerMovement : MonoBehaviour
 
     private void HandleJumpAndGravity()
     {
+       
+
         if (_isGrounded && _velocity.y < 0f)
             _velocity.y = -2f;
 
+        bool contact = !ground && _velocity.y == -2f;
+
+        bool falling = !ground && _velocity.y < -0.1f;
+
+
         animator.SetBool("Grounded", true);
 
-        animator.SetBool("Jump", false);
+        if (falling)
+        animator.SetBool("Grounded", false);
+        ground = false;
 
-        animator.SetBool("Falling", false);
+        animator.SetBool("Jump", false);
+        jump = false;
+
+        animator.SetBool("Falling", true);
+        fall = false;
+
+        animator.SetBool("Contact", false);
+       
+
+        if (contact)
+
+            animator.SetBool("Contact", true);
+       
 
         if (_jumpPressed && _isGrounded)
         {
-            _velocity.y  = Mathf.Sqrt(jumpForce * -2f * gravity);
+            _velocity.y = Mathf.Sqrt(jumpForce * -2f * gravity);
             _jumpPressed = false;
 
             animator.SetBool("Jump", true);
         }
+       
 
-        else
-        {
-            animator.SetBool("Grounded", false);
-            if (_velocity.y < 0 )
-            {
-                animator.SetBool("Falling", true);
-            }
-        }
-        _velocity.y += gravity * Time.deltaTime;
+            _velocity.y += gravity * Time.deltaTime;
         _controller.Move(_velocity * Time.deltaTime);
-
-
 
     }
 

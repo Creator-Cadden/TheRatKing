@@ -179,8 +179,8 @@ ModelImporter:
       name: Armature|Land
       takeName: Armature|Jump
       internalID: 4433405350074790358
-      firstFrame: 27.599998
-      lastFrame: 29
+      firstFrame: 27.900002
+      lastFrame: 28
       wrapMode: 0
       orientationOffsetY: 0
       level: 0
@@ -209,7 +209,7 @@ ModelImporter:
       takeName: Armature|Jump
       internalID: -7596047080260169907
       firstFrame: 13
-      lastFrame: 29
+      lastFrame: 24
       wrapMode: 0
       orientationOffsetY: 0
       level: 0
