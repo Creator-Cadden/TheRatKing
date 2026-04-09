@@ -90,7 +90,7 @@ public class PlayerCombat : MonoBehaviour
             if (angleToTarget <= angle / 2f)
             {
                 Debug.Log($"[Combat] Hit: {hit.name}");
-                // TODO: hit.GetComponent<Health>()?.TakeDamage(attackDamage);
+                hit.GetComponent<EnemyAI>()?.TakeKnockback(attackOrigin.position);
             }
         }
     }
