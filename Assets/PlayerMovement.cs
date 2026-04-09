@@ -6,13 +6,11 @@ using Unity.Cinemachine;
 [RequireComponent(typeof(CharacterController))]
 public class PlayerMovement : MonoBehaviour
 {
-   
     [Header("Movement")]
     public float walkSpeed     = 6f;
     public float sprintSpeed   = 10f;
-    public float acceleration  = 8f;
-    public float deceleration  = 10f;
-    public float sprintDrag    = 2f;
+    public float acceleration  = 20f;
+    public float deceleration  = 25f;
     public float gravity       = -9.81f;
     public float jumpForce     = 1.5f;
     public float rotationSpeed = 10f;
@@ -36,7 +34,7 @@ public class PlayerMovement : MonoBehaviour
     public int defaultPriority = 10;
     public int activePriority  = 20;
 
-    //Animation
+    // Animation
     private Animator animator;
     private bool jump;
     private bool fall;
@@ -46,7 +44,6 @@ public class PlayerMovement : MonoBehaviour
     // ── Private State ──
     private CharacterController _controller;
     private CinemachineInputAxisController _freeLookInput;
-    
 
     private Vector2 _moveInput;
     private Vector3 _velocity;
@@ -70,8 +67,8 @@ public class PlayerMovement : MonoBehaviour
         freeLookCamera.Priority = activePriority;
         aimCamera.Priority      = defaultPriority;
 
-        _aimYaw = transform.eulerAngles.y;
-        animator = GetComponentInChildren<Animator>(); // Animator was in the rat model which was a child of player so have to change GetComponent to GetComponentInChildren / and there were 2 animatior both in rat and Player so i was grabbing the player one which dident work
+        _aimYaw  = transform.eulerAngles.y;
+        animator = GetComponentInChildren<Animator>();
         Debug.Log("Animator found: " + (animator != null ? animator.gameObject.name : "NULL"));
     }
 
@@ -92,8 +89,6 @@ public class PlayerMovement : MonoBehaviour
         else
             animator.SetFloat("Running", 1);
     }
-
-    
 
     private void HandleMovement()
     {
@@ -123,15 +118,12 @@ public class PlayerMovement : MonoBehaviour
         // Accelerate toward target, decelerate when no input
         float accelRate = targetDirection.sqrMagnitude > 0.01f ? acceleration : deceleration;
 
-        // Apply extra drag when sprinting to prevent instant top speed
-        if (_isSprinting && _currentMoveVelocity.magnitude > walkSpeed)
-            accelRate -= sprintDrag;
-
-        _currentMoveVelocity = Vector3.MoveTowards(
-            _currentMoveVelocity,
-            targetVelocity,
-            accelRate * Time.deltaTime
-        );
+        // If moving in a significantly different direction, kill momentum faster
+        float dot = Vector3.Dot(_currentMoveVelocity.normalized, targetVelocity.normalized);
+        if (dot < 0.5f)
+            _currentMoveVelocity = Vector3.Lerp(_currentMoveVelocity, targetVelocity, 15f * Time.deltaTime);
+        else
+            _currentMoveVelocity = Vector3.Lerp(_currentMoveVelocity, targetVelocity, accelRate * Time.deltaTime);
 
         _controller.Move(_currentMoveVelocity * Time.deltaTime);
     }
@@ -157,20 +149,16 @@ public class PlayerMovement : MonoBehaviour
 
     private void HandleJumpAndGravity()
     {
-       
-
         if (_isGrounded && _velocity.y < 0f)
             _velocity.y = -2f;
 
         bool contact = !ground && _velocity.y == -2f;
-
         bool falling = !ground && _velocity.y < -0.1f;
-
 
         animator.SetBool("Grounded", true);
 
         if (falling)
-        animator.SetBool("Grounded", false);
+            animator.SetBool("Grounded", false);
         ground = false;
 
         animator.SetBool("Jump", false);
@@ -180,25 +168,19 @@ public class PlayerMovement : MonoBehaviour
         fall = false;
 
         animator.SetBool("Contact", false);
-       
 
         if (contact)
-
             animator.SetBool("Contact", true);
-       
 
         if (_jumpPressed && _isGrounded)
         {
-            _velocity.y = Mathf.Sqrt(jumpForce * -2f * gravity);
+            _velocity.y  = Mathf.Sqrt(jumpForce * -2f * gravity);
             _jumpPressed = false;
-
             animator.SetBool("Jump", true);
         }
-       
 
-            _velocity.y += gravity * Time.deltaTime;
+        _velocity.y += gravity * Time.deltaTime;
         _controller.Move(_velocity * Time.deltaTime);
-
     }
 
     private void DriveAimLook()
@@ -229,9 +211,9 @@ public class PlayerMovement : MonoBehaviour
     }
 
     // ── Input Callbacks ──
-    public void OnMove(InputValue value)  => _moveInput  = value.Get<Vector2>();
-    public void OnJump(InputValue value)  { if (value.isPressed) _jumpPressed = true; }
-    public void OnLook(InputValue value)  => _lookDelta  = value.Get<Vector2>();
+    public void OnMove(InputValue value)   => _moveInput   = value.Get<Vector2>();
+    public void OnJump(InputValue value)   { if (value.isPressed) _jumpPressed = true; }
+    public void OnLook(InputValue value)   => _lookDelta   = value.Get<Vector2>();
     public void OnSprint(InputValue value) => _isSprinting = value.isPressed;
 
     public void OnAim(InputValue value)
