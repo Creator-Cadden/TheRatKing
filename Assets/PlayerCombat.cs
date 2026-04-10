@@ -60,7 +60,7 @@ public class PlayerCombat : MonoBehaviour
         _lastAttackTime = Time.time;
         Debug.Log("[Combat] Basic Attack fired");
 
-        // TODO: _animator.SetTrigger("BasicAttack");
+       _animator.SetTrigger("Attk");
 
         HitScan(basicAttackRadius, basicAttackAngle);
     }
