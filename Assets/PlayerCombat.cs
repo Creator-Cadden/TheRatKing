@@ -61,6 +61,7 @@ public class PlayerCombat : MonoBehaviour
         Debug.Log("[Combat] Basic Attack fired");
 
        _animator.SetTrigger("Attk");
+        //_animator.SetTrigger("AirAttk");
 
         HitScan(basicAttackRadius, basicAttackAngle);
     }
@@ -73,7 +74,7 @@ public class PlayerCombat : MonoBehaviour
         _lastJumpAttackTime = Time.time;
         Debug.Log("[Combat] Jump Attack fired");
 
-        // TODO: _animator.SetTrigger("JumpAttack");
+        _animator.SetTrigger("AirAttk");
 
         HitScan(jumpAttackRadius, jumpAttackAngle);
     }
