@@ -17,6 +17,9 @@ public class EnemyAI : MonoBehaviour
     [Header("Debug")]
     public bool showAggroGizmo = true;
 
+    // Animation
+    private Animator animator;
+
     // ── Private State ──
     private NavMeshAgent _agent;
     private Transform    _player;
@@ -37,6 +40,9 @@ public class EnemyAI : MonoBehaviour
             _player = playerObj.transform;
         else
             Debug.LogWarning("[EnemyAI] No Player tag found in scene");
+
+        animator = GetComponentInChildren<Animator>();
+        Debug.Log("Animator found: " + (animator != null ? animator.gameObject.name : "NULL"));
     }
 
     void Update()
@@ -55,12 +61,16 @@ public class EnemyAI : MonoBehaviour
         {
             _isAggroed = true;
             Debug.Log("[EnemyAI] Aggroed on player");
+
+            animator.SetFloat("Running", 1);
         }
         else
         {
             _isAggroed = false;
             _agent.ResetPath();
             Debug.Log("[EnemyAI] Lost aggro, idling");
+
+            animator.SetFloat("Running", 0);
         }
 
         if (_isAggroed)
@@ -100,6 +110,8 @@ public class EnemyAI : MonoBehaviour
         _isKnockedBack     = true;
 
         Debug.Log($"[EnemyAI] Knockback received from {sourcePosition}");
+
+        animator.SetTrigger("Stun");
     }
 
     void OnDrawGizmos()
