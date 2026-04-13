@@ -1401,6 +1401,7 @@ GameObject:
   - component: {fileID: 1075244674}
   - component: {fileID: 1075244673}
   - component: {fileID: 1075244676}
+  - component: {fileID: 1075244677}
   m_Layer: 0
   m_Name: Player
   m_TagString: Player
@@ -1529,11 +1530,41 @@ MonoBehaviour:
   jumpAttackAngle: 385
   jumpAttackCooldown: 1.2
   jumpAttackHeight: 4.34
+  bladeStaggerForce: 3
+  hammerStaggerForce: 8
+  bowStaggerForce: 2
   attackOrigin: {fileID: 351376128}
   enemyLayer:
     serializedVersion: 2
     m_Bits: 64
   showAttackGizmos: 1
+--- !u!114 &1075244677
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1075244671}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 165750a70e684c743b657df9eaa07351, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::EntityStats
+  isPlayer: 1
+  playerStatBlock: {fileID: 11400000, guid: 22ab682eccafb084d86976e4f84edfea, type: 2}
+  enemyStatBlock: {fileID: 0}
+  onDeath:
+    m_PersistentCalls:
+      m_Calls: []
+  onDamageTaken:
+    m_PersistentCalls:
+      m_Calls: []
+  onHeal:
+    m_PersistentCalls:
+      m_Calls: []
+  onLevelUp:
+    m_PersistentCalls:
+      m_Calls: []
 --- !u!1 &1148023681
 GameObject:
   m_ObjectHideFlags: 0
@@ -2477,6 +2508,7 @@ GameObject:
   - component: {fileID: 2079085768}
   - component: {fileID: 2079085767}
   - component: {fileID: 2079085772}
+  - component: {fileID: 2079085773}
   - component: {fileID: 2079085771}
   m_Layer: 6
   m_Name: Enemy
@@ -2613,12 +2645,34 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d07b59b9cdd4a3c4ca765395f1bbecd8, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::EnemyAI
-  aggroRange: 8
-  stopRange: 1.5
-  moveSpeed: 3.5
-  knockbackForce: 5
-  knockbackDuration: 0.2
   showAggroGizmo: 1
+--- !u!114 &2079085773
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2079085766}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 165750a70e684c743b657df9eaa07351, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::EntityStats
+  isPlayer: 0
+  playerStatBlock: {fileID: 0}
+  enemyStatBlock: {fileID: 11400000, guid: b8f5e38721057444b9fb9042f5cfcca4, type: 2}
+  onDeath:
+    m_PersistentCalls:
+      m_Calls: []
+  onDamageTaken:
+    m_PersistentCalls:
+      m_Calls: []
+  onHeal:
+    m_PersistentCalls:
+      m_Calls: []
+  onLevelUp:
+    m_PersistentCalls:
+      m_Calls: []
 --- !u!1660057539 &9223372036854775807
 SceneRoots:
   m_ObjectHideFlags: 0

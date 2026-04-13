@@ -11,7 +11,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 151a50ef8daddc24dbb20ddb63dfedb5, type: 3}
   m_Name: PlayerStats
-  m_EditorClassIdentifier: Assembly-CSharp::StatBlock
+  m_EditorClassIdentifier: Assembly-CSharp::PlayerStatBlock
   baseHealth: 30
   baseStrength: 5
   baseStamina: 40
@@ -26,16 +26,18 @@ MonoBehaviour:
   floorThreeCap: 15
   bladeDamageMin: 8
   bladeDamageMax: 12
+  bladeStrengthBonus: 2
+  bladeToughnessBonus: 1
+  bladeStaminaCost: 6
   hammerDamageMin: 20
   hammerDamageMax: 28
+  hammerStrengthBonus: 3
+  hammerToughnessBonus: 4
+  hammerStaminaCost: 18
   bowDamageMin: 10
   bowDamageMax: 18
-  bladeStrengthBonus: 2
-  hammerStrengthBonus: 3
   bowStrengthBonus: 0
-  bladeToughnessBonus: 1
-  hammerToughnessBonus: 4
   bowToughnessBonus: 0
-  bladeStaminaCost: 6
-  hammerStaminaCost: 18
   bowStaminaCost: 10
+  staminaRegenRate: 15
+  staminaRegenDelay: 1.2

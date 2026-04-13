@@ -9,33 +9,24 @@ MonoBehaviour:
   m_GameObject: {fileID: 0}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 151a50ef8daddc24dbb20ddb63dfedb5, type: 3}
+  m_Script: {fileID: 11500000, guid: cddbe9ff30055fe44ac23a486a3194ae, type: 3}
   m_Name: GruntFloor1
-  m_EditorClassIdentifier: Assembly-CSharp::StatBlock
-  baseHealth: 30
+  m_EditorClassIdentifier: Assembly-CSharp::EnemyStatBlock
+  baseHealth: 40
   baseStrength: 5
-  baseStamina: 40
-  baseSpeed: 6
+  baseStamina: 30
+  baseSpeed: 5
   baseToughness: 2
-  healthPerPoint: 10
-  strengthPerPoint: 2
-  staminaPerPoint: 8
-  speedPerPoint: 1
-  floorOneCap: 5
-  floorTwoCap: 10
-  floorThreeCap: 15
-  bladeDamageMin: 8
-  bladeDamageMax: 12
-  hammerDamageMin: 20
-  hammerDamageMax: 28
-  bowDamageMin: 10
-  bowDamageMax: 18
-  bladeStrengthBonus: 2
-  hammerStrengthBonus: 3
-  bowStrengthBonus: 0
-  bladeToughnessBonus: 1
-  hammerToughnessBonus: 4
-  bowToughnessBonus: 0
-  bladeStaminaCost: 6
-  hammerStaminaCost: 18
-  bowStaminaCost: 10
+  attackDamageMin: 8
+  attackDamageMax: 10
+  attackStrengthBonus: 2
+  attackCooldown: 1.5
+  attackRange: 1.8
+  aggroRange: 7
+  stopRange: 1.5
+  moveSpeed: 3.5
+  toughnessReductionPerPoint: 1
+  knockbackDuration: 0.25
+  bladeKnockbackForce: 5
+  hammerKnockbackForce: 12
+  bowKnockbackForce: 2
