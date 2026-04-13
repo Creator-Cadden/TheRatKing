@@ -15,6 +15,11 @@ public class PlayerCombat : MonoBehaviour
     public float jumpAttackCooldown = 1.2f;
     public float jumpAttackHeight   = 1.2f;
 
+    [Header("Stagger Force Per Weapon")]
+    public int bladeStaggerForce  = 3;    // low — only staggers low-toughness enemies
+    public int hammerStaggerForce = 8;    // high — staggers most enemies
+    public int bowStaggerForce    = 2;    // very low
+
     [Header("Attack Origin")]
     public Transform attackOrigin;
 
@@ -26,15 +31,20 @@ public class PlayerCombat : MonoBehaviour
 
     // ── Private State ──
     private CharacterController _controller;
-    private Animator _animator;
-    private float _lastAttackTime;
-    private float _lastJumpAttackTime;
-    private bool _hasJumpAttacked;
+    private Animator            _animator;
+    private EntityStats         _stats;
+    private float               _lastAttackTime;
+    private float               _lastJumpAttackTime;
+    private bool                _hasJumpAttacked;
 
     void Start()
     {
         _controller = GetComponent<CharacterController>();
         _animator   = GetComponentInChildren<Animator>();
+        _stats      = GetComponent<EntityStats>();
+
+        if (_stats == null)
+            Debug.LogError("[PlayerCombat] No EntityStats found on player!");
     }
 
     void Update()
@@ -55,13 +65,25 @@ public class PlayerCombat : MonoBehaviour
             BasicAttack();
     }
 
+    // ── Weapon Swap — hook up to input or UI buttons ──
+
+    public void EquipBlade()  => _stats?.EquipWeapon(EntityStats.WeaponType.Blade);
+    public void EquipHammer() => _stats?.EquipWeapon(EntityStats.WeaponType.Hammer);
+    public void EquipBow()    => _stats?.EquipWeapon(EntityStats.WeaponType.Bow);
+
+    // ─────────────────────────────────────────
     private void BasicAttack()
     {
-        _lastAttackTime = Time.time;
-        Debug.Log("[Combat] Basic Attack fired");
+        // Check stamina before allowing attack
+        int staminaCost = _stats?.GetWeaponStaminaCost() ?? 0;
+        if (_stats != null && !_stats.UseStamina(staminaCost))
+        {
+            Debug.Log("[PlayerCombat] Not enough stamina to attack");
+            return;
+        }
 
-       _animator.SetTrigger("Attk");
-        //_animator.SetTrigger("AirAttk");
+        _lastAttackTime = Time.time;
+        _animator.SetTrigger("Attk");
 
         HitScan(basicAttackRadius, basicAttackAngle);
     }
@@ -70,10 +92,15 @@ public class PlayerCombat : MonoBehaviour
     {
         if (Time.time < _lastJumpAttackTime + jumpAttackCooldown) return;
 
+        int staminaCost = _stats?.GetWeaponStaminaCost() ?? 0;
+        if (_stats != null && !_stats.UseStamina(staminaCost))
+        {
+            Debug.Log("[PlayerCombat] Not enough stamina for jump attack");
+            return;
+        }
+
         _hasJumpAttacked    = true;
         _lastJumpAttackTime = Time.time;
-        Debug.Log("[Combat] Jump Attack fired");
-
         _animator.SetTrigger("AirAttk");
 
         HitScan(jumpAttackRadius, jumpAttackAngle);
@@ -86,16 +113,39 @@ public class PlayerCombat : MonoBehaviour
         foreach (Collider hit in hits)
         {
             Vector3 directionToTarget = (hit.transform.position - attackOrigin.position).normalized;
-            float angleToTarget = Vector3.Angle(transform.forward, directionToTarget);
+            float angleToTarget       = Vector3.Angle(transform.forward, directionToTarget);
 
             if (angleToTarget <= angle / 2f)
             {
-                Debug.Log($"[Combat] Hit: {hit.name}");
-                hit.GetComponent<EnemyAI>()?.TakeKnockback(attackOrigin.position);
+                // Calculate damage from player stats
+                int damage       = _stats?.CalculateWeaponDamage() ?? 10;
+                int staggerForce = GetCurrentStaggerForce();
+
+                Debug.Log($"[PlayerCombat] Hit: {hit.name} for {damage} damage");
+
+                // Deal damage
+                hit.GetComponent<EntityStats>()?.TakeDamage(damage);
+
+                // Knockback + stagger — pass stagger force so enemy checks its own Toughness
+                hit.GetComponent<EnemyAI>()?.TakeKnockback(attackOrigin.position, staggerForce);
             }
         }
     }
 
+    private int GetCurrentStaggerForce()
+    {
+        if (_stats == null) return bladeStaggerForce;
+
+        return _stats.EquippedWeapon switch
+        {
+            EntityStats.WeaponType.Blade  => bladeStaggerForce,
+            EntityStats.WeaponType.Hammer => hammerStaggerForce,
+            EntityStats.WeaponType.Bow    => bowStaggerForce,
+            _                             => bladeStaggerForce
+        };
+    }
+
+    // ─────────────────────────────────────────
     void OnDrawGizmos()
     {
         if (!showAttackGizmos || attackOrigin == null) return;
@@ -115,7 +165,7 @@ public class PlayerCombat : MonoBehaviour
 
         for (int l = 0; l <= layers; l++)
         {
-            float t           = (float)l / layers;
+            float t             = (float)l / layers;
             Vector3 layerOrigin = origin + Vector3.up * (t * height - height / 2f);
             Vector3 prevPoint   = layerOrigin + Quaternion.Euler(0, -halfAngle, 0) * forward * radius;
 
@@ -130,7 +180,6 @@ public class PlayerCombat : MonoBehaviour
             }
         }
 
-        // Vertical lines connecting top and bottom
         for (int i = 0; i <= segments; i++)
         {
             float currentAngle = Mathf.Lerp(-halfAngle, halfAngle, (float)i / segments);

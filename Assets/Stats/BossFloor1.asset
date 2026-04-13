@@ -1,0 +1,41 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 151a50ef8daddc24dbb20ddb63dfedb5, type: 3}
+  m_Name: BossFloor1
+  m_EditorClassIdentifier: Assembly-CSharp::StatBlock
+  baseHealth: 30
+  baseStrength: 5
+  baseStamina: 40
+  baseSpeed: 6
+  baseToughness: 2
+  healthPerPoint: 10
+  strengthPerPoint: 2
+  staminaPerPoint: 8
+  speedPerPoint: 1
+  floorOneCap: 5
+  floorTwoCap: 10
+  floorThreeCap: 15
+  bladeDamageMin: 8
+  bladeDamageMax: 12
+  hammerDamageMin: 20
+  hammerDamageMax: 28
+  bowDamageMin: 10
+  bowDamageMax: 18
+  bladeStrengthBonus: 2
+  hammerStrengthBonus: 3
+  bowStrengthBonus: 0
+  bladeToughnessBonus: 1
+  hammerToughnessBonus: 4
+  bowToughnessBonus: 0
+  bladeStaminaCost: 6
+  hammerStaminaCost: 18
+  bowStaminaCost: 10
