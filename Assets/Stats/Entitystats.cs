@@ -18,7 +18,6 @@ public class EntityStats : MonoBehaviour
     [Tooltip("Drag an EnemyStatBlock here if isPlayer is false")]
     public EnemyStatBlock enemyStatBlock;
 
-    // Convenience property — whichever block is relevant
     public BaseStatBlock BaseBlock => isPlayer
         ? (BaseStatBlock)playerStatBlock
         : (BaseStatBlock)enemyStatBlock;
@@ -50,6 +49,10 @@ public class EntityStats : MonoBehaviour
 
     private bool  _isDead;
     private float _lastStaminaUseTime;
+
+    // Accumulates fractional stamina between frames so small regen rates
+    // are never silently discarded by int truncation
+    private float _staminaRegenAccumulator;
 
     // ─────────────────────────────────────────
     void Start()
@@ -87,6 +90,8 @@ public class EntityStats : MonoBehaviour
         CurrentHealth  = MaxHealth;
         CurrentStamina = MaxStamina;
 
+        _staminaRegenAccumulator = 0f;
+
         if (isPlayer) ApplyWeaponToughnessBonus();
 
         Debug.Log($"[EntityStats] {gameObject.name} ready — " +
@@ -97,10 +102,6 @@ public class EntityStats : MonoBehaviour
     // Leveling — player only
     // ─────────────────────────────────────────
 
-    /// <summary>
-    /// Call when the player earns a level point.
-    /// Returns false if already at the floor cap.
-    /// </summary>
     public bool GainLevel()
     {
         if (!isPlayer) return false;
@@ -117,10 +118,6 @@ public class EntityStats : MonoBehaviour
         return true;
     }
 
-    /// <summary>
-    /// Spend a level point on a chosen stat.
-    /// Valid inputs: "health", "strength", "stamina", "speed"
-    /// </summary>
     public void SpendPoint(string stat)
     {
         if (!isPlayer || playerStatBlock == null) return;
@@ -155,9 +152,6 @@ public class EntityStats : MonoBehaviour
         }
     }
 
-    /// <summary>
-    /// Call when the player beats a floor boss to unlock the next 5 level points.
-    /// </summary>
     public void AdvanceFloor()
     {
         if (!isPlayer) return;
@@ -203,10 +197,6 @@ public class EntityStats : MonoBehaviour
         Toughness = BaseToughness + bonus;
     }
 
-    /// <summary>
-    /// Returns damage for one hit with the currently equipped weapon.
-    /// Bow ignores Strength. Blade and Hammer scale with it.
-    /// </summary>
     public int CalculateWeaponDamage()
     {
         if (playerStatBlock == null) return 0;
@@ -238,9 +228,6 @@ public class EntityStats : MonoBehaviour
         return baseDmg + strengthBonus;
     }
 
-    /// <summary>
-    /// Returns the stamina cost for one use of the equipped weapon.
-    /// </summary>
     public int GetWeaponStaminaCost()
     {
         if (playerStatBlock == null) return 0;
@@ -258,19 +245,17 @@ public class EntityStats : MonoBehaviour
     // Stamina — player only
     // ─────────────────────────────────────────
 
-    /// <summary>
-    /// Returns true if the cost was paid. False if not enough stamina.
-    /// </summary>
     public bool UseStamina(int amount)
     {
         if (CurrentStamina < amount)
         {
-            Debug.Log($"[EntityStats] Not enough stamina ({CurrentStamina}/{amount} needed)");
+            Debug.Log($"[EntityStats] Not enough stamina ({CurrentStamina}/{MaxStamina})");
             return false;
         }
 
-        CurrentStamina      = Mathf.Max(0, CurrentStamina - amount);
-        _lastStaminaUseTime = Time.time;
+        CurrentStamina           = Mathf.Max(0, CurrentStamina - amount);
+        _lastStaminaUseTime      = Time.time;
+        _staminaRegenAccumulator = 0f;   // discard any partial regen that built up
         return true;
     }
 
@@ -280,8 +265,17 @@ public class EntityStats : MonoBehaviour
         if (CurrentStamina >= MaxStamina) return;
         if (Time.time < _lastStaminaUseTime + playerStatBlock.staminaRegenDelay) return;
 
-        CurrentStamina = Mathf.Min(MaxStamina,
-            CurrentStamina + Mathf.RoundToInt(playerStatBlock.staminaRegenRate * Time.deltaTime));
+        // Accumulate fractional stamina across frames.
+        // Without this, staminaRegenRate * deltaTime (~0.24 at 60fps) is
+        // rounded to 0 every frame by int arithmetic and regen never ticks.
+        _staminaRegenAccumulator += playerStatBlock.staminaRegenRate * Time.deltaTime;
+
+        int wholePoints = Mathf.FloorToInt(_staminaRegenAccumulator);
+        if (wholePoints > 0)
+        {
+            _staminaRegenAccumulator -= wholePoints;
+            CurrentStamina = Mathf.Min(MaxStamina, CurrentStamina + wholePoints);
+        }
     }
 
     // ─────────────────────────────────────────
@@ -322,8 +316,5 @@ public class EntityStats : MonoBehaviour
     // Stagger check
     // ─────────────────────────────────────────
 
-    /// <summary>
-    /// Returns true if the hit's stagger force exceeds this entity's Toughness.
-    /// </summary>
     public bool ShouldStagger(int staggerForce) => staggerForce > Toughness;
 }

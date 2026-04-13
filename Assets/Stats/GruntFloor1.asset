@@ -14,19 +14,22 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::EnemyStatBlock
   baseHealth: 40
   baseStrength: 5
-  baseStamina: 30
+  baseStamina: 0
   baseSpeed: 5
   baseToughness: 2
   attackDamageMin: 8
   attackDamageMax: 10
   attackStrengthBonus: 2
   attackCooldown: 1.5
-  attackRange: 1.8
-  aggroRange: 7
-  stopRange: 1.5
+  attackShape: 0
+  attackRadius: 1.6
+  attackAngle: 10
+  attackHeight: 1
+  aggroRange: 8
+  stopRange: 2.5
   moveSpeed: 3.5
   toughnessReductionPerPoint: 1
-  knockbackDuration: 0.25
+  knockbackDuration: 0.2
   bladeKnockbackForce: 5
   hammerKnockbackForce: 12
   bowKnockbackForce: 2

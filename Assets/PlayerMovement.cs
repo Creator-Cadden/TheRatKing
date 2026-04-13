@@ -15,6 +15,11 @@ public class PlayerMovement : MonoBehaviour
     public float jumpForce     = 1.5f;
     public float rotationSpeed = 10f;
 
+    [Header("Roll")]
+    public float rollSpeed     = 12f;
+    public float rollDuration  = 0.35f;
+    public float rollCooldown  = 0.8f;
+
     [Header("Cinemachine Cameras")]
     public CinemachineCamera freeLookCamera;
     public CinemachineCamera aimCamera;
@@ -50,12 +55,19 @@ public class PlayerMovement : MonoBehaviour
     private Vector3 _currentMoveVelocity;
     private bool    _jumpPressed;
     private bool    _isGrounded;
-    private bool    _isSprinting;
+
+    // Sprint is now a held state set directly from input callbacks
+    private bool    _sprintHeld;
 
     private bool    _isAiming;
     private float   _aimYaw;
     private float   _aimPitch;
     private Vector2 _lookDelta;
+
+    // Roll
+    private bool    _isRolling;
+    private float   _lastRollTime = -999f;
+    private Vector3 _rollDirection;
 
     private Coroutine _suppressCoroutine;
 
@@ -76,14 +88,19 @@ public class PlayerMovement : MonoBehaviour
     {
         _isGrounded = _controller.isGrounded;
 
-        HandleMovement();
-        HandleRotation();
+        // Skip normal movement while rolling — roll coroutine drives position
+        if (!_isRolling)
+        {
+            HandleMovement();
+            HandleRotation();
+        }
+
         HandleJumpAndGravity();
 
         if (_isAiming)
             DriveAimLook();
 
-        // Animation — reads AFTER movement is calculated this frame
+        // Animation
         if (_currentMoveVelocity == Vector3.zero)
             animator.SetFloat("Running", 0);
         else
@@ -108,17 +125,15 @@ public class PlayerMovement : MonoBehaviour
 
         Vector3 targetDirection = camForward * _moveInput.y + camRight * _moveInput.x;
 
-        // Can't sprint while aiming
-        float targetSpeed = (_isSprinting && !_isAiming && _moveInput.y > 0.1f)
+        // Sprint works in any movement direction; can't sprint while aiming
+        float targetSpeed = (_sprintHeld && !_isAiming && _moveInput.sqrMagnitude > 0.01f)
             ? sprintSpeed
             : walkSpeed;
 
         Vector3 targetVelocity = targetDirection * targetSpeed;
 
-        // Accelerate toward target, decelerate when no input
         float accelRate = targetDirection.sqrMagnitude > 0.01f ? acceleration : deceleration;
 
-        // If moving in a significantly different direction, kill momentum faster
         float dot = Vector3.Dot(_currentMoveVelocity.normalized, targetVelocity.normalized);
         if (dot < 0.5f)
             _currentMoveVelocity = Vector3.Lerp(_currentMoveVelocity, targetVelocity, 15f * Time.deltaTime);
@@ -183,6 +198,58 @@ public class PlayerMovement : MonoBehaviour
         _controller.Move(_velocity * Time.deltaTime);
     }
 
+    // ── Roll ──────────────────────────────────────────────────
+
+    private void TryRoll()
+    {
+        if (_isRolling) return;
+        if (_isAiming) return;
+        if (Time.time < _lastRollTime + rollCooldown) return;
+
+        // Roll in the current WASD direction relative to camera;
+        // if no input, roll forward relative to the character
+        Vector3 camForward = Vector3.ProjectOnPlane(freeLookCamera.transform.forward, Vector3.up).normalized;
+        Vector3 camRight   = Vector3.ProjectOnPlane(freeLookCamera.transform.right,   Vector3.up).normalized;
+
+        Vector3 inputDir = camForward * _moveInput.y + camRight * _moveInput.x;
+
+        _rollDirection = inputDir.sqrMagnitude > 0.01f
+            ? inputDir.normalized
+            : transform.forward;
+
+        _lastRollTime = Time.time;
+        StartCoroutine(RollCoroutine());
+    }
+
+    private IEnumerator RollCoroutine()
+    {
+        _isRolling = true;
+
+        // Snap rotation to roll direction immediately so the animation looks right
+        if (_rollDirection.sqrMagnitude > 0.01f)
+            transform.rotation = Quaternion.LookRotation(_rollDirection);
+
+        // Optional: trigger a roll animation if you have one
+        // animator.SetTrigger("Roll");
+
+        float elapsed = 0f;
+        while (elapsed < rollDuration)
+        {
+            // Ease out the roll speed so it decelerates naturally
+            float t         = elapsed / rollDuration;
+            float speed     = Mathf.Lerp(rollSpeed, 0f, t);
+
+            _controller.Move(_rollDirection * speed * Time.deltaTime);
+
+            elapsed += Time.deltaTime;
+            yield return null;
+        }
+
+        _isRolling = false;
+    }
+
+    // ── Aim Look ──────────────────────────────────────────────
+
     private void DriveAimLook()
     {
         _aimYaw   += _lookDelta.x * aimSensitivity * 60f * Time.deltaTime;
@@ -210,11 +277,21 @@ public class PlayerMovement : MonoBehaviour
             _freeLookInput.enabled = enabled;
     }
 
-    // ── Input Callbacks ──
+    // ── Input Callbacks ──────────────────────────────────────
+
     public void OnMove(InputValue value)   => _moveInput   = value.Get<Vector2>();
     public void OnJump(InputValue value)   { if (value.isPressed) _jumpPressed = true; }
     public void OnLook(InputValue value)   => _lookDelta   = value.Get<Vector2>();
-    public void OnSprint(InputValue value) => _isSprinting = value.isPressed;
+
+    // Sprint: read as a held button — true while held, false when released
+    public void OnSprint(InputValue value) => _sprintHeld  = value.isPressed;
+
+    // Roll: bind to your "Roll" action in the Input Action asset (e.g. Left Ctrl)
+    public void OnRoll(InputValue value)
+    {
+        if (value.isPressed)
+            TryRoll();
+    }
 
     public void OnAim(InputValue value)
     {
