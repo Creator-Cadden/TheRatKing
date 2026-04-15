@@ -13,14 +13,14 @@ MonoBehaviour:
   m_Name: BossFloor1
   m_EditorClassIdentifier: Assembly-CSharp::EnemyStatBlock
   baseHealth: 280
-  baseStrength: 14
+  baseStrength: 10
   baseStamina: 0
   baseSpeed: 7
   baseToughness: 8
-  attackDamageMin: 16
-  attackDamageMax: 20
-  attackStrengthBonus: 2
-  attackCooldown: 2
+  attackDamageMin: 8
+  attackDamageMax: 12
+  attackStrengthBonus: 1
+  attackCooldown: 2.4
   attackShape: 1
   attackRadius: 2.5
   attackAngle: 70

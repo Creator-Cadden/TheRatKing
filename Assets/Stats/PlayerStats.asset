@@ -12,11 +12,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 151a50ef8daddc24dbb20ddb63dfedb5, type: 3}
   m_Name: PlayerStats
   m_EditorClassIdentifier: Assembly-CSharp::PlayerStatBlock
-  baseHealth: 30
+  baseHealth: 100
   baseStrength: 5
   baseStamina: 40
   baseSpeed: 6
-  baseToughness: 2
+  baseToughness: 3
   healthPerPoint: 10
   strengthPerPoint: 2
   staminaPerPoint: 8

@@ -13,14 +13,14 @@ MonoBehaviour:
   m_Name: GruntFloor1
   m_EditorClassIdentifier: Assembly-CSharp::EnemyStatBlock
   baseHealth: 40
-  baseStrength: 5
+  baseStrength: 4
   baseStamina: 0
   baseSpeed: 5
   baseToughness: 2
-  attackDamageMin: 8
-  attackDamageMax: 10
-  attackStrengthBonus: 2
-  attackCooldown: 1.5
+  attackDamageMin: 5
+  attackDamageMax: 7
+  attackStrengthBonus: 1
+  attackCooldown: 1.8
   attackShape: 0
   attackRadius: 1.6
   attackAngle: 10

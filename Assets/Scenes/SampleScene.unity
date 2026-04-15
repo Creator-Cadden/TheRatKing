@@ -1699,7 +1699,7 @@ MonoBehaviour:
   gravity: -35
   jumpForce: 3
   rotationSpeed: 10
-  rollSpeed: 12
+  rollSpeed: 30
   rollDuration: 0.35
   rollCooldown: 0.8
   freeLookCamera: {fileID: 1240517820}

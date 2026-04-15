@@ -14,6 +14,12 @@ public class PlayerCombat : MonoBehaviour
     public float jumpAttackAngle    = 90f;
     public float jumpAttackCooldown = 1.2f;
     public float jumpAttackHeight   = 1.2f;
+    public float jumpSpinDuration   = 0.35f;
+    public float jumpSpinDegrees    = 360f;
+
+    [Header("Jump Spin Visual")]
+    [Tooltip("Optional visual root to spin. Defaults to animator transform.")]
+    public Transform jumpSpinVisual;
 
     [Header("Stagger Force Per Weapon")]
     public int bladeStaggerForce  = 3;    // low — only staggers low-toughness enemies
@@ -36,12 +42,15 @@ public class PlayerCombat : MonoBehaviour
     private float               _lastAttackTime;
     private float               _lastJumpAttackTime;
     private bool                _hasJumpAttacked;
+    private Coroutine           _jumpSpinRoutine;
 
     void Start()
     {
         _controller = GetComponent<CharacterController>();
         _animator   = GetComponentInChildren<Animator>();
         _stats      = GetComponent<EntityStats>();
+        if (jumpSpinVisual == null && _animator != null)
+            jumpSpinVisual = _animator.transform;
 
         if (_stats == null)
             Debug.LogError("[PlayerCombat] No EntityStats found on player!");
@@ -102,8 +111,34 @@ public class PlayerCombat : MonoBehaviour
         _hasJumpAttacked    = true;
         _lastJumpAttackTime = Time.time;
         _animator.SetTrigger("AirAttk");
+        StartJumpSpin();
 
         HitScan(jumpAttackRadius, jumpAttackAngle);
+    }
+
+    private void StartJumpSpin()
+    {
+        if (jumpSpinVisual == null) return;
+        if (_jumpSpinRoutine != null) StopCoroutine(_jumpSpinRoutine);
+        _jumpSpinRoutine = StartCoroutine(JumpSpinRoutine());
+    }
+
+    private System.Collections.IEnumerator JumpSpinRoutine()
+    {
+        Quaternion startLocalRot = jumpSpinVisual.localRotation;
+        float elapsed = 0f;
+
+        while (elapsed < jumpSpinDuration)
+        {
+            elapsed += Time.deltaTime;
+            float t = Mathf.Clamp01(elapsed / jumpSpinDuration);
+            float xAngle = jumpSpinDegrees * t;
+            jumpSpinVisual.localRotation = startLocalRot * Quaternion.Euler(xAngle, 0f, 0f);
+            yield return null;
+        }
+
+        jumpSpinVisual.localRotation = startLocalRot;
+        _jumpSpinRoutine = null;
     }
 
     private void HitScan(float radius, float angle)
