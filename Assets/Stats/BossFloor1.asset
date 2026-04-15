@@ -12,7 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: cddbe9ff30055fe44ac23a486a3194ae, type: 3}
   m_Name: BossFloor1
   m_EditorClassIdentifier: Assembly-CSharp::EnemyStatBlock
-  baseHealth: 280
+  baseHealth: 300
   baseStrength: 10
   baseStamina: 0
   baseSpeed: 7
@@ -20,11 +20,11 @@ MonoBehaviour:
   attackDamageMin: 8
   attackDamageMax: 12
   attackStrengthBonus: 1
-  attackCooldown: 2.4
+  attackCooldown: 3
   attackShape: 1
-  attackRadius: 2.5
-  attackAngle: 70
-  attackHeight: 1.2
+  attackRadius: 3
+  attackAngle: 76
+  attackHeight: 0.52
   aggroRange: 12
   stopRange: 3
   moveSpeed: 4

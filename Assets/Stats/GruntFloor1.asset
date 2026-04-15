@@ -21,9 +21,9 @@ MonoBehaviour:
   attackDamageMax: 7
   attackStrengthBonus: 1
   attackCooldown: 1.8
-  attackShape: 0
-  attackRadius: 1.6
-  attackAngle: 10
+  attackShape: 1
+  attackRadius: 1.55
+  attackAngle: 63
   attackHeight: 1
   aggroRange: 8
   stopRange: 2.5
