@@ -4,9 +4,7 @@ using UnityEngine.AI;
 public class EnemyAI : MonoBehaviour
 {
     [Header("Legacy Attack Migration")]
-    [Tooltip("Copied into EnemyCombat if that field is unassigned.")]
     public LayerMask playerLayer;
-    [Tooltip("Copied into EnemyCombat if that field is unassigned.")]
     public Transform attackOrigin;
 
     [Header("Debug")]
@@ -39,6 +37,7 @@ public class EnemyAI : MonoBehaviour
         }
 
         _sb = _stats.enemyStatBlock;
+
         _combat = GetComponent<EnemyCombat>();
         if (_combat == null) _combat = gameObject.AddComponent<EnemyCombat>();
 
@@ -51,10 +50,6 @@ public class EnemyAI : MonoBehaviour
         {
             _player = playerObj.transform;
             _playerStats = playerObj.GetComponent<EntityStats>();
-        }
-        else
-        {
-            Debug.LogWarning("[EnemyAI] No GameObject tagged 'Player' found.");
         }
 
         _stats.onDeath.AddListener(OnDeath);
@@ -94,6 +89,7 @@ public class EnemyAI : MonoBehaviour
         if (!_isAggroed) return;
 
         float attackThreshold = _sb.stopRange + 0.4f;
+
         if (dist > attackThreshold)
         {
             _agent.SetDestination(_player.position);
@@ -106,15 +102,8 @@ public class EnemyAI : MonoBehaviour
         }
     }
 
-    public void OnAttackHitFrame()
-    {
-        if (_combat != null) _combat.OnAttackHitFrame();
-    }
-
-    public void OnAttackEnd()
-    {
-        if (_combat != null) _combat.OnAttackEnd();
-    }
+    public void OnAttackHitFrame() => _combat?.OnAttackHitFrame();
+    public void OnAttackEnd() => _combat?.OnAttackEnd();
 
     private void HandleKnockback()
     {
@@ -135,6 +124,7 @@ public class EnemyAI : MonoBehaviour
         if (_sb == null) return;
 
         int toughness = _stats?.Toughness ?? 0;
+
         float baseForce = staggerForce switch
         {
             int f when f >= 8 => _sb.hammerKnockbackForce,
@@ -143,8 +133,10 @@ public class EnemyAI : MonoBehaviour
         };
 
         float finalForce = baseForce - (toughness * _sb.toughnessReductionPerPoint);
+
         Vector3 direction = (transform.position - sourcePosition).normalized;
         direction.y = 0.3f;
+
         bool staggers = _stats == null || _stats.ShouldStagger(staggerForce);
 
         if (finalForce > 0f)
@@ -152,17 +144,11 @@ public class EnemyAI : MonoBehaviour
             _knockbackVelocity = direction * finalForce;
             _knockbackTimer = _sb.knockbackDuration;
             _isKnockedBack = true;
+
             _combat.CancelAttackState();
 
             if (staggers)
-            {
                 _animator.SetTrigger("Stun");
-                Debug.Log($"[EnemyAI] {gameObject.name} staggered — force {finalForce:F1}");
-            }
-            else
-            {
-                Debug.Log($"[EnemyAI] {gameObject.name} pushed but not staggered — force {finalForce:F1}");
-            }
         }
     }
 
@@ -182,64 +168,80 @@ public class EnemyAI : MonoBehaviour
         EnemyStatBlock sb = entityStats != null ? entityStats.enemyStatBlock : null;
         if (sb == null) return;
 
-        Vector3 hitOrigin = _combat != null ? _combat.HitOriginPosition : (attackOrigin != null ? attackOrigin.position : transform.position);
+        Vector3 hitOrigin = _combat != null
+            ? _combat.HitOriginPosition
+            : (attackOrigin != null ? attackOrigin.position : transform.position);
 
+        // Aggro ranges
         if (showAggroGizmo)
         {
             Gizmos.color = new Color(1f, 1f, 0f, 0.06f);
             Gizmos.DrawSphere(transform.position, sb.aggroRange);
+
             Gizmos.color = new Color(1f, 1f, 0f, 0.7f);
             Gizmos.DrawWireSphere(transform.position, sb.aggroRange);
+
             Gizmos.color = new Color(1f, 0.5f, 0f, 0.7f);
             Gizmos.DrawWireSphere(transform.position, sb.stopRange);
         }
 
         if (!showAttackGizmo) return;
 
-        if (sb.attackShape == AttackShape.Sphere)
-        {
-            Gizmos.color = new Color(1f, 0f, 0f, 0.12f);
-            Gizmos.DrawSphere(hitOrigin, sb.attackRadius);
-            Gizmos.color = new Color(1f, 0.1f, 0.1f, 0.9f);
-            Gizmos.DrawWireSphere(hitOrigin, sb.attackRadius);
-        }
-        else
-        {
-            Gizmos.color = new Color(1f, 0f, 0f, 0.12f);
-            DrawConeFan(hitOrigin, transform.forward, sb.attackRadius, sb.attackAngle);
-            Gizmos.color = new Color(1f, 0.1f, 0.1f, 0.9f);
-            DrawConeOutline(hitOrigin, transform.forward, sb.attackRadius, sb.attackAngle);
-        }
+        Gizmos.color = new Color(1f, 0.1f, 0.1f, 0.9f);
+
+        DrawConePrismGizmo(
+            hitOrigin,
+            transform.forward,
+            sb.attackRadius,
+            sb.attackAngle,
+            sb.attackHeight
+        );
     }
 
-    private void DrawConeFan(Vector3 origin, Vector3 forward, float radius, float angle)
+    // 🔥 EXACT MATCH to EnemyCombat prism
+    private void DrawConePrismGizmo(Vector3 origin, Vector3 forward, float radius, float angleDeg, float height)
     {
-        int segments = 20;
-        float halfAngle = angle / 2f;
+        int segments = 24;
+
+        float halfH = height * 0.5f;
+        float halfAngle = angleDeg * 0.5f;
+
+        Vector3 up = Vector3.up;
+
+        Vector3[] topArc = new Vector3[segments + 1];
+        Vector3[] bottomArc = new Vector3[segments + 1];
+
         for (int i = 0; i <= segments; i++)
         {
-            float a = Mathf.Lerp(-halfAngle, halfAngle, (float)i / segments);
-            Vector3 point = origin + Quaternion.Euler(0, a, 0) * forward * radius;
-            Gizmos.DrawLine(origin, point);
+            float t = (float)i / segments;
+            float a = Mathf.Lerp(-halfAngle, halfAngle, t);
+
+            Quaternion rot = Quaternion.Euler(0, a, 0);
+            Vector3 dir = rot * forward;
+
+            topArc[i]    = origin + dir * radius + up * halfH;
+            bottomArc[i] = origin + dir * radius - up * halfH;
         }
-    }
 
-    private void DrawConeOutline(Vector3 origin, Vector3 forward, float radius, float angle)
-    {
-        int segments = 20;
-        float halfAngle = angle / 2f;
-        Vector3 leftEdge = origin + Quaternion.Euler(0, -halfAngle, 0) * forward * radius;
-        Vector3 rightEdge = origin + Quaternion.Euler(0, halfAngle, 0) * forward * radius;
-        Gizmos.DrawLine(origin, leftEdge);
-        Gizmos.DrawLine(origin, rightEdge);
-
-        Vector3 prev = leftEdge;
-        for (int i = 1; i <= segments; i++)
+        for (int i = 0; i < segments; i++)
         {
-            float a = Mathf.Lerp(-halfAngle, halfAngle, (float)i / segments);
-            Vector3 next = origin + Quaternion.Euler(0, a, 0) * forward * radius;
-            Gizmos.DrawLine(prev, next);
-            prev = next;
+            Gizmos.DrawLine(topArc[i], topArc[i + 1]);
+            Gizmos.DrawLine(bottomArc[i], bottomArc[i + 1]);
         }
+
+        for (int i = 0; i <= segments; i++)
+        {
+            Gizmos.DrawLine(topArc[i], bottomArc[i]);
+        }
+
+        Vector3 topOrigin = origin + up * halfH;
+        Vector3 bottomOrigin = origin - up * halfH;
+
+        Gizmos.DrawLine(topOrigin, topArc[0]);
+        Gizmos.DrawLine(bottomOrigin, bottomArc[0]);
+        Gizmos.DrawLine(topOrigin, topArc[segments]);
+        Gizmos.DrawLine(bottomOrigin, bottomArc[segments]);
+
+        Gizmos.DrawLine(topOrigin, bottomOrigin);
     }
 }
