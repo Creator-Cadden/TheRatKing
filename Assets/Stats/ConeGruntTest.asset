@@ -10,31 +10,31 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: cddbe9ff30055fe44ac23a486a3194ae, type: 3}
-  m_Name: BossFloor1
+  m_Name: ConeGruntTest
   m_EditorClassIdentifier: Assembly-CSharp::EnemyStatBlock
-  baseHealth: 300
-  baseStrength: 10
+  baseHealth: 40
+  baseStrength: 4
   baseStamina: 0
-  baseSpeed: 7
-  baseToughness: 8
-  attackDamageMin: 8
-  attackDamageMax: 12
+  baseSpeed: 5
+  baseToughness: 2
+  attackDamageMin: 5
+  attackDamageMax: 7
   attackStrengthBonus: 1
   attackShape: 0
   attackHeight: 0.12
-  attackRadius: 8
-  attackAngle: 87
-  circleRadius: 2
-  rectWidth: 1.5
-  rectLength: 2.5
-  attackCooldown: 4
-  attackWindupTime: 2
+  attackRadius: 3.5
+  attackAngle: 66
+  circleRadius: 4
+  rectWidth: 2
+  rectLength: 5
+  attackCooldown: 1.8
+  attackWindupTime: 1
   attackAnimTimeout: 2.5
-  aggroRange: 12
-  stopRange: 5
-  moveSpeed: 4
+  aggroRange: 8
+  stopRange: 3
+  moveSpeed: 3.5
   toughnessReductionPerPoint: 1
-  knockbackDuration: 0.1
+  knockbackDuration: 0.2
   bladeKnockbackForce: 5
   hammerKnockbackForce: 12
   bowKnockbackForce: 2

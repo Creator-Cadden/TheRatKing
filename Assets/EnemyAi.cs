@@ -7,6 +7,11 @@ public class EnemyAI : MonoBehaviour
     public LayerMask playerLayer;
     public Transform attackOrigin;
 
+    [Header("Post-Attack")]
+    [Tooltip("Seconds after an attack completes before the enemy resumes rotating and chasing.\n" +
+             "Gives the player a window to reposition after dodging.")]
+    public float postAttackDelay = 0.4f;
+
     [Header("Debug")]
     public bool showAttackGizmo = true;
     public bool showAggroGizmo = true;
@@ -20,10 +25,16 @@ public class EnemyAI : MonoBehaviour
     private EnemyStatBlock _sb;
     private EnemyCombat _combat;
 
-    private bool _isAggroed;
-    private bool _isKnockedBack;
+    private bool  _isAggroed;
+    private bool  _isKnockedBack;
+    private bool  _isPostAttackPause;
+    private float _postAttackPauseUntil;
     private Vector3 _knockbackVelocity;
     private float _knockbackTimer;
+
+    // Tracks whether we were locked last frame so we can detect the
+    // exact frame the lock releases and start the post-attack pause.
+    private bool _wasRotationLocked;
 
     void Start()
     {
@@ -70,9 +81,31 @@ public class EnemyAI : MonoBehaviour
 
         _combat.verboseAttackLog = verboseAttackLog;
         _combat.Tick();
+
+        // Detect the frame the rotation lock releases (attack fully finished)
+        // and start the post-attack pause timer.
+        bool lockedNow = _combat.IsRotationLocked;
+        if (_wasRotationLocked && !lockedNow)
+        {
+            _isPostAttackPause    = true;
+            _postAttackPauseUntil = Time.time + postAttackDelay;
+        }
+        _wasRotationLocked = lockedNow;
+
+        // During the post-attack pause the enemy stands still and faces the
+        // direction it attacked — no chasing, no rotation, no new attacks.
+        if (_isPostAttackPause)
+        {
+            _agent.ResetPath();
+            if (Time.time >= _postAttackPauseUntil)
+                _isPostAttackPause = false;
+            return;
+        }
+
+        // While the combat system owns rotation, let it — don't steer here.
         if (_combat.IsBusy) return;
 
-        float dist = Vector3.Distance(transform.position, _player.position);
+        float dist = FlatDist(transform.position, _player.position);
 
         if (dist <= _sb.aggroRange)
         {
@@ -88,9 +121,10 @@ public class EnemyAI : MonoBehaviour
 
         if (!_isAggroed) return;
 
-        float attackThreshold = _sb.stopRange + 0.4f;
+        float walkThreshold   = _sb.stopRange;
+        float attackThreshold = _sb.AttackReach + 0.35f;
 
-        if (dist > attackThreshold)
+        if (dist > walkThreshold)
         {
             _agent.SetDestination(_player.position);
             _combat.CancelWindup();
@@ -98,12 +132,21 @@ public class EnemyAI : MonoBehaviour
         else
         {
             _agent.ResetPath();
-            _combat.TryStartAttack(dist);
+
+            if (dist <= attackThreshold)
+                _combat.TryStartAttack(dist);
         }
     }
 
     public void OnAttackHitFrame() => _combat?.OnAttackHitFrame();
-    public void OnAttackEnd() => _combat?.OnAttackEnd();
+    public void OnAttackEnd()      => _combat?.OnAttackEnd();
+
+    private static float FlatDist(Vector3 a, Vector3 b)
+    {
+        float dx = a.x - b.x;
+        float dz = a.z - b.z;
+        return Mathf.Sqrt(dx * dx + dz * dz);
+    }
 
     private void HandleKnockback()
     {
@@ -172,7 +215,6 @@ public class EnemyAI : MonoBehaviour
             ? _combat.HitOriginPosition
             : (attackOrigin != null ? attackOrigin.position : transform.position);
 
-        // Aggro ranges
         if (showAggroGizmo)
         {
             Gizmos.color = new Color(1f, 1f, 0f, 0.06f);
@@ -198,50 +240,42 @@ public class EnemyAI : MonoBehaviour
         );
     }
 
-    // 🔥 EXACT MATCH to EnemyCombat prism
     private void DrawConePrismGizmo(Vector3 origin, Vector3 forward, float radius, float angleDeg, float height)
     {
         int segments = 24;
-
         float halfH = height * 0.5f;
         float halfAngle = angleDeg * 0.5f;
-
         Vector3 up = Vector3.up;
 
-        Vector3[] topArc = new Vector3[segments + 1];
+        Vector3[] topArc    = new Vector3[segments + 1];
         Vector3[] bottomArc = new Vector3[segments + 1];
 
         for (int i = 0; i <= segments; i++)
         {
-            float t = (float)i / segments;
-            float a = Mathf.Lerp(-halfAngle, halfAngle, t);
-
+            float t   = (float)i / segments;
+            float a   = Mathf.Lerp(-halfAngle, halfAngle, t);
             Quaternion rot = Quaternion.Euler(0, a, 0);
-            Vector3 dir = rot * forward;
-
+            Vector3 dir    = rot * forward;
             topArc[i]    = origin + dir * radius + up * halfH;
             bottomArc[i] = origin + dir * radius - up * halfH;
         }
 
         for (int i = 0; i < segments; i++)
         {
-            Gizmos.DrawLine(topArc[i], topArc[i + 1]);
+            Gizmos.DrawLine(topArc[i],    topArc[i + 1]);
             Gizmos.DrawLine(bottomArc[i], bottomArc[i + 1]);
         }
 
         for (int i = 0; i <= segments; i++)
-        {
             Gizmos.DrawLine(topArc[i], bottomArc[i]);
-        }
 
-        Vector3 topOrigin = origin + up * halfH;
+        Vector3 topOrigin    = origin + up * halfH;
         Vector3 bottomOrigin = origin - up * halfH;
 
-        Gizmos.DrawLine(topOrigin, topArc[0]);
+        Gizmos.DrawLine(topOrigin,    topArc[0]);
         Gizmos.DrawLine(bottomOrigin, bottomArc[0]);
-        Gizmos.DrawLine(topOrigin, topArc[segments]);
+        Gizmos.DrawLine(topOrigin,    topArc[segments]);
         Gizmos.DrawLine(bottomOrigin, bottomArc[segments]);
-
-        Gizmos.DrawLine(topOrigin, bottomOrigin);
+        Gizmos.DrawLine(topOrigin,    bottomOrigin);
     }
 }
