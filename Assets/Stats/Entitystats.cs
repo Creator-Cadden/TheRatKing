@@ -47,11 +47,9 @@ public class EntityStats : MonoBehaviour
     public enum WeaponType { None, Blade, Hammer, Bow }
     public WeaponType EquippedWeapon { get; private set; } = WeaponType.Blade;
 
-    private bool  _isDead;
-    private float _lastStaminaUseTime;
+    public bool IsDead { get; private set; }
 
-    // Accumulates fractional stamina between frames so small regen rates
-    // are never silently discarded by int truncation
+    private float _lastStaminaUseTime;
     private float _staminaRegenAccumulator;
 
     // ─────────────────────────────────────────
@@ -255,7 +253,7 @@ public class EntityStats : MonoBehaviour
 
         CurrentStamina           = Mathf.Max(0, CurrentStamina - amount);
         _lastStaminaUseTime      = Time.time;
-        _staminaRegenAccumulator = 0f;   // discard any partial regen that built up
+        _staminaRegenAccumulator = 0f;
         return true;
     }
 
@@ -265,9 +263,6 @@ public class EntityStats : MonoBehaviour
         if (CurrentStamina >= MaxStamina) return;
         if (Time.time < _lastStaminaUseTime + playerStatBlock.staminaRegenDelay) return;
 
-        // Accumulate fractional stamina across frames.
-        // Without this, staminaRegenRate * deltaTime (~0.24 at 60fps) is
-        // rounded to 0 every frame by int arithmetic and regen never ticks.
         _staminaRegenAccumulator += playerStatBlock.staminaRegenRate * Time.deltaTime;
 
         int wholePoints = Mathf.FloorToInt(_staminaRegenAccumulator);
@@ -284,7 +279,7 @@ public class EntityStats : MonoBehaviour
 
     public void TakeDamage(int damage)
     {
-        if (_isDead) return;
+        if (IsDead) return;
 
         int finalDamage = Mathf.Max(1, damage);
         CurrentHealth   = Mathf.Max(0, CurrentHealth - finalDamage);
@@ -292,29 +287,55 @@ public class EntityStats : MonoBehaviour
         onDamageTaken?.Invoke(finalDamage);
         Debug.Log($"[EntityStats] {gameObject.name} took {finalDamage} — HP {CurrentHealth}/{MaxHealth}");
 
-        if (CurrentHealth <= 0) Die();
+        if (CurrentHealth <= 0)
+        {
+            Debug.Log($"[EntityStats] {gameObject.name} HP hit 0 — calling Die(). isPlayer={isPlayer}");
+            Die();
+        }
     }
 
     public void Heal(int amount)
     {
-        if (_isDead) return;
+        if (IsDead) return;
         CurrentHealth = Mathf.Min(MaxHealth, CurrentHealth + amount);
         onHeal?.Invoke(amount);
     }
 
     private void Die()
     {
-        if (_isDead) return;
-        _isDead = true;
-        Debug.Log($"[EntityStats] {gameObject.name} died.");
+        if (IsDead) return;
+        IsDead = true;
+
+        // Log how many runtime listeners are attached — if this is 0 when isPlayer=true,
+        // it means GameManager.SubscribeNextFrame() never ran or found the wrong object.
+        Debug.Log($"[EntityStats] Die() fired on '{gameObject.name}'. isPlayer={isPlayer}. " +
+                  $"onDeath persistent listeners: {onDeath.GetPersistentEventCount()}");
+
         onDeath?.Invoke();
     }
-
-    public bool IsDead => _isDead;
 
     // ─────────────────────────────────────────
     // Stagger check
     // ─────────────────────────────────────────
 
     public bool ShouldStagger(int staggerForce) => staggerForce > Toughness;
+
+    // ─────────────────────────────────────────
+    // Reset — called by GameManager on Retry
+    // ─────────────────────────────────────────
+
+    public void ResetToFull()
+    {
+        IsDead = false;
+
+        CurrentHealth  = MaxHealth;
+        CurrentStamina = MaxStamina;
+
+        _lastStaminaUseTime      = -999f;
+        _staminaRegenAccumulator = 0f;
+
+        onHeal?.Invoke(MaxHealth);
+
+        Debug.Log($"[EntityStats] {gameObject.name} fully reset — HP {CurrentHealth}/{MaxHealth}");
+    }
 }

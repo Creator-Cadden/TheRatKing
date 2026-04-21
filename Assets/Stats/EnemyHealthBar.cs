@@ -39,9 +39,9 @@ public class EnemyHealthBar : MonoBehaviour
     public float visibleDuration = 3f;
 
     [Header("Colours")]
-    public Color fullColour    = new Color(0.27f, 0.72f, 0.18f); // green
-    public Color halfColour    = new Color(0.96f, 0.74f, 0.10f); // amber
-    public Color criticalColour = new Color(0.85f, 0.15f, 0.15f); // red
+    public Color fullColour      = new Color(0.27f, 0.72f, 0.18f);
+    public Color halfColour      = new Color(0.96f, 0.74f, 0.10f);
+    public Color criticalColour  = new Color(0.85f, 0.15f, 0.15f);
     public Color backgroundColour = new Color(0f, 0f, 0f, 0.8f);
 
     [Header("Layout")]
@@ -52,7 +52,7 @@ public class EnemyHealthBar : MonoBehaviour
     // ── Private ──
     private EntityStats _stats;
     private Camera      _cam;
-    private float       _displayedFill;   // 0-1, smoothed
+    private float       _displayedFill;
     private float       _targetFill;
     private float       _hideTimer;
     private CanvasGroup _canvasGroup;
@@ -61,15 +61,29 @@ public class EnemyHealthBar : MonoBehaviour
 
     void Awake()
     {
-        // Walk up to find EntityStats on the parent enemy
-        _stats = GetComponentInParent<EntityStats>();
+        // GetComponentInParent searches this GameObject AND all parents,
+        // so this works whether the script is on the enemy directly, a child, or deeper.
+        _stats = GetComponentInParent<EntityStats>(includeInactive: true);
+
+        // Belt-and-suspenders: if we're nested under a Canvas or similar,
+        // manually walk up until we find EntityStats.
         if (_stats == null)
-            Debug.LogError("[EnemyHealthBar] No EntityStats found in parent hierarchy.");
+        {
+            Transform t = transform.parent;
+            while (t != null && _stats == null)
+            {
+                _stats = t.GetComponent<EntityStats>();
+                t = t.parent;
+            }
+        }
+
+        if (_stats == null)
+            Debug.LogError($"[EnemyHealthBar] No EntityStats found in the hierarchy above '{gameObject.name}'. " +
+                           "Make sure EnemyHealthBar is placed somewhere inside the enemy GameObject that has EntityStats.");
 
         _canvasGroup = GetComponentInChildren<CanvasGroup>();
         if (_canvasGroup == null)
         {
-            // Auto-add one to the Canvas child if missing
             Canvas c = GetComponentInChildren<Canvas>();
             if (c != null) _canvasGroup = c.gameObject.AddComponent<CanvasGroup>();
         }
@@ -100,8 +114,7 @@ public class EnemyHealthBar : MonoBehaviour
 
     void Start()
     {
-        // Snap to current HP immediately — no lerp flash on spawn
-        _targetFill   = GetFillRatio();
+        _targetFill    = GetFillRatio();
         _displayedFill = _targetFill;
         ApplyLayoutStyle();
         RefreshBar(snap: true);
@@ -112,19 +125,19 @@ public class EnemyHealthBar : MonoBehaviour
 
     void LateUpdate()
     {
-        // ── Billboard: face the camera ───────────────────────────────
+        // Billboard: face the camera
         if (_cam != null)
             transform.rotation = Quaternion.LookRotation(transform.position - _cam.transform.position);
 
-        // ── Keep position above enemy origin (works even if enemy moves) ─
+        // Keep position above enemy origin
         if (transform.parent != null)
             transform.position = transform.parent.position + Vector3.up * heightOffset;
 
-        // ── Smooth fill ──────────────────────────────────────────────
+        // Smooth fill
         _displayedFill = Mathf.Lerp(_displayedFill, _targetFill, Time.deltaTime * lerpSpeed);
         RefreshBar(snap: false);
 
-        // ── Auto-hide after visibleDuration ─────────────────────────
+        // Auto-hide after visibleDuration
         if (_hideTimer > 0f)
         {
             _hideTimer -= Time.deltaTime;
@@ -132,7 +145,7 @@ public class EnemyHealthBar : MonoBehaviour
                 SetVisible(false, instant: false);
         }
 
-        // ── Fade alpha ───────────────────────────────────────────────
+        // Fade alpha
         if (_canvasGroup != null)
         {
             float target = (_canvasGroup.alpha < 0.99f && _hideTimer <= 0f) ? 0f : 1f;
@@ -194,7 +207,6 @@ public class EnemyHealthBar : MonoBehaviour
         if (_canvasGroup == null) return;
         if (instant)
             _canvasGroup.alpha = visible ? 1f : 0f;
-        // Gradual fade is handled in LateUpdate
         if (visible) _canvasGroup.alpha = 1f;
     }
 
@@ -206,44 +218,44 @@ public class EnemyHealthBar : MonoBehaviour
 
         if (_backgroundImage != null)
         {
-            _backgroundImage.type = Image.Type.Simple;
+            _backgroundImage.type   = Image.Type.Simple;
             _backgroundImage.sprite = square;
-            _backgroundImage.color = backgroundColour;
-            RectTransform bgRt = _backgroundImage.rectTransform;
-            bgRt.anchorMin = new Vector2(0.5f, 0.5f);
-            bgRt.anchorMax = new Vector2(0.5f, 0.5f);
-            bgRt.pivot = new Vector2(0.5f, 0.5f);
-            bgRt.sizeDelta = barSize;
-            bgRt.anchoredPosition = Vector2.zero;
+            _backgroundImage.color  = backgroundColour;
+            RectTransform bgRt      = _backgroundImage.rectTransform;
+            bgRt.anchorMin          = new Vector2(0.5f, 0.5f);
+            bgRt.anchorMax          = new Vector2(0.5f, 0.5f);
+            bgRt.pivot              = new Vector2(0.5f, 0.5f);
+            bgRt.sizeDelta          = barSize;
+            bgRt.anchoredPosition   = Vector2.zero;
         }
 
         if (fillImage != null)
         {
-            fillImage.type = Image.Type.Filled;
-            fillImage.fillMethod = Image.FillMethod.Horizontal;
-            fillImage.fillOrigin = (int)Image.OriginHorizontal.Left;
-            fillImage.sprite = square;
-            RectTransform fillRt = fillImage.rectTransform;
-            fillRt.anchorMin = new Vector2(0.5f, 0.5f);
-            fillRt.anchorMax = new Vector2(0.5f, 0.5f);
-            fillRt.pivot = new Vector2(0.5f, 0.5f);
-            fillRt.sizeDelta = new Vector2(barSize.x - 4f, barSize.y - 4f);
+            fillImage.type        = Image.Type.Filled;
+            fillImage.fillMethod  = Image.FillMethod.Horizontal;
+            fillImage.fillOrigin  = (int)Image.OriginHorizontal.Left;
+            fillImage.sprite      = square;
+            RectTransform fillRt  = fillImage.rectTransform;
+            fillRt.anchorMin      = new Vector2(0.5f, 0.5f);
+            fillRt.anchorMax      = new Vector2(0.5f, 0.5f);
+            fillRt.pivot          = new Vector2(0.5f, 0.5f);
+            fillRt.sizeDelta      = new Vector2(barSize.x - 4f, barSize.y - 4f);
             fillRt.anchoredPosition = Vector2.zero;
         }
 
         if (hpLabel != null)
         {
-            RectTransform labelRt = hpLabel.rectTransform;
-            labelRt.anchorMin = new Vector2(0.5f, 0.5f);
-            labelRt.anchorMax = new Vector2(0.5f, 0.5f);
-            labelRt.pivot = new Vector2(0.5f, 0.5f);
-            labelRt.sizeDelta = barSize;
+            RectTransform labelRt   = hpLabel.rectTransform;
+            labelRt.anchorMin       = new Vector2(0.5f, 0.5f);
+            labelRt.anchorMax       = new Vector2(0.5f, 0.5f);
+            labelRt.pivot           = new Vector2(0.5f, 0.5f);
+            labelRt.sizeDelta       = barSize;
             labelRt.anchoredPosition = Vector2.zero;
-            hpLabel.alignment = TextAlignmentOptions.Center;
-            hpLabel.fontSize = labelFontSize;
+            hpLabel.alignment       = TextAlignmentOptions.Center;
+            hpLabel.fontSize        = labelFontSize;
             hpLabel.enableAutoSizing = false;
-            hpLabel.color = Color.white;
-            hpLabel.overflowMode = TextOverflowModes.Overflow;
+            hpLabel.color           = Color.white;
+            hpLabel.overflowMode    = TextOverflowModes.Overflow;
         }
     }
 
@@ -254,8 +266,8 @@ public class EnemyHealthBar : MonoBehaviour
         Texture2D tex = new Texture2D(1, 1, TextureFormat.RGBA32, false);
         tex.SetPixel(0, 0, Color.white);
         tex.Apply();
-        tex.hideFlags = HideFlags.HideAndDontSave;
-        _squareSprite = Sprite.Create(tex, new Rect(0f, 0f, 1f, 1f), new Vector2(0.5f, 0.5f), 1f);
+        tex.hideFlags  = HideFlags.HideAndDontSave;
+        _squareSprite  = Sprite.Create(tex, new Rect(0f, 0f, 1f, 1f), new Vector2(0.5f, 0.5f), 1f);
         _squareSprite.name = "EnemyHealthBarSquareSprite";
         return _squareSprite;
     }
