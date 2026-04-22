@@ -81,32 +81,22 @@ public class PlayerCombat : MonoBehaviour
     public void EquipBow()    => _stats?.EquipWeapon(EntityStats.WeaponType.Bow);
 
     // ─────────────────────────────────────────
+    // Attacks do NOT cost stamina.
+    // Stamina is spent on mobility: sprint, roll, jump.
+    // This keeps combat always available and lets the player
+    // make interesting decisions about stamina during movement.
+    // ─────────────────────────────────────────
+
     private void BasicAttack()
     {
-        // Check stamina before allowing attack
-        int staminaCost = _stats?.GetWeaponStaminaCost() ?? 0;
-        if (_stats != null && !_stats.UseStamina(staminaCost))
-        {
-            Debug.Log("[PlayerCombat] Not enough stamina to attack");
-            return;
-        }
-
         _lastAttackTime = Time.time;
         _animator.SetTrigger("Attk");
-
         HitScan(basicAttackRadius, basicAttackAngle);
     }
 
     private void JumpAttack()
     {
         if (Time.time < _lastJumpAttackTime + jumpAttackCooldown) return;
-
-        int staminaCost = _stats?.GetWeaponStaminaCost() ?? 0;
-        if (_stats != null && !_stats.UseStamina(staminaCost))
-        {
-            Debug.Log("[PlayerCombat] Not enough stamina for jump attack");
-            return;
-        }
 
         _hasJumpAttacked    = true;
         _lastJumpAttackTime = Time.time;
@@ -152,16 +142,12 @@ public class PlayerCombat : MonoBehaviour
 
             if (angleToTarget <= angle / 2f)
             {
-                // Calculate damage from player stats
                 int damage       = _stats?.CalculateWeaponDamage() ?? 10;
                 int staggerForce = GetCurrentStaggerForce();
 
                 Debug.Log($"[PlayerCombat] Hit: {hit.name} for {damage} damage");
 
-                // Deal damage
                 hit.GetComponent<EntityStats>()?.TakeDamage(damage);
-
-                // Knockback + stagger — pass stagger force so enemy checks its own Toughness
                 hit.GetComponent<EnemyAI>()?.TakeKnockback(attackOrigin.position, staggerForce);
             }
         }

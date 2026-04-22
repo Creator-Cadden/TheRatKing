@@ -16,9 +16,9 @@ public class PlayerMovement : MonoBehaviour
     public float rotationSpeed = 10f;
 
     [Header("Roll")]
-    public float rollSpeed     = 12f;
-    public float rollDuration  = 0.35f;
-    public float rollCooldown  = 0.8f;
+    public float rollSpeed    = 12f;
+    public float rollDuration = 0.35f;
+    public float rollCooldown = 0.8f;
 
     [Header("Cinemachine Cameras")]
     public CinemachineCamera freeLookCamera;
@@ -47,8 +47,9 @@ public class PlayerMovement : MonoBehaviour
     private bool ground;
 
     // ── Private State ──
-    private CharacterController _controller;
+    private CharacterController          _controller;
     private CinemachineInputAxisController _freeLookInput;
+    private EntityStats                  _stats;
 
     private Vector2 _moveInput;
     private Vector3 _velocity;
@@ -56,7 +57,7 @@ public class PlayerMovement : MonoBehaviour
     private bool    _jumpPressed;
     private bool    _isGrounded;
 
-    // Sprint is now a held state set directly from input callbacks
+    // Sprint is a held state set directly from input callbacks
     private bool    _sprintHeld;
 
     private bool    _isAiming;
@@ -75,6 +76,7 @@ public class PlayerMovement : MonoBehaviour
     {
         _controller    = GetComponent<CharacterController>();
         _freeLookInput = freeLookCamera.GetComponent<CinemachineInputAxisController>();
+        _stats         = GetComponent<EntityStats>();
 
         freeLookCamera.Priority = activePriority;
         aimCamera.Priority      = defaultPriority;
@@ -125,10 +127,16 @@ public class PlayerMovement : MonoBehaviour
 
         Vector3 targetDirection = camForward * _moveInput.y + camRight * _moveInput.x;
 
-        // Sprint works in any movement direction; can't sprint while aiming
-        float targetSpeed = (_sprintHeld && !_isAiming && _moveInput.sqrMagnitude > 0.01f)
-            ? sprintSpeed
-            : walkSpeed;
+        // Sprint: held button + moving + not aiming + has stamina
+        bool canSprint = _sprintHeld && !_isAiming && _moveInput.sqrMagnitude > 0.01f;
+
+        if (canSprint && _stats != null)
+        {
+            // UseStaminaPerSecond returns false when stamina hits 0 — stop sprinting
+            canSprint = _stats.UseStaminaPerSecond(_stats.playerStatBlock.sprintStaminaPerSecond);
+        }
+
+        float targetSpeed = canSprint ? sprintSpeed : walkSpeed;
 
         Vector3 targetVelocity = targetDirection * targetSpeed;
 
@@ -189,9 +197,19 @@ public class PlayerMovement : MonoBehaviour
 
         if (_jumpPressed && _isGrounded)
         {
-            _velocity.y  = Mathf.Sqrt(jumpForce * -2f * gravity);
-            _jumpPressed = false;
-            animator.SetBool("Jump", true);
+            // Check stamina before allowing jump
+            int jumpCost = _stats?.playerStatBlock?.jumpStaminaCost ?? 5;
+            if (_stats != null && !_stats.UseStamina(jumpCost))
+            {
+                // Not enough stamina — cancel jump
+                _jumpPressed = false;
+            }
+            else
+            {
+                _velocity.y  = Mathf.Sqrt(jumpForce * -2f * gravity);
+                _jumpPressed = false;
+                animator.SetBool("Jump", true);
+            }
         }
 
         _velocity.y += gravity * Time.deltaTime;
@@ -205,6 +223,14 @@ public class PlayerMovement : MonoBehaviour
         if (_isRolling) return;
         if (_isAiming) return;
         if (Time.time < _lastRollTime + rollCooldown) return;
+
+        // Check stamina before allowing roll
+        int rollCost = _stats?.playerStatBlock?.rollStaminaCost ?? 12;
+        if (_stats != null && !_stats.UseStamina(rollCost))
+        {
+            Debug.Log("[PlayerMovement] Not enough stamina to roll");
+            return;
+        }
 
         // Roll in the current WASD direction relative to camera;
         // if no input, roll forward relative to the character
@@ -235,9 +261,8 @@ public class PlayerMovement : MonoBehaviour
         float elapsed = 0f;
         while (elapsed < rollDuration)
         {
-            // Ease out the roll speed so it decelerates naturally
-            float t         = elapsed / rollDuration;
-            float speed     = Mathf.Lerp(rollSpeed, 0f, t);
+            float t     = elapsed / rollDuration;
+            float speed = Mathf.Lerp(rollSpeed, 0f, t);
 
             _controller.Move(_rollDirection * speed * Time.deltaTime);
 
@@ -279,12 +304,12 @@ public class PlayerMovement : MonoBehaviour
 
     // ── Input Callbacks ──────────────────────────────────────
 
-    public void OnMove(InputValue value)   => _moveInput   = value.Get<Vector2>();
+    public void OnMove(InputValue value)   => _moveInput  = value.Get<Vector2>();
     public void OnJump(InputValue value)   { if (value.isPressed) _jumpPressed = true; }
-    public void OnLook(InputValue value)   => _lookDelta   = value.Get<Vector2>();
+    public void OnLook(InputValue value)   => _lookDelta  = value.Get<Vector2>();
 
     // Sprint: read as a held button — true while held, false when released
-    public void OnSprint(InputValue value) => _sprintHeld  = value.isPressed;
+    public void OnSprint(InputValue value) => _sprintHeld = value.isPressed;
 
     // Roll: bind to your "Roll" action in the Input Action asset (e.g. Left Ctrl)
     public void OnRoll(InputValue value)

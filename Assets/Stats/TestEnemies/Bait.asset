@@ -10,17 +10,17 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: cddbe9ff30055fe44ac23a486a3194ae, type: 3}
-  m_Name: CircGruntTest
+  m_Name: Bait
   m_EditorClassIdentifier: Assembly-CSharp::EnemyStatBlock
-  baseHealth: 40
-  baseStrength: 4
+  baseHealth: 1
+  baseStrength: 1
   baseStamina: 0
-  baseSpeed: 5
-  baseToughness: 2
+  baseSpeed: 1
+  baseToughness: 1
   attackDamageMin: 5
   attackDamageMax: 7
   attackStrengthBonus: 1
-  attackShape: 1
+  attackShape: 0
   attackHeight: 0.12
   attackRadius: 3.5
   attackAngle: 66
@@ -30,7 +30,7 @@ MonoBehaviour:
   attackCooldown: 1.8
   attackWindupTime: 1
   attackAnimTimeout: 2.5
-  aggroRange: 8
+  aggroRange: 10
   stopRange: 3
   moveSpeed: 3.5
   toughnessReductionPerPoint: 1

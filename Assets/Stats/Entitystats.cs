@@ -226,23 +226,14 @@ public class EntityStats : MonoBehaviour
         return baseDmg + strengthBonus;
     }
 
-    public int GetWeaponStaminaCost()
-    {
-        if (playerStatBlock == null) return 0;
-
-        return EquippedWeapon switch
-        {
-            WeaponType.Blade  => playerStatBlock.bladeStaminaCost,
-            WeaponType.Hammer => playerStatBlock.hammerStaminaCost,
-            WeaponType.Bow    => playerStatBlock.bowStaminaCost,
-            _                 => 0
-        };
-    }
-
     // ─────────────────────────────────────────
     // Stamina — player only
     // ─────────────────────────────────────────
 
+    /// <summary>
+    /// Flat stamina cost — used for roll and jump.
+    /// Returns false if not enough stamina (action should be cancelled).
+    /// </summary>
     public bool UseStamina(int amount)
     {
         if (CurrentStamina < amount)
@@ -256,6 +247,28 @@ public class EntityStats : MonoBehaviour
         _staminaRegenAccumulator = 0f;
         return true;
     }
+
+    /// <summary>
+    /// Per-second stamina drain — call once per frame while sprinting.
+    /// Returns false if stamina is fully depleted (stop sprinting).
+    /// </summary>
+    public bool UseStaminaPerSecond(float amountPerSecond)
+        {
+            if (CurrentStamina <= 0) return false;
+
+            // Accumulate fractional drain — only subtract whole points when ready
+            _staminaRegenAccumulator -= amountPerSecond * Time.deltaTime;
+
+            if (_staminaRegenAccumulator <= -1f)
+            {
+                int drain          = Mathf.FloorToInt(-_staminaRegenAccumulator);
+                _staminaRegenAccumulator += drain;
+                CurrentStamina     = Mathf.Max(0, CurrentStamina - drain);
+            }
+
+            _lastStaminaUseTime = Time.time;
+            return CurrentStamina > 0;
+        }
 
     private void RegenStamina()
     {
@@ -306,8 +319,6 @@ public class EntityStats : MonoBehaviour
         if (IsDead) return;
         IsDead = true;
 
-        // Log how many runtime listeners are attached — if this is 0 when isPlayer=true,
-        // it means GameManager.SubscribeNextFrame() never ran or found the wrong object.
         Debug.Log($"[EntityStats] Die() fired on '{gameObject.name}'. isPlayer={isPlayer}. " +
                   $"onDeath persistent listeners: {onDeath.GetPersistentEventCount()}");
 

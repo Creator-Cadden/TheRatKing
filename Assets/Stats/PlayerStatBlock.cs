@@ -33,6 +33,8 @@ public class PlayerStatBlock : BaseStatBlock
 
     // ─────────────────────────────────────────
     // WEAPON DAMAGE
+    // Attacks do NOT cost stamina — combat is always available.
+    // Stamina is spent on movement actions (sprint, roll, jump).
     // ─────────────────────────────────────────
 
     [Header("Blade")]
@@ -42,8 +44,6 @@ public class PlayerStatBlock : BaseStatBlock
     public int bladeStrengthBonus  = 2;
     [Tooltip("Toughness added to player base while blade is equipped")]
     public int bladeToughnessBonus = 1;
-    [Tooltip("Stamina cost per blade hit")]
-    public int bladeStaminaCost    = 6;
 
     [Header("Hammer")]
     public int hammerDamageMin      = 20;
@@ -52,8 +52,6 @@ public class PlayerStatBlock : BaseStatBlock
     public int hammerStrengthBonus  = 3;
     [Tooltip("Toughness added to player base while hammer is equipped")]
     public int hammerToughnessBonus = 4;
-    [Tooltip("Stamina cost per hammer hit")]
-    public int hammerStaminaCost    = 18;
 
     [Header("Bow")]
     public int bowDamageMin      = 10;
@@ -62,8 +60,21 @@ public class PlayerStatBlock : BaseStatBlock
     public int bowStrengthBonus  = 0;
     [Tooltip("Bow gives no Toughness — fragile while aiming")]
     public int bowToughnessBonus = 0;
-    [Tooltip("Stamina cost per bow draw")]
-    public int bowStaminaCost    = 10;
+
+    // ─────────────────────────────────────────
+    // ACTION STAMINA COSTS
+    // Walk speed is always free. Everything else costs stamina.
+    // ─────────────────────────────────────────
+
+    [Header("Action Stamina Costs")]
+    [Tooltip("Stamina drained per second while sprinting (walk is always free)")]
+    public float sprintStaminaPerSecond = 3.5f;
+
+    [Tooltip("Flat stamina cost per roll/dodge")]
+    public int rollStaminaCost = 12;
+
+    [Tooltip("Flat stamina cost per jump")]
+    public int jumpStaminaCost = 5;
 
     // ─────────────────────────────────────────
     // STAMINA REGEN
