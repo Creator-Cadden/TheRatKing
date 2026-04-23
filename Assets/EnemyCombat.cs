@@ -188,6 +188,8 @@ public class EnemyCombat : MonoBehaviour
         _isAttacking     = true;
         _attackStartTime = Time.time;
 
+        _animator.SetTrigger("Bite");
+
         // NO rotation change here — _lockedRotation is already set and Tick()
         // enforces it every frame. The hitbox fires in exactly the direction
         // the indicator showed during windup.

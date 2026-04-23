@@ -202,7 +202,7 @@ public class EnemyAI : MonoBehaviour
     {
         _combat.CancelAttackState();
         _agent.enabled = false;
-        _animator.SetTrigger("Death");
+        _animator.SetBool("Death", true);
     }
 
     void OnDrawGizmos()
