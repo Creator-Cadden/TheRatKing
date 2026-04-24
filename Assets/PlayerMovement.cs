@@ -40,7 +40,9 @@ public class PlayerMovement : MonoBehaviour
     public int activePriority  = 20;
 
     // Animation
-    private Animator animator;
+    [Header("Animators")]
+    [SerializeField] private Animator _primaryAnimator;   
+    [SerializeField] private Animator _secondaryAnimator;
     private bool jump;
     private bool fall;
     private bool contact;
@@ -82,8 +84,8 @@ public class PlayerMovement : MonoBehaviour
         aimCamera.Priority      = defaultPriority;
 
         _aimYaw  = transform.eulerAngles.y;
-        animator = GetComponentInChildren<Animator>();
-        Debug.Log("Animator found: " + (animator != null ? animator.gameObject.name : "NULL"));
+       
+        //Debug.Log("Animator found: " + (animator != null ? animator.gameObject.name : "NULL"));
     }
 
     void Update()
@@ -104,9 +106,21 @@ public class PlayerMovement : MonoBehaviour
 
         // Animation
         if (_currentMoveVelocity == Vector3.zero)
-            animator.SetFloat("Running", 0);
+            SetFloat("Running", 0);
         else
-            animator.SetFloat("Running", 1);
+            SetFloat("Running", 1);
+    }
+
+    private void SetBool(string param, bool value)
+    {
+        _primaryAnimator?.SetBool(param, value);
+        _secondaryAnimator?.SetBool(param, value);
+    }
+
+    private void SetFloat(string param, float value)
+    {
+        _primaryAnimator?.SetFloat(param, value);
+        _secondaryAnimator?.SetFloat(param, value);
     }
 
     private void HandleMovement()
@@ -178,22 +192,22 @@ public class PlayerMovement : MonoBehaviour
         bool contact = !ground && _velocity.y == -2f;
         bool falling = !ground && _velocity.y < -0.1f;
 
-        animator.SetBool("Grounded", true);
+        SetBool("Grounded", true);
 
         if (falling)
-            animator.SetBool("Grounded", false);
+            SetBool("Grounded", false);
         ground = false;
 
-        animator.SetBool("Jump", false);
+        SetBool("Jump", false);
         jump = false;
 
-        animator.SetBool("Falling", true);
+        SetBool("Falling", true);
         fall = false;
 
-        animator.SetBool("Contact", false);
+        SetBool("Contact", false);
 
         if (contact)
-            animator.SetBool("Contact", true);
+            SetBool("Contact", true);
 
         if (_jumpPressed && _isGrounded)
         {
@@ -208,7 +222,7 @@ public class PlayerMovement : MonoBehaviour
             {
                 _velocity.y  = Mathf.Sqrt(jumpForce * -2f * gravity);
                 _jumpPressed = false;
-                animator.SetBool("Jump", true);
+                SetBool("Jump", true);
             }
         }
 

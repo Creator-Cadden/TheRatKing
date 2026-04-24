@@ -36,8 +36,10 @@ public class PlayerCombat : MonoBehaviour
     public bool showAttackGizmos = true;
 
     // ── Private State ──
+    [Header("Animators")]
+    [SerializeField] private Animator _primaryAnimator;
+    [SerializeField] private Animator _secondaryAnimator;
     private CharacterController _controller;
-    private Animator            _animator;
     private EntityStats         _stats;
     private float               _lastAttackTime;
     private float               _lastJumpAttackTime;
@@ -47,10 +49,9 @@ public class PlayerCombat : MonoBehaviour
     void Start()
     {
         _controller = GetComponent<CharacterController>();
-        _animator   = GetComponentInChildren<Animator>();
         _stats      = GetComponent<EntityStats>();
-        if (jumpSpinVisual == null && _animator != null)
-            jumpSpinVisual = _animator.transform;
+        if (jumpSpinVisual == null && _primaryAnimator != null)
+            jumpSpinVisual = _primaryAnimator.transform;
 
         if (_stats == null)
             Debug.LogError("[PlayerCombat] No EntityStats found on player!");
@@ -90,7 +91,8 @@ public class PlayerCombat : MonoBehaviour
     private void BasicAttack()
     {
         _lastAttackTime = Time.time;
-        _animator.SetTrigger("Attk");
+        _primaryAnimator?.SetTrigger("Attk");
+        _secondaryAnimator?.SetTrigger("Attk");
         HitScan(basicAttackRadius, basicAttackAngle);
     }
 
@@ -100,7 +102,8 @@ public class PlayerCombat : MonoBehaviour
 
         _hasJumpAttacked    = true;
         _lastJumpAttackTime = Time.time;
-        _animator.SetTrigger("AirAttk");
+        _primaryAnimator?.SetTrigger("AirAttk");
+        _secondaryAnimator?.SetTrigger("AirAttk");
         StartJumpSpin();
 
         HitScan(jumpAttackRadius, jumpAttackAngle);
