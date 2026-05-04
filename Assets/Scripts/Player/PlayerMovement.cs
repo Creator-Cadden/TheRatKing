@@ -39,29 +39,26 @@ public class PlayerMovement : MonoBehaviour
     public int defaultPriority = 10;
     public int activePriority  = 20;
 
-    // Animation
     [Header("Animators")]
-    [SerializeField] private Animator _primaryAnimator;   
+    [SerializeField] private Animator _primaryAnimator;
     [SerializeField] private Animator _secondaryAnimator;
-    private bool jump;
-    private bool fall;
-    private bool contact;
-    private bool ground;
 
     // ── Private State ──
-    private CharacterController          _controller;
+    private CharacterController            _controller;
     private CinemachineInputAxisController _freeLookInput;
-    private EntityStats                  _stats;
+    private EntityStats                    _stats;
+
+    // Base speeds stored at Start() so ApplySpeedBonus always scales
+    // from the original Inspector values, not a previously-modified value.
+    private float _baseWalkSpeed;
+    private float _baseSprintSpeed;
 
     private Vector2 _moveInput;
     private Vector3 _velocity;
     private Vector3 _currentMoveVelocity;
     private bool    _jumpPressed;
     private bool    _isGrounded;
-
-    // Sprint is a held state set directly from input callbacks
     private bool    _sprintHeld;
-
     private bool    _isAiming;
     private float   _aimYaw;
     private float   _aimPitch;
@@ -74,25 +71,33 @@ public class PlayerMovement : MonoBehaviour
 
     private Coroutine _suppressCoroutine;
 
+    // Animation state
+    private bool jump;
+    private bool fall;
+    private bool contact;
+    private bool ground;
+
+    // ─────────────────────────────────────────
     void Start()
     {
         _controller    = GetComponent<CharacterController>();
         _freeLookInput = freeLookCamera.GetComponent<CinemachineInputAxisController>();
         _stats         = GetComponent<EntityStats>();
 
+        // Cache the Inspector-set base speeds before any stat bonuses are applied
+        _baseWalkSpeed   = walkSpeed;
+        _baseSprintSpeed = sprintSpeed;
+
         freeLookCamera.Priority = activePriority;
         aimCamera.Priority      = defaultPriority;
 
-        _aimYaw  = transform.eulerAngles.y;
-       
-        //Debug.Log("Animator found: " + (animator != null ? animator.gameObject.name : "NULL"));
+        _aimYaw = transform.eulerAngles.y;
     }
 
     void Update()
     {
         _isGrounded = _controller.isGrounded;
 
-        // Skip normal movement while rolling — roll coroutine drives position
         if (!_isRolling)
         {
             HandleMovement();
@@ -105,23 +110,37 @@ public class PlayerMovement : MonoBehaviour
             DriveAimLook();
 
         // Animation
-        if (_currentMoveVelocity == Vector3.zero)
-            SetFloat("Running", 0);
-        else
-            SetFloat("Running", 1);
+        SetFloat("Running", _currentMoveVelocity == Vector3.zero ? 0f : 1f);
     }
 
-    private void SetBool(string param, bool value)
+    // ─────────────────────────────────────────
+    // Speed stat integration
+    // ─────────────────────────────────────────
+
+    /// <summary>
+    /// Called by EntityStats whenever the Speed stat changes (on init and on SpendPoint).
+    /// bonusPoints = Speed - baseSpeed (points spent above the starting value).
+    /// bonusPerPoint = flat walk speed added per bonus point (sprint scales 1.33x faster).
+    ///
+    /// Example at defaults (bonusPerPoint = 0.5):
+    ///   +1 Speed  →  walk  6.5,  sprint 10.67
+    ///   +3 Speed  →  walk  7.5,  sprint 12.00
+    ///   +5 Speed  →  walk  8.5,  sprint 13.33
+    /// </summary>
+    public void ApplySpeedBonus(int bonusPoints, float bonusPerPoint)
     {
-        _primaryAnimator?.SetBool(param, value);
-        _secondaryAnimator?.SetBool(param, value);
+        float walkBonus   = bonusPoints * bonusPerPoint;
+        float sprintBonus = bonusPoints * bonusPerPoint * 1.33f;
+
+        walkSpeed   = _baseWalkSpeed   + walkBonus;
+        sprintSpeed = _baseSprintSpeed + sprintBonus;
+
+        Debug.Log($"[PlayerMovement] Speed updated — walk:{walkSpeed:F1}  sprint:{sprintSpeed:F1}");
     }
 
-    private void SetFloat(string param, float value)
-    {
-        _primaryAnimator?.SetFloat(param, value);
-        _secondaryAnimator?.SetFloat(param, value);
-    }
+    // ─────────────────────────────────────────
+    // Movement
+    // ─────────────────────────────────────────
 
     private void HandleMovement()
     {
@@ -141,46 +160,37 @@ public class PlayerMovement : MonoBehaviour
 
         Vector3 targetDirection = camForward * _moveInput.y + camRight * _moveInput.x;
 
-        // Sprint: held button + moving + not aiming + has stamina
         bool canSprint = _sprintHeld && !_isAiming && _moveInput.sqrMagnitude > 0.01f;
 
         if (canSprint && _stats != null)
-        {
-            // UseStaminaPerSecond returns false when stamina hits 0 — stop sprinting
             canSprint = _stats.UseStaminaPerSecond(_stats.playerStatBlock.sprintStaminaPerSecond);
-        }
 
-        float targetSpeed = canSprint ? sprintSpeed : walkSpeed;
-
+        float targetSpeed    = canSprint ? sprintSpeed : walkSpeed;
         Vector3 targetVelocity = targetDirection * targetSpeed;
 
         float accelRate = targetDirection.sqrMagnitude > 0.01f ? acceleration : deceleration;
 
         float dot = Vector3.Dot(_currentMoveVelocity.normalized, targetVelocity.normalized);
-        if (dot < 0.5f)
-            _currentMoveVelocity = Vector3.Lerp(_currentMoveVelocity, targetVelocity, 15f * Time.deltaTime);
-        else
-            _currentMoveVelocity = Vector3.Lerp(_currentMoveVelocity, targetVelocity, accelRate * Time.deltaTime);
+        float lerpRate = dot < 0.5f ? 15f : accelRate;
 
+        _currentMoveVelocity = Vector3.Lerp(_currentMoveVelocity, targetVelocity, lerpRate * Time.deltaTime);
         _controller.Move(_currentMoveVelocity * Time.deltaTime);
     }
 
     private void HandleRotation()
     {
-        if (!_isAiming)
+        if (_isAiming) return;
+
+        Vector3 camForward = Vector3.ProjectOnPlane(freeLookCamera.transform.forward, Vector3.up).normalized;
+        Vector3 camRight   = Vector3.ProjectOnPlane(freeLookCamera.transform.right,   Vector3.up).normalized;
+
+        Vector3 move = (camForward * _moveInput.y + camRight * _moveInput.x);
+        move.y = 0f;
+
+        if (move.sqrMagnitude > 0.01f)
         {
-            Vector3 camForward = Vector3.ProjectOnPlane(freeLookCamera.transform.forward, Vector3.up).normalized;
-            Vector3 camRight   = Vector3.ProjectOnPlane(freeLookCamera.transform.right,   Vector3.up).normalized;
-
-            Vector3 move = camForward * _moveInput.y + camRight * _moveInput.x;
-            move.y = 0f;
-
-            if (move.sqrMagnitude > 0.01f)
-            {
-                Quaternion targetRot = Quaternion.LookRotation(move);
-                transform.rotation = Quaternion.Slerp(
-                    transform.rotation, targetRot, rotationSpeed * Time.deltaTime);
-            }
+            Quaternion targetRot = Quaternion.LookRotation(move);
+            transform.rotation   = Quaternion.Slerp(transform.rotation, targetRot, rotationSpeed * Time.deltaTime);
         }
     }
 
@@ -189,33 +199,24 @@ public class PlayerMovement : MonoBehaviour
         if (_isGrounded && _velocity.y < 0f)
             _velocity.y = -2f;
 
-        bool contact = !ground && _velocity.y == -2f;
-        bool falling = !ground && _velocity.y < -0.1f;
+        bool landedThisFrame = !ground && _velocity.y == -2f;
+        bool falling         = !ground && _velocity.y < -0.1f;
 
         SetBool("Grounded", true);
-
-        if (falling)
-            SetBool("Grounded", false);
+        if (falling) SetBool("Grounded", false);
         ground = false;
 
-        SetBool("Jump", false);
-        jump = false;
-
+        SetBool("Jump",    false);
         SetBool("Falling", true);
-        fall = false;
-
         SetBool("Contact", false);
 
-        if (contact)
-            SetBool("Contact", true);
+        if (landedThisFrame) SetBool("Contact", true);
 
         if (_jumpPressed && _isGrounded)
         {
-            // Check stamina before allowing jump
             int jumpCost = _stats?.playerStatBlock?.jumpStaminaCost ?? 5;
             if (_stats != null && !_stats.UseStamina(jumpCost))
             {
-                // Not enough stamina — cancel jump
                 _jumpPressed = false;
             }
             else
@@ -230,15 +231,16 @@ public class PlayerMovement : MonoBehaviour
         _controller.Move(_velocity * Time.deltaTime);
     }
 
-    // ── Roll ──────────────────────────────────────────────────
+    // ─────────────────────────────────────────
+    // Roll
+    // ─────────────────────────────────────────
 
     private void TryRoll()
     {
         if (_isRolling) return;
-        if (_isAiming) return;
+        if (_isAiming)  return;
         if (Time.time < _lastRollTime + rollCooldown) return;
 
-        // Check stamina before allowing roll
         int rollCost = _stats?.playerStatBlock?.rollStaminaCost ?? 12;
         if (_stats != null && !_stats.UseStamina(rollCost))
         {
@@ -246,18 +248,13 @@ public class PlayerMovement : MonoBehaviour
             return;
         }
 
-        // Roll in the current WASD direction relative to camera;
-        // if no input, roll forward relative to the character
         Vector3 camForward = Vector3.ProjectOnPlane(freeLookCamera.transform.forward, Vector3.up).normalized;
         Vector3 camRight   = Vector3.ProjectOnPlane(freeLookCamera.transform.right,   Vector3.up).normalized;
+        Vector3 inputDir   = camForward * _moveInput.y + camRight * _moveInput.x;
 
-        Vector3 inputDir = camForward * _moveInput.y + camRight * _moveInput.x;
+        _rollDirection = inputDir.sqrMagnitude > 0.01f ? inputDir.normalized : transform.forward;
+        _lastRollTime  = Time.time;
 
-        _rollDirection = inputDir.sqrMagnitude > 0.01f
-            ? inputDir.normalized
-            : transform.forward;
-
-        _lastRollTime = Time.time;
         StartCoroutine(RollCoroutine());
     }
 
@@ -265,21 +262,15 @@ public class PlayerMovement : MonoBehaviour
     {
         _isRolling = true;
 
-        // Snap rotation to roll direction immediately so the animation looks right
         if (_rollDirection.sqrMagnitude > 0.01f)
             transform.rotation = Quaternion.LookRotation(_rollDirection);
-
-        // Optional: trigger a roll animation if you have one
-        // animator.SetTrigger("Roll");
 
         float elapsed = 0f;
         while (elapsed < rollDuration)
         {
             float t     = elapsed / rollDuration;
             float speed = Mathf.Lerp(rollSpeed, 0f, t);
-
             _controller.Move(_rollDirection * speed * Time.deltaTime);
-
             elapsed += Time.deltaTime;
             yield return null;
         }
@@ -287,7 +278,9 @@ public class PlayerMovement : MonoBehaviour
         _isRolling = false;
     }
 
-    // ── Aim Look ──────────────────────────────────────────────
+    // ─────────────────────────────────────────
+    // Aim Look
+    // ─────────────────────────────────────────
 
     private void DriveAimLook()
     {
@@ -302,10 +295,7 @@ public class PlayerMovement : MonoBehaviour
     private void SuppressFreeLookInput(bool suppress)
     {
         if (_freeLookInput == null) return;
-
-        if (_suppressCoroutine != null)
-            StopCoroutine(_suppressCoroutine);
-
+        if (_suppressCoroutine != null) StopCoroutine(_suppressCoroutine);
         _suppressCoroutine = StartCoroutine(SetFreeLookEnabledNextFrame(!suppress));
     }
 
@@ -316,20 +306,34 @@ public class PlayerMovement : MonoBehaviour
             _freeLookInput.enabled = enabled;
     }
 
-    // ── Input Callbacks ──────────────────────────────────────
+    // ─────────────────────────────────────────
+    // Animator helpers
+    // ─────────────────────────────────────────
+
+    private void SetBool(string param, bool value)
+    {
+        _primaryAnimator?.SetBool(param, value);
+        _secondaryAnimator?.SetBool(param, value);
+    }
+
+    private void SetFloat(string param, float value)
+    {
+        _primaryAnimator?.SetFloat(param, value);
+        _secondaryAnimator?.SetFloat(param, value);
+    }
+
+    // ─────────────────────────────────────────
+    // Input Callbacks
+    // ─────────────────────────────────────────
 
     public void OnMove(InputValue value)   => _moveInput  = value.Get<Vector2>();
     public void OnJump(InputValue value)   { if (value.isPressed) _jumpPressed = true; }
     public void OnLook(InputValue value)   => _lookDelta  = value.Get<Vector2>();
-
-    // Sprint: read as a held button — true while held, false when released
     public void OnSprint(InputValue value) => _sprintHeld = value.isPressed;
 
-    // Roll: bind to your "Roll" action in the Input Action asset (e.g. Left Ctrl)
     public void OnRoll(InputValue value)
     {
-        if (value.isPressed)
-            TryRoll();
+        if (value.isPressed) TryRoll();
     }
 
     public void OnAim(InputValue value)

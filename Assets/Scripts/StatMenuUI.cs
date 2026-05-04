@@ -12,15 +12,12 @@ using UnityEngine.InputSystem;
 /// child TMP/Image components never initialize and label refs will be null.
 ///
 /// Input setup:
-///   This script lives on a Canvas object, not on the Player, so PlayerInput
-///   Send Messages cannot reach it. Use the InputActionReference field instead:
 ///   1. Add a "StatMenu" Button action bound to Tab in your Input Action Asset.
 ///   2. Drag that action into the [Toggle Action] field in the Inspector.
-///   3. Done. The script enables/disables the action itself.
 ///
-/// XP fill bar setup:
-///   The xpFillImage must have Image Type = Filled and Fill Method = Horizontal
-///   in the Inspector, OR the script will force-set it at runtime in Start().
+/// Plus buttons:
+///   Drag each + Button component (not the GameObject) into the matching slot.
+///   The script wires OnClick automatically — no manual Inspector event setup needed.
 /// </summary>
 public class StatMenuUI : MonoBehaviour
 {
@@ -41,28 +38,29 @@ public class StatMenuUI : MonoBehaviour
     public TMP_Text levelLabel;
 
     [Header("XP Bar")]
-    [Tooltip("Image Type must be Filled + Horizontal. Script will force this at runtime.")]
+    [Tooltip("Script forces Image.Type.Filled at runtime so fillAmount works.")]
     public Image    xpFillImage;
     public TMP_Text xpLabel;
 
-    [Header("Stat Values")]
+    [Header("Stat Value Labels")]
     public TMP_Text healthValueLabel;
     public TMP_Text strengthValueLabel;
     public TMP_Text staminaValueLabel;
     public TMP_Text speedValueLabel;
     public TMP_Text toughnessValueLabel;
 
-    [Header("Plus Buttons (hidden when no points available)")]
-    public GameObject healthPlusButton;
-    public GameObject strengthPlusButton;
-    public GameObject staminaPlusButton;
-    public GameObject speedPlusButton;
+    [Header("Plus Buttons — drag the Button component, not the GameObject")]
+    [Tooltip("Script wires OnClick automatically. No Inspector event setup needed.")]
+    public Button healthPlusButton;
+    public Button strengthPlusButton;
+    public Button staminaPlusButton;
+    public Button speedPlusButton;
 
     [Header("Points Label")]
     public TMP_Text pointsAvailableLabel;
 
     [Header("Input")]
-    [Tooltip("Drag your 'StatMenu' InputActionReference here. Script manages Enable/Disable.")]
+    [Tooltip("Drag your 'StatMenu' InputActionReference here.")]
     public InputActionReference toggleAction;
 
     // =========================================================================
@@ -80,7 +78,7 @@ public class StatMenuUI : MonoBehaviour
 
     void Awake()
     {
-        // Subscribe to input in Awake so it's live regardless of active state
+        // Wire input early so Tab works regardless of active state
         if (toggleAction != null)
         {
             toggleAction.action.performed += OnTogglePerformed;
@@ -92,7 +90,7 @@ public class StatMenuUI : MonoBehaviour
                              "InputActionReference into the Toggle Action field.");
         }
 
-        // Find player components early
+        // Auto-find player components
         if (playerStats == null || xpSystem == null)
         {
             GameObject player = GameObject.FindWithTag("Player");
@@ -109,9 +107,14 @@ public class StatMenuUI : MonoBehaviour
 
     void Start()
     {
-        // Force correct Image type on XP fill bar so fillAmount actually works.
-        // If the Image is set to Simple in the Inspector, fillAmount is silently ignored
-        // and the bar always renders full. This guarantees the correct setup at runtime.
+        // ── Wire button clicks in code so nothing needs setting up in Inspector ──
+        // This is why the fields are Button not GameObject — AddListener needs it.
+        if (healthPlusButton   != null) healthPlusButton  .onClick.AddListener(OnSpendHealth);
+        if (strengthPlusButton != null) strengthPlusButton.onClick.AddListener(OnSpendStrength);
+        if (staminaPlusButton  != null) staminaPlusButton .onClick.AddListener(OnSpendStamina);
+        if (speedPlusButton    != null) speedPlusButton   .onClick.AddListener(OnSpendSpeed);
+
+        // Force correct fill type — fillAmount is silently ignored on Simple images
         if (xpFillImage != null)
         {
             xpFillImage.type       = Image.Type.Filled;
@@ -119,7 +122,7 @@ public class StatMenuUI : MonoBehaviour
             xpFillImage.fillOrigin = (int)Image.OriginHorizontal.Left;
         }
 
-        // Subscribe to XP/level events
+        // Subscribe to XP/level events for live refresh while menu is open
         if (xpSystem != null)
         {
             xpSystem.onXPGained.AddListener(OnXPGained);
@@ -127,10 +130,13 @@ public class StatMenuUI : MonoBehaviour
             xpSystem.onStatPointSpent.AddListener(OnStatPointSpent);
         }
 
+        // Subscribe to stat changes (weapon swaps, resets, etc.)
+        if (playerStats != null)
+            playerStats.onStatsChanged.AddListener(RefreshIfOpen);
+
         _initialized = true;
 
-        // Hide root panel at runtime. statMenuRoot must be active in the Editor
-        // so its child components can initialize -- this hides it on frame 1.
+        // Hide on first frame — root must be active in Editor so children init
         SetMenuVisible(false);
     }
 
@@ -149,7 +155,15 @@ public class StatMenuUI : MonoBehaviour
             xpSystem.onStatPointSpent.RemoveListener(OnStatPointSpent);
         }
 
-        // Always release cursor on destroy so nothing gets stuck
+        if (playerStats != null)
+            playerStats.onStatsChanged.RemoveListener(RefreshIfOpen);
+
+        // Remove button listeners to avoid ghost callbacks after destroy
+        if (healthPlusButton   != null) healthPlusButton  .onClick.RemoveListener(OnSpendHealth);
+        if (strengthPlusButton != null) strengthPlusButton.onClick.RemoveListener(OnSpendStrength);
+        if (staminaPlusButton  != null) staminaPlusButton .onClick.RemoveListener(OnSpendStamina);
+        if (speedPlusButton    != null) speedPlusButton   .onClick.RemoveListener(OnSpendSpeed);
+
         CursorManager.Release(CURSOR_OWNER);
     }
 
@@ -157,20 +171,13 @@ public class StatMenuUI : MonoBehaviour
     // INPUT
     // =========================================================================
 
-    /// <summary>
-    /// Called by the InputActionReference subscription.
-    /// This is the correct path when StatMenuUI is on a Canvas object.
-    /// </summary>
     private void OnTogglePerformed(InputAction.CallbackContext ctx)
     {
         if (ctx.phase == InputActionPhase.Performed)
             ToggleMenu();
     }
 
-    /// <summary>
-    /// Option A fallback — only fires if PlayerInput is on the SAME GameObject
-    /// as this script with Behavior = Send Messages.
-    /// </summary>
+    // Fallback if PlayerInput Send Messages somehow reaches this object
     public void OnStatMenu(InputValue value)
     {
         if (value.isPressed) ToggleMenu();
@@ -193,9 +200,8 @@ public class StatMenuUI : MonoBehaviour
         if (statMenuRoot != null)
             statMenuRoot.SetActive(visible);
         else
-            Debug.LogWarning("[StatMenuUI] statMenuRoot is null.");
+            Debug.LogWarning("[StatMenuUI] statMenuRoot is null — assign it in the Inspector.");
 
-        // Cursor: request when open, release when closed
         if (visible)
             CursorManager.Request(CURSOR_OWNER);
         else
@@ -211,7 +217,7 @@ public class StatMenuUI : MonoBehaviour
     }
 
     // =========================================================================
-    // EVENT RELAY (named methods so RemoveListener works correctly)
+    // EVENT RELAY
     // =========================================================================
 
     private void OnXPGained(int _)       => RefreshIfOpen();
@@ -255,7 +261,8 @@ public class StatMenuUI : MonoBehaviour
     {
         if (playerStats == null) return;
 
-        SetLabel(healthValueLabel,    playerStats.CurrentHealth.ToString());
+        // Health shows current / max so the player always knows their ceiling
+        SetLabel(healthValueLabel,    $"{playerStats.CurrentHealth} / {playerStats.MaxHealth}");
         SetLabel(strengthValueLabel,  playerStats.Strength.ToString());
         SetLabel(staminaValueLabel,   $"{playerStats.CurrentStamina} / {playerStats.MaxStamina}");
         SetLabel(speedValueLabel,     playerStats.Speed.ToString());
@@ -266,11 +273,11 @@ public class StatMenuUI : MonoBehaviour
     {
         bool hasPoints = xpSystem != null && xpSystem.UnspentPoints > 0;
 
-        SetActive(healthPlusButton,   hasPoints);
-        SetActive(strengthPlusButton, hasPoints);
-        SetActive(staminaPlusButton,  hasPoints);
-        SetActive(speedPlusButton,    hasPoints);
-        // Toughness has no + button -- weapon-driven
+        SetButtonActive(healthPlusButton,   hasPoints);
+        SetButtonActive(strengthPlusButton, hasPoints);
+        SetButtonActive(staminaPlusButton,  hasPoints);
+        SetButtonActive(speedPlusButton,    hasPoints);
+        // Toughness has no + button — weapon-driven, not leveled
     }
 
     private void RefreshPointsLabel()
@@ -281,19 +288,29 @@ public class StatMenuUI : MonoBehaviour
     }
 
     // =========================================================================
-    // BUTTON CALLBACKS -- wire each + Button's OnClick() to these in Inspector
+    // BUTTON CALLBACKS — wired in Start(), do not need Inspector OnClick setup
     // =========================================================================
 
-    public void OnSpendHealth()   => SpendPoint("health");
-    public void OnSpendStrength() => SpendPoint("strength");
-    public void OnSpendStamina()  => SpendPoint("stamina");
-    public void OnSpendSpeed()    => SpendPoint("speed");
+    private void OnSpendHealth()   => SpendPoint("health");
+    private void OnSpendStrength() => SpendPoint("strength");
+    private void OnSpendStamina()  => SpendPoint("stamina");
+    private void OnSpendSpeed()    => SpendPoint("speed");
 
     private void SpendPoint(string stat)
     {
-        if (xpSystem == null) return;
-        xpSystem.SpendPoint(stat);
-        RefreshAll();
+        if (xpSystem == null)
+        {
+            Debug.LogError("[StatMenuUI] xpSystem is null — cannot spend point.");
+            return;
+        }
+
+        bool spent = xpSystem.SpendPoint(stat);
+
+        if (spent)
+        {
+            Debug.Log($"[StatMenuUI] Spent point on {stat}.");
+            RefreshAll();
+        }
     }
 
     // =========================================================================
@@ -305,8 +322,9 @@ public class StatMenuUI : MonoBehaviour
         if (label != null) label.text = text;
     }
 
-    private static void SetActive(GameObject go, bool active)
+    // Hides/shows the button's GameObject via the Button component reference
+    private static void SetButtonActive(Button btn, bool active)
     {
-        if (go != null) go.SetActive(active);
+        if (btn != null) btn.gameObject.SetActive(active);
     }
 }

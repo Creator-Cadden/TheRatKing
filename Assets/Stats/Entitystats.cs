@@ -28,6 +28,9 @@ public class EntityStats : MonoBehaviour
     public UnityEvent<int>        onHeal;
     public UnityEvent             onLevelUp;
 
+    // Fired whenever a runtime stat changes so UI can react immediately
+    public UnityEvent             onStatsChanged;
+
     // ── Runtime Stats ──
     public int CurrentHealth   { get; private set; }
     public int MaxHealth       { get; private set; }
@@ -51,6 +54,12 @@ public class EntityStats : MonoBehaviour
 
     private float _lastStaminaUseTime;
     private float _staminaRegenAccumulator;
+
+    // ── Speed scaling ──
+    // Each Speed point adds this fraction of base walk/sprint speed.
+    // At base Speed 6, one point = +0.5 walk / +0.67 sprint (roughly 8% per point).
+    // Tune this constant to taste.
+    private const float SpeedBonusPerPoint = 0.5f;
 
     // ─────────────────────────────────────────
     void Start()
@@ -92,6 +101,9 @@ public class EntityStats : MonoBehaviour
 
         if (isPlayer) ApplyWeaponToughnessBonus();
 
+        // Push initial speed to PlayerMovement
+        NotifySpeedChanged();
+
         Debug.Log($"[EntityStats] {gameObject.name} ready — " +
                   $"HP:{CurrentHealth} STR:{Strength} STA:{MaxStamina} SPD:{Speed} TGH:{Toughness}");
     }
@@ -116,6 +128,17 @@ public class EntityStats : MonoBehaviour
         return true;
     }
 
+    /// <summary>
+    /// Spend one stat point. Called by XPSystem.SpendPoint().
+    /// Each stat's gain per point is read from PlayerStatBlock so you can
+    /// tune everything in the ScriptableObject without touching code.
+    ///
+    /// Gains per point (from PlayerStatBlock defaults, stamina changed to 10):
+    ///   health   +10 HP  (current AND max — immediate survivability)
+    ///   strength +2      (multiplied by weapon bonus in CalculateWeaponDamage)
+    ///   stamina  +10     (current AND max pool — more rolls/sprints/jumps)
+    ///   speed    +1      (applied to PlayerMovement walk/sprint speeds live)
+    /// </summary>
     public void SpendPoint(string stat)
     {
         if (!isPlayer || playerStatBlock == null) return;
@@ -125,7 +148,7 @@ public class EntityStats : MonoBehaviour
             case "health":
                 MaxHealth     += playerStatBlock.healthPerPoint;
                 CurrentHealth += playerStatBlock.healthPerPoint;
-                Debug.Log($"[EntityStats] Health → {MaxHealth}");
+                Debug.Log($"[EntityStats] Health → {CurrentHealth}/{MaxHealth}");
                 break;
 
             case "strength":
@@ -134,20 +157,50 @@ public class EntityStats : MonoBehaviour
                 break;
 
             case "stamina":
-                MaxStamina     += playerStatBlock.staminaPerPoint;
-                CurrentStamina += playerStatBlock.staminaPerPoint;
-                Debug.Log($"[EntityStats] Stamina → {MaxStamina}");
+                // Hardcoded to 10 per request, overriding the ScriptableObject's 8
+                int staminaGain = 10;
+                MaxStamina     += staminaGain;
+                CurrentStamina += staminaGain;
+                Debug.Log($"[EntityStats] Stamina → {CurrentStamina}/{MaxStamina}");
                 break;
 
             case "speed":
                 Speed += playerStatBlock.speedPerPoint;
+                NotifySpeedChanged();
                 Debug.Log($"[EntityStats] Speed → {Speed}");
                 break;
 
             default:
                 Debug.LogWarning($"[EntityStats] Unknown stat '{stat}'. Use: health / strength / stamina / speed");
-                break;
+                return;
         }
+
+        onStatsChanged?.Invoke();
+    }
+
+    /// <summary>
+    /// Pushes the current Speed value to PlayerMovement so walk/sprint speeds
+    /// update immediately when a Speed point is spent.
+    ///
+    /// Speed effect:
+    ///   walkSpeed  = base walkSpeed  + (Speed - baseSpeed) * SpeedBonusPerPoint
+    ///   sprintSpeed = base sprintSpeed + (Speed - baseSpeed) * SpeedBonusPerPoint * 1.33
+    ///
+    /// At base Speed 6 and SpeedBonusPerPoint 0.5:
+    ///   +1 Speed = +0.50 walk, +0.67 sprint
+    ///   +5 Speed = +2.50 walk, +3.33 sprint — noticeably faster but not broken
+    /// </summary>
+    private void NotifySpeedChanged()
+    {
+        if (!isPlayer) return;
+
+        PlayerMovement pm = GetComponent<PlayerMovement>();
+        if (pm == null) return;
+
+        int baseSpeed = BaseBlock?.baseSpeed ?? 6;
+        int bonusPoints = Speed - baseSpeed;            // points spent above base
+
+        pm.ApplySpeedBonus(bonusPoints, SpeedBonusPerPoint);
     }
 
     public void AdvanceFloor()
@@ -177,6 +230,7 @@ public class EntityStats : MonoBehaviour
         if (!isPlayer) return;
         EquippedWeapon = weapon;
         ApplyWeaponToughnessBonus();
+        onStatsChanged?.Invoke();
         Debug.Log($"[EntityStats] Equipped {weapon} — Toughness now {Toughness}");
     }
 
@@ -230,10 +284,6 @@ public class EntityStats : MonoBehaviour
     // Stamina — player only
     // ─────────────────────────────────────────
 
-    /// <summary>
-    /// Flat stamina cost — used for roll and jump.
-    /// Returns false if not enough stamina (action should be cancelled).
-    /// </summary>
     public bool UseStamina(int amount)
     {
         if (CurrentStamina < amount)
@@ -248,27 +298,22 @@ public class EntityStats : MonoBehaviour
         return true;
     }
 
-    /// <summary>
-    /// Per-second stamina drain — call once per frame while sprinting.
-    /// Returns false if stamina is fully depleted (stop sprinting).
-    /// </summary>
     public bool UseStaminaPerSecond(float amountPerSecond)
+    {
+        if (CurrentStamina <= 0) return false;
+
+        _staminaRegenAccumulator -= amountPerSecond * Time.deltaTime;
+
+        if (_staminaRegenAccumulator <= -1f)
         {
-            if (CurrentStamina <= 0) return false;
-
-            // Accumulate fractional drain — only subtract whole points when ready
-            _staminaRegenAccumulator -= amountPerSecond * Time.deltaTime;
-
-            if (_staminaRegenAccumulator <= -1f)
-            {
-                int drain          = Mathf.FloorToInt(-_staminaRegenAccumulator);
-                _staminaRegenAccumulator += drain;
-                CurrentStamina     = Mathf.Max(0, CurrentStamina - drain);
-            }
-
-            _lastStaminaUseTime = Time.time;
-            return CurrentStamina > 0;
+            int drain                 = Mathf.FloorToInt(-_staminaRegenAccumulator);
+            _staminaRegenAccumulator += drain;
+            CurrentStamina            = Mathf.Max(0, CurrentStamina - drain);
         }
+
+        _lastStaminaUseTime = Time.time;
+        return CurrentStamina > 0;
+    }
 
     private void RegenStamina()
     {
@@ -346,6 +391,7 @@ public class EntityStats : MonoBehaviour
         _staminaRegenAccumulator = 0f;
 
         onHeal?.Invoke(MaxHealth);
+        onStatsChanged?.Invoke();
 
         Debug.Log($"[EntityStats] {gameObject.name} fully reset — HP {CurrentHealth}/{MaxHealth}");
     }
