@@ -46,10 +46,9 @@ public class PlayerMovement : MonoBehaviour
     // ── Private State ──
     private CharacterController            _controller;
     private CinemachineInputAxisController _freeLookInput;
+    private CinemachineOrbitalFollow       _orbitalFollow;   // <-- NEW: direct ref to sync yaw on aim-exit
     private EntityStats                    _stats;
 
-    // Base speeds stored at Start() so ApplySpeedBonus always scales
-    // from the original Inspector values, not a previously-modified value.
     private float _baseWalkSpeed;
     private float _baseSprintSpeed;
 
@@ -84,7 +83,12 @@ public class PlayerMovement : MonoBehaviour
         _freeLookInput = freeLookCamera.GetComponent<CinemachineInputAxisController>();
         _stats         = GetComponent<EntityStats>();
 
-        // Cache the Inspector-set base speeds before any stat bonuses are applied
+        // Cache the OrbitalFollow so we can write HorizontalAxis.Value on aim-exit
+        _orbitalFollow = freeLookCamera.GetComponent<CinemachineOrbitalFollow>();
+        if (_orbitalFollow == null)
+            Debug.LogWarning("[PlayerMovement] CinemachineOrbitalFollow not found on freeLookCamera. " +
+                             "Aim-exit yaw sync will not work.");
+
         _baseWalkSpeed   = walkSpeed;
         _baseSprintSpeed = sprintSpeed;
 
@@ -109,7 +113,6 @@ public class PlayerMovement : MonoBehaviour
         if (_isAiming)
             DriveAimLook();
 
-        // Animation
         SetFloat("Running", _currentMoveVelocity == Vector3.zero ? 0f : 1f);
     }
 
@@ -117,16 +120,6 @@ public class PlayerMovement : MonoBehaviour
     // Speed stat integration
     // ─────────────────────────────────────────
 
-    /// <summary>
-    /// Called by EntityStats whenever the Speed stat changes (on init and on SpendPoint).
-    /// bonusPoints = Speed - baseSpeed (points spent above the starting value).
-    /// bonusPerPoint = flat walk speed added per bonus point (sprint scales 1.33x faster).
-    ///
-    /// Example at defaults (bonusPerPoint = 0.5):
-    ///   +1 Speed  →  walk  6.5,  sprint 10.67
-    ///   +3 Speed  →  walk  7.5,  sprint 12.00
-    ///   +5 Speed  →  walk  8.5,  sprint 13.33
-    /// </summary>
     public void ApplySpeedBonus(int bonusPoints, float bonusPerPoint)
     {
         float walkBonus   = bonusPoints * bonusPerPoint;
@@ -161,17 +154,14 @@ public class PlayerMovement : MonoBehaviour
         Vector3 targetDirection = camForward * _moveInput.y + camRight * _moveInput.x;
 
         bool canSprint = _sprintHeld && !_isAiming && _moveInput.sqrMagnitude > 0.01f;
-
         if (canSprint && _stats != null)
             canSprint = _stats.UseStaminaPerSecond(_stats.playerStatBlock.sprintStaminaPerSecond);
 
-        float targetSpeed    = canSprint ? sprintSpeed : walkSpeed;
+        float targetSpeed      = canSprint ? sprintSpeed : walkSpeed;
         Vector3 targetVelocity = targetDirection * targetSpeed;
-
-        float accelRate = targetDirection.sqrMagnitude > 0.01f ? acceleration : deceleration;
-
-        float dot = Vector3.Dot(_currentMoveVelocity.normalized, targetVelocity.normalized);
-        float lerpRate = dot < 0.5f ? 15f : accelRate;
+        float accelRate        = targetDirection.sqrMagnitude > 0.01f ? acceleration : deceleration;
+        float dot              = Vector3.Dot(_currentMoveVelocity.normalized, targetVelocity.normalized);
+        float lerpRate         = dot < 0.5f ? 15f : accelRate;
 
         _currentMoveVelocity = Vector3.Lerp(_currentMoveVelocity, targetVelocity, lerpRate * Time.deltaTime);
         _controller.Move(_currentMoveVelocity * Time.deltaTime);
@@ -183,8 +173,7 @@ public class PlayerMovement : MonoBehaviour
 
         Vector3 camForward = Vector3.ProjectOnPlane(freeLookCamera.transform.forward, Vector3.up).normalized;
         Vector3 camRight   = Vector3.ProjectOnPlane(freeLookCamera.transform.right,   Vector3.up).normalized;
-
-        Vector3 move = (camForward * _moveInput.y + camRight * _moveInput.x);
+        Vector3 move       = (camForward * _moveInput.y + camRight * _moveInput.x);
         move.y = 0f;
 
         if (move.sqrMagnitude > 0.01f)
@@ -209,7 +198,6 @@ public class PlayerMovement : MonoBehaviour
         SetBool("Jump",    false);
         SetBool("Falling", true);
         SetBool("Contact", false);
-
         if (landedThisFrame) SetBool("Contact", true);
 
         if (_jumpPressed && _isGrounded)
@@ -254,7 +242,6 @@ public class PlayerMovement : MonoBehaviour
 
         _rollDirection = inputDir.sqrMagnitude > 0.01f ? inputDir.normalized : transform.forward;
         _lastRollTime  = Time.time;
-
         StartCoroutine(RollCoroutine());
     }
 
@@ -290,6 +277,21 @@ public class PlayerMovement : MonoBehaviour
 
         transform.rotation        = Quaternion.Euler(0f, _aimYaw, 0f);
         cameraPitch.localRotation = Quaternion.Euler(_aimPitch, 0f, 0f);
+    }
+
+    /// <summary>
+    /// Writes the current aim yaw back into the OrbitalFollow's horizontal axis
+    /// so the free look camera resumes from exactly where aim left off.
+    /// Without this, the orbit snaps back to wherever it was when you entered aim.
+    /// </summary>
+    private void SyncFreeLookYawToAim()
+    {
+        if (_orbitalFollow == null) return;
+
+        // HorizontalAxis.Value is the orbit angle in degrees.
+        // Setting it here repositions the camera instantly on the same frame
+        // that freeLookCamera regains priority, preventing any visible snap.
+        _orbitalFollow.HorizontalAxis.Value = _aimYaw;
     }
 
     private void SuppressFreeLookInput(bool suppress)
@@ -342,6 +344,8 @@ public class PlayerMovement : MonoBehaviour
 
         if (_isAiming)
         {
+            // Entering aim — read the free look camera's current yaw so aim
+            // starts from exactly where the orbit camera is pointing
             _aimYaw   = freeLookCamera.transform.eulerAngles.y;
             _aimPitch = cameraPitch.localEulerAngles.x;
             if (_aimPitch > 180f) _aimPitch -= 360f;
@@ -352,6 +356,10 @@ public class PlayerMovement : MonoBehaviour
         }
         else
         {
+            // Exiting aim — sync the orbit back to aim's final yaw BEFORE
+            // restoring priority so there is zero visible snap on the transition
+            SyncFreeLookYawToAim();
+
             freeLookCamera.Priority = activePriority;
             aimCamera.Priority      = defaultPriority;
             SuppressFreeLookInput(false);

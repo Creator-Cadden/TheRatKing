@@ -8,16 +8,16 @@ public abstract class BaseStatBlock : ScriptableObject
 {
     [Header("Core Stats")]
     [Tooltip("Starting HP pool")]
-    public int baseHealth    = 30;
+    public int baseHealth    = 100;
 
     [Tooltip("Scales melee damage output")]
     public int baseStrength  = 5;
 
     [Tooltip("Pool spent on attacks, dodges, and sprinting")]
-    public int baseStamina   = 40;
+    public int baseStamina   = 50;
 
     [Tooltip("Movement speed and attack recovery rate")]
-    public int baseSpeed     = 6;
+    public int baseSpeed     = 5;
 
     [Tooltip("Fixed — never leveled up. Modified only by equipped weapon on the player.")]
     public int baseToughness = 2;
