@@ -5,26 +5,24 @@ using TMPro;
 
 /// <summary>
 /// Controls the death / game-over overlay.
+/// All cursor state goes through CursorManager.
 ///
-/// ── UI Hierarchy (create manually or let this script auto-build it) ──────────
-///
-///   Canvas  (Screen Space — Overlay, sort order 10)
-///   └── DeathScreenRoot          ← attach DeathScreen here
+/// UI Hierarchy:
+///   Canvas  (Screen Space - Overlay, sort order 10)
+///   └── DeathScreenRoot          <- attach DeathScreen here
 ///       ├── Backdrop             (Image, full-screen, black semi-transparent)
-///       ├── Panel                (Image, centered, dark card)
-///       │   ├── TitleLabel       (TMP_Text — "YOU DIED")
-///       │   ├── SubtitleLabel    (TMP_Text — optional flavour)
-///       │   └── RetryButton      (Button → TMP_Text child "RETRY")
-///       └── VignetteImage        (Image, full-screen radial vignette, optional)
+///       ├── Panel                (Image, centered dark card)
+///       │   ├── TitleLabel       (TMP_Text "YOU DIED")
+///       │   ├── SubtitleLabel    (TMP_Text optional flavour)
+///       │   └── RetryButton      (Button -> TMP_Text child "RETRY")
+///       └── VignetteImage        (Image, full-screen, optional)
 ///
-/// If autoBuiltLayout = true the script builds the whole hierarchy at Start()
-/// so you only need the Canvas and this root GameObject.
-/// ─────────────────────────────────────────────────────────────────────────────
+/// Set autoBuiltLayout = true and the script builds the whole hierarchy at Start().
 /// </summary>
 [RequireComponent(typeof(CanvasGroup))]
 public class DeathScreen : MonoBehaviour
 {
-    [Header("References — leave null to auto-build")]
+    [Header("References - leave null to auto-build")]
     public Button   retryButton;
     public TMP_Text titleLabel;
     public TMP_Text subtitleLabel;
@@ -38,14 +36,14 @@ public class DeathScreen : MonoBehaviour
     public float fadeOutDuration = 0.35f;
 
     [Header("Auto-build Layout")]
-    [Tooltip("If true, generates the full UI hierarchy at Start() from code.")]
     public bool autoBuiltLayout = true;
 
-    // ── Private ──
     private CanvasGroup _group;
     private Coroutine   _fadeRoutine;
 
-    // ───────────────────────────────────────────────
+    // Cursor owner key
+    private const string CURSOR_OWNER = "death";
+
     void Awake()
     {
         _group = GetComponent<CanvasGroup>();
@@ -57,20 +55,30 @@ public class DeathScreen : MonoBehaviour
             retryButton.onClick.AddListener(OnRetryClicked);
     }
 
-    // ───────────────────────────────────────────────
-    // Public API
-    // ───────────────────────────────────────────────
+    void OnDestroy()
+    {
+        CursorManager.Release(CURSOR_OWNER);
+    }
+
+    // ── Public API ────────────────────────────────────────────────────────────
 
     public void Show()
     {
         gameObject.SetActive(true);
         SetInteractable(true);
         FadeTo(1f, fadeInDuration);
+
+        // Player died — we need the cursor so they can click Retry
+        CursorManager.Request(CURSOR_OWNER);
     }
 
     public void Hide(bool instant)
     {
         SetInteractable(false);
+
+        // Release cursor before hiding — game is resuming
+        CursorManager.Release(CURSOR_OWNER);
+
         if (instant)
         {
             StopAllCoroutines();
@@ -83,10 +91,10 @@ public class DeathScreen : MonoBehaviour
         }
     }
 
-    // ───────────────────────────────────────────────
+    // ── Private ───────────────────────────────────────────────────────────────
+
     private void OnRetryClicked()
     {
-        // Disable button immediately so double-clicks don't fire
         SetInteractable(false);
         GameManager.Instance?.Retry();
     }
@@ -97,9 +105,7 @@ public class DeathScreen : MonoBehaviour
         _group.blocksRaycasts = state;
     }
 
-    // ───────────────────────────────────────────────
-    // Fade
-    // ───────────────────────────────────────────────
+    // ── Fade ──────────────────────────────────────────────────────────────────
 
     private void FadeTo(float target, float duration, System.Action onComplete = null)
     {
@@ -114,7 +120,6 @@ public class DeathScreen : MonoBehaviour
 
         while (elapsed < duration)
         {
-            // WaitForUnscaledDeltaTime so fading works even when timeScale = 0
             elapsed      += Time.unscaledDeltaTime;
             _group.alpha  = Mathf.Lerp(start, target, elapsed / duration);
             yield return null;
@@ -124,31 +129,26 @@ public class DeathScreen : MonoBehaviour
         onComplete?.Invoke();
     }
 
-    // ───────────────────────────────────────────────
-    // Auto-build Layout
-    // ───────────────────────────────────────────────
+    // ── Auto-build Layout ─────────────────────────────────────────────────────
 
     private void BuildLayout()
     {
-        // ── Backdrop ──────────────────────────────────────────────────
         GameObject backdropGO = CreateUIObject("Backdrop", transform);
         Image backdrop        = backdropGO.AddComponent<Image>();
         backdrop.color        = new Color(0f, 0f, 0f, 0.82f);
         StretchFull(backdropGO.GetComponent<RectTransform>());
 
-        // ── Panel (dark card) ─────────────────────────────────────────
         GameObject panelGO    = CreateUIObject("Panel", transform);
         Image panelImg        = panelGO.AddComponent<Image>();
         panelImg.color        = new Color(0.05f, 0.03f, 0.03f, 0.95f);
 
-        RectTransform panelRt = panelGO.GetComponent<RectTransform>();
-        panelRt.anchorMin     = new Vector2(0.5f, 0.5f);
-        panelRt.anchorMax     = new Vector2(0.5f, 0.5f);
-        panelRt.pivot         = new Vector2(0.5f, 0.5f);
-        panelRt.sizeDelta     = new Vector2(480f, 320f);
+        RectTransform panelRt    = panelGO.GetComponent<RectTransform>();
+        panelRt.anchorMin        = new Vector2(0.5f, 0.5f);
+        panelRt.anchorMax        = new Vector2(0.5f, 0.5f);
+        panelRt.pivot            = new Vector2(0.5f, 0.5f);
+        panelRt.sizeDelta        = new Vector2(480f, 320f);
         panelRt.anchoredPosition = Vector2.zero;
 
-        // ── Title Label ───────────────────────────────────────────────
         GameObject titleGO    = CreateUIObject("TitleLabel", panelGO.transform);
         titleLabel            = titleGO.AddComponent<TextMeshProUGUI>();
         titleLabel.text       = titleText;
@@ -163,16 +163,15 @@ public class DeathScreen : MonoBehaviour
         titleRt.offsetMin     = new Vector2(20f, 0f);
         titleRt.offsetMax     = new Vector2(-20f, 0f);
 
-        // ── Subtitle Label ────────────────────────────────────────────
         if (!string.IsNullOrEmpty(subtitleText))
         {
-            GameObject subGO      = CreateUIObject("SubtitleLabel", panelGO.transform);
-            subtitleLabel         = subGO.AddComponent<TextMeshProUGUI>();
-            subtitleLabel.text    = subtitleText;
+            GameObject subGO       = CreateUIObject("SubtitleLabel", panelGO.transform);
+            subtitleLabel          = subGO.AddComponent<TextMeshProUGUI>();
+            subtitleLabel.text     = subtitleText;
             subtitleLabel.fontSize = 18f;
-            subtitleLabel.fontStyle = FontStyles.Italic;
-            subtitleLabel.alignment = TextAlignmentOptions.Center;
-            subtitleLabel.color   = new Color(0.65f, 0.55f, 0.55f, 1f);
+            subtitleLabel.fontStyle  = FontStyles.Italic;
+            subtitleLabel.alignment  = TextAlignmentOptions.Center;
+            subtitleLabel.color    = new Color(0.65f, 0.55f, 0.55f, 1f);
 
             RectTransform subRt   = subGO.GetComponent<RectTransform>();
             subRt.anchorMin       = new Vector2(0f, 0.38f);
@@ -181,13 +180,11 @@ public class DeathScreen : MonoBehaviour
             subRt.offsetMax       = new Vector2(-20f, 0f);
         }
 
-        // ── Retry Button ──────────────────────────────────────────────
         GameObject btnGO   = CreateUIObject("RetryButton", panelGO.transform);
         retryButton        = btnGO.AddComponent<Button>();
         Image btnImg       = btnGO.AddComponent<Image>();
         btnImg.color       = new Color(0.72f, 0.08f, 0.08f, 1f);
 
-        // Button transitions
         ColorBlock cb         = retryButton.colors;
         cb.normalColor        = new Color(0.72f, 0.08f, 0.08f, 1f);
         cb.highlightedColor   = new Color(0.88f, 0.15f, 0.15f, 1f);
@@ -197,26 +194,22 @@ public class DeathScreen : MonoBehaviour
         retryButton.colors    = cb;
         retryButton.targetGraphic = btnImg;
 
-        RectTransform btnRt   = btnGO.GetComponent<RectTransform>();
-        btnRt.anchorMin       = new Vector2(0.5f, 0f);
-        btnRt.anchorMax       = new Vector2(0.5f, 0f);
-        btnRt.pivot           = new Vector2(0.5f, 0f);
-        btnRt.sizeDelta       = new Vector2(200f, 52f);
-        btnRt.anchoredPosition = new Vector2(0f, 32f);
+        RectTransform btnRt      = btnGO.GetComponent<RectTransform>();
+        btnRt.anchorMin          = new Vector2(0.5f, 0f);
+        btnRt.anchorMax          = new Vector2(0.5f, 0f);
+        btnRt.pivot              = new Vector2(0.5f, 0.5f);
+        btnRt.sizeDelta          = new Vector2(200f, 52f);
+        btnRt.anchoredPosition   = new Vector2(0f, 32f);
 
-        // Button label
-        GameObject btnTextGO  = CreateUIObject("Label", btnGO.transform);
-        TMP_Text btnText      = btnTextGO.AddComponent<TextMeshProUGUI>();
-        btnText.text          = "RETRY";
-        btnText.fontSize      = 22f;
-        btnText.fontStyle     = FontStyles.Bold;
-        btnText.alignment     = TextAlignmentOptions.Center;
-        btnText.color         = Color.white;
+        GameObject btnTextGO = CreateUIObject("Label", btnGO.transform);
+        TMP_Text btnText     = btnTextGO.AddComponent<TextMeshProUGUI>();
+        btnText.text         = "RETRY";
+        btnText.fontSize     = 22f;
+        btnText.fontStyle    = FontStyles.Bold;
+        btnText.alignment    = TextAlignmentOptions.Center;
+        btnText.color        = Color.white;
+        StretchFull(btnTextGO.GetComponent<RectTransform>());
 
-        RectTransform btnTextRt = btnTextGO.GetComponent<RectTransform>();
-        StretchFull(btnTextRt);
-
-        // Wire up the button now it exists
         retryButton.onClick.RemoveAllListeners();
         retryButton.onClick.AddListener(OnRetryClicked);
     }
@@ -231,9 +224,9 @@ public class DeathScreen : MonoBehaviour
 
     private static void StretchFull(RectTransform rt)
     {
-        rt.anchorMin        = Vector2.zero;
-        rt.anchorMax        = Vector2.one;
-        rt.offsetMin        = Vector2.zero;
-        rt.offsetMax        = Vector2.zero;
+        rt.anchorMin = Vector2.zero;
+        rt.anchorMax = Vector2.one;
+        rt.offsetMin = Vector2.zero;
+        rt.offsetMax = Vector2.zero;
     }
 }
