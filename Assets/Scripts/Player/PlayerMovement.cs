@@ -120,15 +120,19 @@ public class PlayerMovement : MonoBehaviour
     // Speed stat integration
     // ─────────────────────────────────────────
 
-    public void ApplySpeedBonus(int bonusPoints, float bonusPerPoint)
+    /// <summary>
+    /// Called by EntityStats on init, stat spend, and weapon swap.
+    /// hammerFraction = 1.0 normally, 0.667 while hammer is equipped.
+    /// </summary>
+    public void ApplySpeedBonus(int bonusPoints, float bonusPerPoint, float weaponFraction = 1f)
     {
         float walkBonus   = bonusPoints * bonusPerPoint;
         float sprintBonus = bonusPoints * bonusPerPoint * 1.33f;
 
-        walkSpeed   = _baseWalkSpeed   + walkBonus;
-        sprintSpeed = _baseSprintSpeed + sprintBonus;
+        walkSpeed   = (_baseWalkSpeed   + walkBonus) * weaponFraction;
+        sprintSpeed = (_baseSprintSpeed + sprintBonus) * weaponFraction;
 
-        Debug.Log($"[PlayerMovement] Speed updated — walk:{walkSpeed:F1}  sprint:{sprintSpeed:F1}");
+        Debug.Log($"[PlayerMovement] Speed updated — walk:{walkSpeed:F1}  sprint:{sprintSpeed:F1}  weaponFraction:{weaponFraction:F2}");
     }
 
     // ─────────────────────────────────────────
@@ -157,7 +161,16 @@ public class PlayerMovement : MonoBehaviour
         if (canSprint && _stats != null)
             canSprint = _stats.UseStaminaPerSecond(_stats.playerStatBlock.sprintStaminaPerSecond);
 
-        float targetSpeed      = canSprint ? sprintSpeed : walkSpeed;
+        // Bow aim penalty — reduce move speed by bowAimMoveSpeedFraction while aiming
+        float weaponAimFraction = 1f;
+        if (_isAiming && _stats != null &&
+            _stats.EquippedWeapon == EntityStats.WeaponType.Bow &&
+            _stats.playerStatBlock != null)
+        {
+            weaponAimFraction = _stats.playerStatBlock.bowAimMoveSpeedFraction;
+        }
+
+        float targetSpeed      = (canSprint ? sprintSpeed : walkSpeed) * weaponAimFraction;
         Vector3 targetVelocity = targetDirection * targetSpeed;
         float accelRate        = targetDirection.sqrMagnitude > 0.01f ? acceleration : deceleration;
         float dot              = Vector3.Dot(_currentMoveVelocity.normalized, targetVelocity.normalized);

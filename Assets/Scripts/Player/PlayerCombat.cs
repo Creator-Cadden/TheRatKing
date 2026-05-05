@@ -58,6 +58,9 @@ public class PlayerCombat : MonoBehaviour
     // Current effective cooldown — recalculated whenever Speed changes
     private float _currentAttackCooldown;
 
+    // Bow charged shot — true while the player is aiming with the bow
+    private bool  _isAiming = false;
+
     void Start()
     {
         _controller = GetComponent<CharacterController>();
@@ -106,7 +109,11 @@ public class PlayerCombat : MonoBehaviour
     ///   Speed      14 → 0.55 - (8 * 0.03) = 0.31s  (noticeably snappier)
     ///   Speed      20 → clamped at 0.20s  (hard floor)
     /// </summary>
-    private void RecalculateAttackCooldown()
+    /// <summary>
+    /// Public so EntityStats can call it directly on weapon swap.
+    /// Applies speed reduction AND hammer attack speed penalty if equipped.
+    /// </summary>
+    public void RecalculateAttackCooldown()
     {
         if (_stats == null)
         {
@@ -114,15 +121,26 @@ public class PlayerCombat : MonoBehaviour
             return;
         }
 
-        int baseSpeed   = _stats.playerStatBlock != null ? _stats.playerStatBlock.baseSpeed : 6;
-        int speedBonus  = Mathf.Max(0, _stats.Speed - baseSpeed);
+        int baseSpd     = _stats.playerStatBlock != null ? _stats.playerStatBlock.baseSpeed : 5;
+        int speedBonus  = Mathf.Max(0, _stats.Speed - baseSpd);
         float reduction = speedBonus * attackCooldownPerSpeed;
 
-        _currentAttackCooldown = Mathf.Max(basicAttackCooldownMin,
-                                           basicAttackCooldownBase - reduction);
+        float cooldown = Mathf.Max(basicAttackCooldownMin,
+                                   basicAttackCooldownBase - reduction);
+
+        // Hammer halves attack speed — double the cooldown, but still respect the min
+        if (_stats.EquippedWeapon == EntityStats.WeaponType.Hammer &&
+            _stats.playerStatBlock != null)
+        {
+            float fraction = _stats.playerStatBlock.hammerAttackSpeedFraction;
+            // fraction 0.5 means half speed = double the time
+            cooldown = Mathf.Min(cooldown / fraction, basicAttackCooldownBase * 3f);
+        }
+
+        _currentAttackCooldown = cooldown;
 
         Debug.Log($"[PlayerCombat] Attack cooldown → {_currentAttackCooldown:F2}s " +
-                  $"(Speed {_stats.Speed}, bonus -{reduction:F2}s)");
+                  $"(Speed {_stats.Speed}, weapon:{_stats.EquippedWeapon})");
     }
 
     // ─────────────────────────────────────────
@@ -135,11 +153,24 @@ public class PlayerCombat : MonoBehaviour
 
         bool isGrounded = _controller.isGrounded;
 
+        // Bow charged shot: attack while aiming fires the charged version
+        if (_isAiming && _stats != null && _stats.EquippedWeapon == EntityStats.WeaponType.Bow)
+        {
+            if (Time.time >= _lastAttackTime + _currentAttackCooldown)
+                ChargedBowShot();
+            return;
+        }
+
         if (!isGrounded && !_hasJumpAttacked)
             JumpAttack();
         else if (isGrounded && Time.time >= _lastAttackTime + _currentAttackCooldown)
             BasicAttack();
     }
+
+    // ── Aim state — forwarded from PlayerMovement via PlayerInput Send Messages ──
+    // PlayerInput calls OnAim on ALL MonoBehaviours on the GameObject, so this
+    // receives the same event as PlayerMovement without any extra wiring.
+    public void OnAim(InputValue value) => _isAiming = value.isPressed;
 
     // ── Weapon Swap ──────────────────────────────────────────
 
@@ -218,6 +249,25 @@ public class PlayerCombat : MonoBehaviour
         }
     }
 
+    /// <summary>
+    /// Fired when the player attacks while aiming with the bow.
+    /// Deals Strength * bowStrengthMultiplier * bowChargedMultiplier damage.
+    /// Uses the same cooldown as the basic attack.
+    /// </summary>
+    private void ChargedBowShot()
+    {
+        _lastAttackTime = Time.time;
+        _primaryAnimator?.SetTrigger("Attk");
+        _secondaryAnimator?.SetTrigger("Attk");
+
+        // Reuse HitScan with basic attack range/angle for now —
+        // swap for a raycast when you add actual projectiles
+        int chargedDamage = _stats?.CalculateChargedBowDamage() ?? 0;
+        HitScanWithDamage(basicAttackRadius, basicAttackAngle, chargedDamage);
+
+        Debug.Log($"[PlayerCombat] Charged bow shot for {chargedDamage} damage");
+    }
+
     private int GetCurrentStaggerForce()
     {
         if (_stats == null) return bladeStaggerForce;
@@ -285,6 +335,28 @@ public class PlayerCombat : MonoBehaviour
             Vector3 bottom = origin + Vector3.up * (-height / 2f) + Quaternion.Euler(0, currentAngle, 0) * forward * radius;
             Vector3 top    = origin + Vector3.up * ( height / 2f) + Quaternion.Euler(0, currentAngle, 0) * forward * radius;
             Gizmos.DrawLine(bottom, top);
+        }
+    }
+
+    /// <summary>
+    /// HitScan with explicit damage value — used by charged bow shot so the
+    /// multiplied damage is passed in rather than recalculated inside.
+    /// </summary>
+    private void HitScanWithDamage(float radius, float angle, int damage)
+    {
+        Collider[] hits = Physics.OverlapSphere(attackOrigin.position, radius, enemyLayer);
+
+        foreach (Collider hit in hits)
+        {
+            Vector3 dir          = (hit.transform.position - attackOrigin.position).normalized;
+            float   angleToTarget = Vector3.Angle(transform.forward, dir);
+
+            if (angleToTarget <= angle / 2f)
+            {
+                int staggerForce = GetCurrentStaggerForce();
+                hit.GetComponent<EntityStats>()?.TakeDamage(damage);
+                hit.GetComponent<EnemyAI>()?.TakeKnockback(attackOrigin.position, staggerForce);
+            }
         }
     }
 

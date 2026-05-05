@@ -4,7 +4,6 @@ using UnityEngine.Events;
 /// <summary>
 /// Lives on the Player and every enemy/boss.
 /// Player needs a PlayerStatBlock. Enemies need an EnemyStatBlock.
-/// Both share BaseStatBlock for the five core stats.
 /// </summary>
 public class EntityStats : MonoBehaviour
 {
@@ -12,24 +11,19 @@ public class EntityStats : MonoBehaviour
     public bool isPlayer = false;
 
     [Header("Stat Block")]
-    [Tooltip("Drag a PlayerStatBlock here if isPlayer is true")]
     public PlayerStatBlock playerStatBlock;
-
-    [Tooltip("Drag an EnemyStatBlock here if isPlayer is false")]
-    public EnemyStatBlock enemyStatBlock;
+    public EnemyStatBlock  enemyStatBlock;
 
     public BaseStatBlock BaseBlock => isPlayer
         ? (BaseStatBlock)playerStatBlock
         : (BaseStatBlock)enemyStatBlock;
 
     // ── Events ──
-    public UnityEvent             onDeath;
-    public UnityEvent<int>        onDamageTaken;
-    public UnityEvent<int>        onHeal;
-    public UnityEvent             onLevelUp;
-
-    // Fired whenever a runtime stat changes so UI can react immediately
-    public UnityEvent             onStatsChanged;
+    public UnityEvent          onDeath;
+    public UnityEvent<int>     onDamageTaken;
+    public UnityEvent<int>     onHeal;
+    public UnityEvent          onLevelUp;
+    public UnityEvent          onStatsChanged;
 
     // ── Runtime Stats ──
     public int CurrentHealth   { get; private set; }
@@ -55,10 +49,7 @@ public class EntityStats : MonoBehaviour
     private float _lastStaminaUseTime;
     private float _staminaRegenAccumulator;
 
-    // ── Speed scaling ──
-    // Each Speed point adds this fraction of base walk/sprint speed.
-    // At base Speed 6, one point = +0.5 walk / +0.67 sprint (roughly 8% per point).
-    // Tune this constant to taste.
+    // Speed: each point above base adds this to walk speed (sprint scales 1.33x)
     private const float SpeedBonusPerPoint = 0.5f;
 
     // ─────────────────────────────────────────
@@ -66,11 +57,9 @@ public class EntityStats : MonoBehaviour
     {
         if (BaseBlock == null)
         {
-            Debug.LogError($"[EntityStats] {gameObject.name} has no stat block assigned! " +
-                           $"Drag a {(isPlayer ? "PlayerStatBlock" : "EnemyStatBlock")} into the slot.");
+            Debug.LogError($"[EntityStats] {gameObject.name} has no stat block assigned!");
             return;
         }
-
         InitStats();
     }
 
@@ -99,46 +88,33 @@ public class EntityStats : MonoBehaviour
 
         _staminaRegenAccumulator = 0f;
 
-        if (isPlayer) ApplyWeaponToughnessBonus();
-
-        // Push initial speed to PlayerMovement
-        NotifySpeedChanged();
+        if (isPlayer)
+        {
+            ApplyWeaponToughnessBonus();
+            NotifySpeedChanged();
+        }
 
         Debug.Log($"[EntityStats] {gameObject.name} ready — " +
                   $"HP:{CurrentHealth} STR:{Strength} STA:{MaxStamina} SPD:{Speed} TGH:{Toughness}");
     }
 
     // ─────────────────────────────────────────
-    // Leveling — player only
+    // Leveling
     // ─────────────────────────────────────────
 
     public bool GainLevel()
     {
         if (!isPlayer) return false;
-
         if (CurrentLevel >= LevelCap)
         {
-            Debug.Log("[EntityStats] At level cap — beat the boss to continue.");
+            Debug.Log("[EntityStats] At level cap.");
             return false;
         }
-
         CurrentLevel++;
-        Debug.Log($"[EntityStats] Level up — now {CurrentLevel}/{LevelCap}");
         onLevelUp?.Invoke();
         return true;
     }
 
-    /// <summary>
-    /// Spend one stat point. Called by XPSystem.SpendPoint().
-    /// Each stat's gain per point is read from PlayerStatBlock so you can
-    /// tune everything in the ScriptableObject without touching code.
-    ///
-    /// Gains per point (from PlayerStatBlock defaults, stamina changed to 10):
-    ///   health   +10 HP  (current AND max — immediate survivability)
-    ///   strength +2      (multiplied by weapon bonus in CalculateWeaponDamage)
-    ///   stamina  +10     (current AND max pool — more rolls/sprints/jumps)
-    ///   speed    +1      (applied to PlayerMovement walk/sprint speeds live)
-    /// </summary>
     public void SpendPoint(string stat)
     {
         if (!isPlayer || playerStatBlock == null) return;
@@ -148,48 +124,27 @@ public class EntityStats : MonoBehaviour
             case "health":
                 MaxHealth     += playerStatBlock.healthPerPoint;
                 CurrentHealth += playerStatBlock.healthPerPoint;
-                Debug.Log($"[EntityStats] Health → {CurrentHealth}/{MaxHealth}");
                 break;
-
             case "strength":
                 Strength += playerStatBlock.strengthPerPoint;
-                Debug.Log($"[EntityStats] Strength → {Strength}");
                 break;
-
             case "stamina":
-                // Hardcoded to 10 per request, overriding the ScriptableObject's 8
-                int staminaGain = 10;
-                MaxStamina     += staminaGain;
-                CurrentStamina += staminaGain;
-                Debug.Log($"[EntityStats] Stamina → {CurrentStamina}/{MaxStamina}");
+                MaxStamina     += 10;
+                CurrentStamina += 10;
                 break;
-
             case "speed":
                 Speed += playerStatBlock.speedPerPoint;
                 NotifySpeedChanged();
-                Debug.Log($"[EntityStats] Speed → {Speed}");
                 break;
-
             default:
-                Debug.LogWarning($"[EntityStats] Unknown stat '{stat}'. Use: health / strength / stamina / speed");
+                Debug.LogWarning($"[EntityStats] Unknown stat '{stat}'.");
                 return;
         }
 
         onStatsChanged?.Invoke();
+        Debug.Log($"[EntityStats] Spent point on {stat}.");
     }
 
-    /// <summary>
-    /// Pushes the current Speed value to PlayerMovement so walk/sprint speeds
-    /// update immediately when a Speed point is spent.
-    ///
-    /// Speed effect:
-    ///   walkSpeed  = base walkSpeed  + (Speed - baseSpeed) * SpeedBonusPerPoint
-    ///   sprintSpeed = base sprintSpeed + (Speed - baseSpeed) * SpeedBonusPerPoint * 1.33
-    ///
-    /// At base Speed 6 and SpeedBonusPerPoint 0.5:
-    ///   +1 Speed = +0.50 walk, +0.67 sprint
-    ///   +5 Speed = +2.50 walk, +3.33 sprint — noticeably faster but not broken
-    /// </summary>
     private void NotifySpeedChanged()
     {
         if (!isPlayer) return;
@@ -197,17 +152,21 @@ public class EntityStats : MonoBehaviour
         PlayerMovement pm = GetComponent<PlayerMovement>();
         if (pm == null) return;
 
-        int baseSpeed = BaseBlock?.baseSpeed ?? 6;
-        int bonusPoints = Speed - baseSpeed;            // points spent above base
+        int baseSpd     = BaseBlock?.baseSpeed ?? 5;
+        int bonusPoints = Speed - baseSpd;
 
-        pm.ApplySpeedBonus(bonusPoints, SpeedBonusPerPoint);
+        // Pass hammer fraction so movement knows to apply it on top of speed bonus
+        float hammerFraction = (isPlayer && playerStatBlock != null && EquippedWeapon == WeaponType.Hammer)
+            ? playerStatBlock.hammerMoveSpeedFraction
+            : 1f;
+
+        pm.ApplySpeedBonus(bonusPoints, SpeedBonusPerPoint, hammerFraction);
     }
 
     public void AdvanceFloor()
     {
         if (!isPlayer) return;
         CurrentFloor = Mathf.Min(CurrentFloor + 1, 3);
-        Debug.Log($"[EntityStats] Floor {CurrentFloor} — level cap now {LevelCap}");
     }
 
     private int GetLevelCap()
@@ -222,7 +181,7 @@ public class EntityStats : MonoBehaviour
     }
 
     // ─────────────────────────────────────────
-    // Weapons — player only
+    // Weapons
     // ─────────────────────────────────────────
 
     public void EquipWeapon(WeaponType weapon)
@@ -230,8 +189,16 @@ public class EntityStats : MonoBehaviour
         if (!isPlayer) return;
         EquippedWeapon = weapon;
         ApplyWeaponToughnessBonus();
+
+        // Push move speed change (hammer penalty or removal of it)
+        NotifySpeedChanged();
+
+        // Push attack speed change to PlayerCombat
+        PlayerCombat pc = GetComponent<PlayerCombat>();
+        pc?.RecalculateAttackCooldown();
+
         onStatsChanged?.Invoke();
-        Debug.Log($"[EntityStats] Equipped {weapon} — Toughness now {Toughness}");
+        Debug.Log($"[EntityStats] Equipped {weapon} — Toughness:{Toughness}");
     }
 
     private void ApplyWeaponToughnessBonus()
@@ -249,49 +216,44 @@ public class EntityStats : MonoBehaviour
         Toughness = BaseToughness + bonus;
     }
 
+    /// <summary>
+    /// Damage formula:
+    ///   Blade  = Strength * bladeStrengthMultiplier  (no flat base)
+    ///   Hammer = Strength * hammerStrengthMultiplier (no flat base, heavy penalty to speed)
+    ///   Bow    = Random(bowDamageMin, bowDamageMax)  (no strength scaling, ranged)
+    /// </summary>
     public int CalculateWeaponDamage()
     {
         if (playerStatBlock == null) return 0;
 
-        int baseDmg;
-        int strengthBonus;
-
-        switch (EquippedWeapon)
+        return EquippedWeapon switch
         {
-            case WeaponType.Blade:
-                baseDmg       = Random.Range(playerStatBlock.bladeDamageMin,  playerStatBlock.bladeDamageMax  + 1);
-                strengthBonus = Strength * playerStatBlock.bladeStrengthBonus;
-                break;
+            WeaponType.Blade  => Strength * playerStatBlock.bladeStrengthMultiplier,
+            WeaponType.Hammer => Strength * playerStatBlock.hammerStrengthMultiplier,
+            WeaponType.Bow    => Strength * playerStatBlock.bowStrengthMultiplier,
+            _                 => 0
+        };
+    }
 
-            case WeaponType.Hammer:
-                baseDmg       = Random.Range(playerStatBlock.hammerDamageMin, playerStatBlock.hammerDamageMax + 1);
-                strengthBonus = Strength * playerStatBlock.hammerStrengthBonus;
-                break;
-
-            case WeaponType.Bow:
-                baseDmg       = Random.Range(playerStatBlock.bowDamageMin,    playerStatBlock.bowDamageMax    + 1);
-                strengthBonus = 0;
-                break;
-
-            default:
-                return 0;
-        }
-
-        return baseDmg + strengthBonus;
+    /// <summary>
+    /// Charged bow shot — full aim-hold release.
+    /// Damage = Strength * bowStrengthMultiplier * bowChargedMultiplier
+    /// </summary>
+    public int CalculateChargedBowDamage()
+    {
+        if (playerStatBlock == null || EquippedWeapon != WeaponType.Bow) return 0;
+        float charged = Strength * playerStatBlock.bowStrengthMultiplier
+                        * playerStatBlock.bowChargedMultiplier;
+        return Mathf.RoundToInt(charged);
     }
 
     // ─────────────────────────────────────────
-    // Stamina — player only
+    // Stamina
     // ─────────────────────────────────────────
 
     public bool UseStamina(int amount)
     {
-        if (CurrentStamina < amount)
-        {
-            Debug.Log($"[EntityStats] Not enough stamina ({CurrentStamina}/{MaxStamina})");
-            return false;
-        }
-
+        if (CurrentStamina < amount) return false;
         CurrentStamina           = Mathf.Max(0, CurrentStamina - amount);
         _lastStaminaUseTime      = Time.time;
         _staminaRegenAccumulator = 0f;
@@ -338,18 +300,10 @@ public class EntityStats : MonoBehaviour
     public void TakeDamage(int damage)
     {
         if (IsDead) return;
-
         int finalDamage = Mathf.Max(1, damage);
         CurrentHealth   = Mathf.Max(0, CurrentHealth - finalDamage);
-
         onDamageTaken?.Invoke(finalDamage);
-        Debug.Log($"[EntityStats] {gameObject.name} took {finalDamage} — HP {CurrentHealth}/{MaxHealth}");
-
-        if (CurrentHealth <= 0)
-        {
-            Debug.Log($"[EntityStats] {gameObject.name} HP hit 0 — calling Die(). isPlayer={isPlayer}");
-            Die();
-        }
+        if (CurrentHealth <= 0) Die();
     }
 
     public void Heal(int amount)
@@ -363,27 +317,14 @@ public class EntityStats : MonoBehaviour
     {
         if (IsDead) return;
         IsDead = true;
-
-        Debug.Log($"[EntityStats] Die() fired on '{gameObject.name}'. isPlayer={isPlayer}. " +
-                  $"onDeath persistent listeners: {onDeath.GetPersistentEventCount()}");
-
         onDeath?.Invoke();
     }
 
-    // ─────────────────────────────────────────
-    // Stagger check
-    // ─────────────────────────────────────────
-
     public bool ShouldStagger(int staggerForce) => staggerForce > Toughness;
-
-    // ─────────────────────────────────────────
-    // Reset — called by GameManager on Retry
-    // ─────────────────────────────────────────
 
     public void ResetToFull()
     {
-        IsDead = false;
-
+        IsDead         = false;
         CurrentHealth  = MaxHealth;
         CurrentStamina = MaxStamina;
 
@@ -392,7 +333,5 @@ public class EntityStats : MonoBehaviour
 
         onHeal?.Invoke(MaxHealth);
         onStatsChanged?.Invoke();
-
-        Debug.Log($"[EntityStats] {gameObject.name} fully reset — HP {CurrentHealth}/{MaxHealth}");
     }
 }

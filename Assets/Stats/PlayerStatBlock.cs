@@ -1,6 +1,6 @@
 using UnityEngine;
 
-// Right-click in Project → Create → Rat King → Player Stat Block
+// Right-click in Project -> Create -> Rat King -> Player Stat Block
 [CreateAssetMenu(fileName = "PlayerStatBlock", menuName = "Rat King/Player Stat Block")]
 public class PlayerStatBlock : BaseStatBlock
 {
@@ -10,68 +10,74 @@ public class PlayerStatBlock : BaseStatBlock
 
     [Header("Per Level Point")]
     [Tooltip("+HP gained each time the player puts a point into Health")]
-    public int healthPerPoint   = 10;
+    public int healthPerPoint = 10;
 
     [Tooltip("+Strength gained each time the player puts a point into Strength")]
     public int strengthPerPoint = 2;
 
     [Tooltip("+Stamina pool gained each time the player puts a point into Stamina")]
-    public int staminaPerPoint  = 8;
+    public int staminaPerPoint = 8;
 
     [Tooltip("+Speed gained each time the player puts a point into Speed")]
-    public int speedPerPoint    = 1;
+    public int speedPerPoint = 1;
 
     [Header("Floor Level Caps")]
-    [Tooltip("Max levels allowed until the floor 1 boss is beaten")]
     public int floorOneCap   = 5;
-
-    [Tooltip("Max levels allowed until the floor 2 boss is beaten")]
     public int floorTwoCap   = 10;
-
-    [Tooltip("Max levels allowed on floor 3 before the Rat King")]
     public int floorThreeCap = 15;
 
     // ─────────────────────────────────────────
     // WEAPON DAMAGE
-    // Attacks do NOT cost stamina — combat is always available.
-    // Stamina is spent on movement actions (sprint, roll, jump).
+    //
+    // Blade  — damage = Strength * bladeStrengthMultiplier. Fast, mobile.
+    // Hammer — damage = Strength * hammerStrengthMultiplier. Slow, heavy.
+    // Bow    — damage = Strength * bowStrengthMultiplier (default 1).
+    //          Charged shot while aiming = damage * bowChargedMultiplier.
     // ─────────────────────────────────────────
 
     [Header("Blade")]
-    public int bladeDamageMin      = 8;
-    public int bladeDamageMax      = 12;
-    [Tooltip("+damage per Strength point while blade is equipped")]
-    public int bladeStrengthBonus  = 2;
-    [Tooltip("Toughness added to player base while blade is equipped")]
+    [Tooltip("Blade damage = Strength x this. No flat base damage.")]
+    public int bladeStrengthMultiplier = 2;
+
+    [Tooltip("Toughness added while blade is equipped")]
     public int bladeToughnessBonus = 1;
 
     [Header("Hammer")]
-    public int hammerDamageMin      = 20;
-    public int hammerDamageMax      = 28;
-    [Tooltip("+damage per Strength point while hammer is equipped")]
-    public int hammerStrengthBonus  = 3;
-    [Tooltip("Toughness added to player base while hammer is equipped")]
+    [Tooltip("Hammer damage = Strength x this. No flat base damage.")]
+    public int hammerStrengthMultiplier = 4;
+
+    [Tooltip("Toughness added while hammer is equipped")]
     public int hammerToughnessBonus = 4;
 
+    [Tooltip("Fraction of normal move speed while hammer is equipped. 0.667 = one third reduction.")]
+    public float hammerMoveSpeedFraction = 0.667f;
+
+    [Tooltip("Fraction of normal attack speed while hammer is equipped. 0.5 = cooldown doubled.")]
+    public float hammerAttackSpeedFraction = 0.5f;
+
     [Header("Bow")]
-    public int bowDamageMin      = 10;
-    public int bowDamageMax      = 18;
-    [Tooltip("Bow does not scale with Strength — always 0")]
-    public int bowStrengthBonus  = 0;
-    [Tooltip("Bow gives no Toughness — fragile while aiming")]
+    [Tooltip("Bow damage = Strength x this. Default 1 means no amplification.")]
+    public int bowStrengthMultiplier = 1;
+
+    [Tooltip("Bow gives no Toughness bonus.")]
     public int bowToughnessBonus = 0;
+
+    [Tooltip("Charged aimed shot multiplies damage by this. Default 3 = triple damage.")]
+    public float bowChargedMultiplier = 3f;
+
+    [Tooltip("Fraction of normal move speed while aiming the bow. 0.667 = one third reduction.")]
+    public float bowAimMoveSpeedFraction = 0.667f;
 
     // ─────────────────────────────────────────
     // ACTION STAMINA COSTS
-    // Walk speed is always free. Everything else costs stamina.
     // ─────────────────────────────────────────
 
     [Header("Action Stamina Costs")]
-    [Tooltip("Stamina drained per second while sprinting (walk is always free)")]
-    public float sprintStaminaPerSecond = 3.5f;
+    [Tooltip("Stamina drained per second while sprinting")]
+    public float sprintStaminaPerSecond = 5f;
 
     [Tooltip("Flat stamina cost per roll/dodge")]
-    public int rollStaminaCost = 12;
+    public int rollStaminaCost = 15;
 
     [Tooltip("Flat stamina cost per jump")]
     public int jumpStaminaCost = 5;
@@ -82,7 +88,7 @@ public class PlayerStatBlock : BaseStatBlock
 
     [Header("Stamina Regen")]
     [Tooltip("Stamina recovered per second after the regen delay")]
-    public float staminaRegenRate  = 15f;
+    public float staminaRegenRate = 15f;
 
     [Tooltip("Seconds after last stamina use before regen kicks in")]
     public float staminaRegenDelay = 1.2f;
