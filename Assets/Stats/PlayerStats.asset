@@ -35,7 +35,7 @@ MonoBehaviour:
   bowChargedMultiplier: 3
   bowAimMoveSpeedFraction: 0.667
   sprintStaminaPerSecond: 5
-  rollStaminaCost: 20
+  rollStaminaCost: 15
   jumpStaminaCost: 5
   staminaRegenRate: 15
   staminaRegenDelay: 1
