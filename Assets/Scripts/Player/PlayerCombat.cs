@@ -189,6 +189,8 @@ public class PlayerCombat : MonoBehaviour
         _primaryAnimator?.SetTrigger("Attk");
         _secondaryAnimator?.SetTrigger("Attk");
         HitScan(basicAttackRadius, basicAttackAngle);
+
+        AudioManager.Instance.Play(AudioManager.SoundType.Attack);
     }
 
     private void JumpAttack()
@@ -199,6 +201,9 @@ public class PlayerCombat : MonoBehaviour
         _lastJumpAttackTime = Time.time;
         _primaryAnimator?.SetTrigger("AirAttk");
         _secondaryAnimator?.SetTrigger("AirAttk");
+
+        AudioManager.Instance.Play(AudioManager.SoundType.AirAttk);
+
         StartJumpSpin();
 
         HitScan(jumpAttackRadius, jumpAttackAngle);

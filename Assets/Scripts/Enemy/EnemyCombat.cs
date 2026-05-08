@@ -165,6 +165,9 @@ public class EnemyCombat : MonoBehaviour
         _attackStartTime = Time.time;
 
         _animator.SetTrigger("Bite");
+
+        AudioManager.Instance.Play(AudioManager.SoundType.EnemyAttk);
+
         SetIndicatorColor(executeColor);
 
         bool hasAttackTrigger = false;
