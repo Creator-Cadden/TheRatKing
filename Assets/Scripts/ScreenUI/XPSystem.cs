@@ -122,4 +122,18 @@ public class XPSystem : MonoBehaviour
         // Linear growth: level 1 = base, level 2 = base + scaling, etc.
         return baseXPPerLevel + (targetLevel - 1) * xpScalingPerLevel;
     }
+
+    // ─────────────────────────────────────────
+    // Save / Load
+    // ─────────────────────────────────────────
+
+    public void ApplySaveData(SaveData data)
+    {
+        CurrentLevel  = data.currentLevel;
+        CurrentXP     = data.currentXP;
+        UnspentPoints = data.unspentPoints;
+
+        onXPGained?.Invoke(0);
+        Debug.Log($"[XPSystem] Save data applied — Lv{CurrentLevel} XP:{CurrentXP} Points:{UnspentPoints}");
+    }
 }

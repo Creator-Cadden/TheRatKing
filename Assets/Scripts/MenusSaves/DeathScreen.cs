@@ -96,7 +96,7 @@ public class DeathScreen : MonoBehaviour
     private void OnRetryClicked()
     {
         SetInteractable(false);
-        GameManager.Instance?.Retry();
+        GameManager.Instance?.ResetToCheckpoint();  // was Retry()
     }
 
     private void SetInteractable(bool state)

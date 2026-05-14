@@ -334,4 +334,31 @@ public class EntityStats : MonoBehaviour
         onHeal?.Invoke(MaxHealth);
         onStatsChanged?.Invoke();
     }
+
+    // ─────────────────────────────────────────
+    // Save / Load
+    // ─────────────────────────────────────────
+
+    /// <summary>
+    /// Restores runtime stat values from a SaveData object.
+    /// Called by SaveSystem.ApplyToStats after scene load.
+    /// </summary>
+    public void ApplySaveData(SaveData data)
+    {
+        MaxHealth      = data.maxHealth;
+        CurrentHealth  = data.currentHealth;
+        Strength       = data.strength;
+        MaxStamina     = data.maxStamina;
+        CurrentStamina = data.currentStamina;
+        Speed          = data.speed;
+        CurrentFloor   = data.currentFloor;
+
+        EquippedWeapon = (WeaponType)data.equippedWeapon;
+        ApplyWeaponToughnessBonus();
+        NotifySpeedChanged();
+
+        onStatsChanged?.Invoke();
+
+        Debug.Log($"[EntityStats] Save data applied — HP:{CurrentHealth}/{MaxHealth} STR:{Strength} SPD:{Speed}");
+    }
 }
