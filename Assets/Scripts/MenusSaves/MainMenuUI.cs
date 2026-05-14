@@ -3,47 +3,106 @@ using UnityEngine.UI;
 using TMPro;
 
 /// <summary>
-/// Main menu with title, slot selection, continue/new game, and delete.
+/// Main Menu flow:
+///
+///   MainPanel  →  SlotPanel  →  NamePanel  →  [WeaponSelect scene]  →  [Level1]
+///
+/// MainPanel:
+///   CONTINUE  — loads most recent save directly (shown if any save exists)
+///   PLAY      — shown when no saves exist, goes straight to SlotPanel
+///   LOAD GAME — opens SlotPanel (grayed out if no saves)
+///   SETTINGS  — stub
+///   EXIT
+///
+/// SlotPanel:
+///   Three slot buttons showing name/floor/level or "Empty"
+///   Clicking an existing slot → loads it immediately
+///   Clicking an empty slot   → goes to NamePanel
+///   Delete button (existing slots only)
+///   Back button
+///
+/// NamePanel:
+///   Text input for the save name
+///   Confirm → saves the name into GameManager, loads WeaponSelect scene
+///   Back → returns to SlotPanel
 ///
 /// Hierarchy:
 ///   Canvas
-///   └── MainMenuRoot
-///       ├── TitleLabel          (TMP_Text)
-///       ├── MainPanel           shown first — Play / Quit
-///       │   ├── PlayButton      (Button)
-///       │   └── QuitButton      (Button)
-///       └── SlotPanel           shown after Play — three save slots
-///           ├── SlotButton_0    (Button)
-///           ├── SlotButton_1    (Button)
-///           ├── SlotButton_2    (Button)
-///           ├── DeleteButton    (Button) — deletes selected slot
-///           ├── NewGameButton   (Button) — starts fresh in selected slot
-///           └── BackButton      (Button) — back to main panel
+///   └── MainMenuRoot          ← attach this script
+///       ├── MainPanel
+///       │   ├── TitleLabel        (TMP_Text)
+///       │   ├── PlayContinueButton(Button)
+///       │   │   └── Label         (TMP_Text)
+///       │   ├── LoadGameButton    (Button)
+///       │   │   └── Label         (TMP_Text)
+///       │   ├── SettingsButton    (Button)
+///       │   └── ExitButton        (Button)
+///       ├── SlotPanel
+///       │   ├── SlotButton_0      (Button)
+///       │   │   ├── SlotNameLabel (TMP_Text)
+///       │   │   └── SlotSubLabel  (TMP_Text)
+///       │   │   └── DeleteX_0     (Button) small X on the slot — only shown if save exists
+///       │   ├── SlotButton_1      (same structure)
+///       │   ├── SlotButton_2      (same structure)
+///       │   ├── ConfirmDeletePanel (inactive by default)
+///       │   │   ├── ConfirmDeleteLabel  (TMP_Text) "Delete this save?"
+///       │   │   ├── YesButton           (Button) "Yes, Delete"
+///       │   │   └── NoButton            (Button) "Cancel"
+///       │   └── BackButton        (Button)
+///       └── NamePanel
+///           ├── PromptLabel       (TMP_Text) "Name your adventure:"
+///           ├── NameInputField    (TMP_InputField)
+///           ├── ConfirmButton     (Button)
+///           └── BackButton2       (Button) "Back"
 /// </summary>
 public class MainMenuUI : MonoBehaviour
 {
-    [Header("Scene To Load")]
-    [Tooltip("Name of the first game scene for a new game.")]
-    public string firstGameScene = "Floor1";
+    [Header("Scene Names")]
+    public string weaponSelectScene = "WeaponSelect";
 
     [Header("Panels")]
     public GameObject mainPanel;
     public GameObject slotPanel;
+    public GameObject namePanel;
 
     [Header("Main Panel")]
-    public Button playButton;
-    public Button quitButton;
+    public Button   playContinueButton;
+    public TMP_Text playContinueLabel;
+    public Button   loadGameButton;
+    public TMP_Text loadGameLabel;
+    public Button   settingsButton;
+    public Button   exitButton;
 
     [Header("Slot Panel")]
-    public Button[]   slotButtons   = new Button[3];
-    public TMP_Text[] slotLabels    = new TMP_Text[3];
-    public TMP_Text[] slotSubLabels = new TMP_Text[3];   // date / play time
-    public Button     newGameButton;
-    public Button     deleteButton;
-    public Button     backButton;
+    public Button[]   slotButtons    = new Button[3];
+    public TMP_Text[] slotNameLabels = new TMP_Text[3];
+    public TMP_Text[] slotSubLabels  = new TMP_Text[3];
+    [Tooltip("One small X button per slot, child of each SlotButton. Only visible on filled slots.")]
+    public Button[]   deleteXButtons = new Button[3];
+    public Button     slotBackButton;
 
-    // ── Private ──
-    private int _selectedSlot = -1;
+    [Header("Confirm Delete Panel")]
+    public GameObject confirmDeletePanel;
+    public TMP_Text   confirmDeleteLabel;
+    public Button     confirmYesButton;
+    public Button     confirmNoButton;
+
+    [Header("Name Panel")]
+    public TMP_Text       promptLabel;
+    public TMP_InputField nameInputField;
+    public Button         confirmButton;
+    public Button         nameBackButton;
+
+    [Header("Colors")]
+    public Color activeSlotColor   = new Color(0.28f, 0.28f, 0.28f, 1f);
+    public Color inactiveSlotColor = new Color(0.12f, 0.12f, 0.12f, 1f);
+    public Color disabledTextColor = new Color(0.38f, 0.38f, 0.38f, 1f);
+    public Color normalTextColor   = new Color(1f,    1f,    1f,    1f);
+
+    // ── Private state ──
+    private int  _selectedSlot    = -1;
+    private int  _mostRecentSlot  = -1;
+    private bool _anySaveExists   = false;
 
     // ═════════════════════════════════════════════════════════════
 
@@ -52,27 +111,59 @@ public class MainMenuUI : MonoBehaviour
         CursorManager.Request("mainmenu");
         Time.timeScale = 1f;
 
-        // Main panel buttons
-        playButton?.onClick.AddListener(OnPlayClicked);
-        quitButton?.onClick.AddListener(OnQuitClicked);
+        ScanSaves();
 
-        // Slot buttons
+        // Main panel
+        playContinueButton?.onClick.AddListener(OnPlayContinue);
+        loadGameButton    ?.onClick.AddListener(OnLoadGame);
+        settingsButton    ?.onClick.AddListener(OnSettings);
+        exitButton        ?.onClick.AddListener(OnExit);
+
+        // Slot panel
         for (int i = 0; i < 3; i++)
         {
             int slot = i;
-            slotButtons[i]?.onClick.AddListener(() => SelectSlot(slot));
+            slotButtons[i]?.onClick.AddListener(() => OnSlotClicked(slot));
         }
+        for (int i = 0; i < 3; i++)
+        {
+            int slot = i;
+            deleteXButtons[i]?.onClick.AddListener(() => OnDeleteXClicked(slot));
+        }
+        slotBackButton  ?.onClick.AddListener(ShowMainPanel);
+        confirmYesButton?.onClick.AddListener(OnConfirmDeleteYes);
+        confirmNoButton ?.onClick.AddListener(OnConfirmDeleteNo);
 
-        newGameButton?.onClick.AddListener(OnNewGame);
-        deleteButton ?.onClick.AddListener(OnDeleteSlot);
-        backButton   ?.onClick.AddListener(ShowMainPanel);
+        // Name panel
+        confirmButton ?.onClick.AddListener(OnNameConfirmed);
+        nameBackButton?.onClick.AddListener(ShowSlotPanel);
 
         ShowMainPanel();
     }
 
-    void OnDestroy()
+    void OnDestroy() => CursorManager.Release("mainmenu");
+
+    // ═════════════════════════════════════════════════════════════
+    // Save scanning
+    // ═════════════════════════════════════════════════════════════
+
+    private void ScanSaves()
     {
-        CursorManager.Release("mainmenu");
+        _anySaveExists  = false;
+        _mostRecentSlot = -1;
+        float latest    = -1f;
+
+        for (int i = 0; i < SaveSystem.SlotCount; i++)
+        {
+            if (!SaveSystem.SlotHasData(i)) continue;
+            _anySaveExists = true;
+            SaveData d = SaveSystem.Load(i);
+            if (d.totalPlayTime > latest)
+            {
+                latest          = d.totalPlayTime;
+                _mostRecentSlot = i;
+            }
+        }
     }
 
     // ═════════════════════════════════════════════════════════════
@@ -81,107 +172,212 @@ public class MainMenuUI : MonoBehaviour
 
     private void ShowMainPanel()
     {
-        mainPanel?.SetActive(true);
-        slotPanel?.SetActive(false);
+        SetPanels(main: true, slot: false, name: false);
         _selectedSlot = -1;
+        ScanSaves();
+        RefreshMainPanel();
     }
 
     private void ShowSlotPanel()
     {
-        mainPanel?.SetActive(false);
-        slotPanel?.SetActive(true);
+        SetPanels(main: false, slot: true, name: false);
+        HideConfirmDelete();
         RefreshSlots();
-        SelectSlot(0);    // default to first slot
+        if (_mostRecentSlot >= 0)
+            HighlightSlot(_mostRecentSlot);
+        else
+            HighlightSlot(-1);
+    }
+
+    private void ShowNamePanel()
+    {
+        SetPanels(main: false, slot: false, name: true);
+
+        if (promptLabel    != null) promptLabel.text    = "Name your adventure:";
+        if (nameInputField != null) nameInputField.text = "";
+    }
+
+    private void SetPanels(bool main, bool slot, bool name)
+    {
+        mainPanel?.SetActive(main);
+        slotPanel?.SetActive(slot);
+        namePanel?.SetActive(name);
     }
 
     // ═════════════════════════════════════════════════════════════
-    // Slot display
+    // Main panel
+    // ═════════════════════════════════════════════════════════════
+
+    private void RefreshMainPanel()
+    {
+        if (playContinueLabel != null)
+            playContinueLabel.text = _anySaveExists ? "CONTINUE" : "PLAY";
+
+        if (loadGameButton != null)
+            loadGameButton.interactable = _anySaveExists;
+
+        if (loadGameLabel != null)
+            loadGameLabel.color = _anySaveExists ? normalTextColor : disabledTextColor;
+    }
+
+    // ═════════════════════════════════════════════════════════════
+    // Slot panel
     // ═════════════════════════════════════════════════════════════
 
     private void RefreshSlots()
     {
+        ScanSaves();
+
         for (int i = 0; i < 3; i++)
         {
-            SaveData data = SaveSystem.Load(i);
+            SaveData d = SaveSystem.Load(i);
 
-            if (data.hasData)
+            if (d.hasData)
             {
-                SetLabel(slotLabels[i],    $"Save {i + 1}  —  Floor {data.currentFloor}  Lv{data.currentLevel}");
-                SetLabel(slotSubLabels[i], $"{data.saveDate}   {FormatTime(data.totalPlayTime)}");
+                string name = string.IsNullOrEmpty(d.saveName)
+                    ? $"Save {i + 1}"
+                    : d.saveName;
+
+                SetLabel(slotNameLabels[i],
+                    $"{name}  —  Floor {d.currentFloor}  Lv{d.currentLevel}");
+                SetLabel(slotSubLabels[i],
+                    $"{d.saveDate}   {FormatTime(d.totalPlayTime)}");
             }
             else
             {
-                SetLabel(slotLabels[i],    $"Save {i + 1}  —  Empty");
-                SetLabel(slotSubLabels[i], "");
+                SetLabel(slotNameLabels[i], $"— Empty Slot {i + 1} —");
+                SetLabel(slotSubLabels[i],  "Click to start a new game");
             }
         }
 
-        RefreshSlotButtons();
+        RefreshDeleteXButtons();
     }
 
-    private void SelectSlot(int slot)
+    private void HighlightSlot(int slot)
     {
         _selectedSlot = slot;
-        RefreshSlotButtons();
-    }
-
-    private void RefreshSlotButtons()
-    {
-        bool hasSave = _selectedSlot >= 0 && SaveSystem.SlotHasData(_selectedSlot);
-
-        // Highlight selected slot
         for (int i = 0; i < 3; i++)
         {
             if (slotButtons[i] == null) continue;
-            var colors = slotButtons[i].colors;
-            colors.normalColor = (i == _selectedSlot)
-                ? new Color(0.25f, 0.25f, 0.25f, 1f)
-                : new Color(0.12f, 0.12f, 0.12f, 1f);
-            slotButtons[i].colors = colors;
+            var cb = slotButtons[i].colors;
+            cb.normalColor = (i == slot) ? activeSlotColor : inactiveSlotColor;
+            slotButtons[i].colors = cb;
         }
-
-        // "Continue" if save exists, "New Game" label changes
-        if (newGameButton != null)
-        {
-            var label = newGameButton.GetComponentInChildren<TMP_Text>();
-            if (label != null)
-                label.text = hasSave ? "Continue" : "New Game";
-        }
-
-        // Delete only available when save exists
-        deleteButton?.gameObject.SetActive(hasSave);
+        RefreshDeleteXButtons();
     }
 
-    // ═════════════════════════════════════════════════════════════
-    // Button callbacks
-    // ═════════════════════════════════════════════════════════════
-
-    private void OnPlayClicked() => ShowSlotPanel();
-
-    private void OnNewGame()
+    private void RefreshDeleteXButtons()
     {
-        if (_selectedSlot < 0) return;
-
-        if (SaveSystem.SlotHasData(_selectedSlot))
+        for (int i = 0; i < 3; i++)
         {
-            // Slot has data — Continue
-            GameManager.Instance?.ContinueGame(_selectedSlot);
+            if (deleteXButtons[i] == null) continue;
+            // X button only visible on slots that have save data
+            deleteXButtons[i].gameObject.SetActive(SaveSystem.SlotHasData(i));
+        }
+    }
+
+    private void OnSlotClicked(int slot)
+    {
+        HighlightSlot(slot);
+
+        if (SaveSystem.SlotHasData(slot))
+        {
+            // Existing save — load it directly
+            GameManager.Instance?.ContinueGame(slot);
         }
         else
         {
-            // Empty slot — New Game
-            GameManager.Instance?.StartNewGame(_selectedSlot, firstGameScene);
+            // Empty slot — go to name input
+            _selectedSlot = slot;
+            ShowNamePanel();
         }
     }
 
-    private void OnDeleteSlot()
+    private void OnDeleteXClicked(int slot)
+    {
+        // Don't act if there's no save in this slot
+        if (!SaveSystem.SlotHasData(slot)) return;
+
+        _selectedSlot = slot;
+        ShowConfirmDelete(slot);
+    }
+
+    private void ShowConfirmDelete(int slot)
+    {
+        if (confirmDeletePanel != null)
+            confirmDeletePanel.SetActive(true);
+
+        SaveData d    = SaveSystem.Load(slot);
+        string   name = !string.IsNullOrEmpty(d.saveName) ? d.saveName : $"Save {slot + 1}";
+
+        if (confirmDeleteLabel != null)
+            confirmDeleteLabel.text = $"Delete "{name}"?
+This cannot be undone.";
+    }
+
+    private void HideConfirmDelete()
+    {
+        if (confirmDeletePanel != null)
+            confirmDeletePanel.SetActive(false);
+    }
+
+    private void OnConfirmDeleteYes()
     {
         if (_selectedSlot < 0) return;
         SaveSystem.Delete(_selectedSlot);
+        HideConfirmDelete();
+        HighlightSlot(-1);
         RefreshSlots();
+        ScanSaves();
+        RefreshMainPanel();
     }
 
-    private void OnQuitClicked()
+    private void OnConfirmDeleteNo()
+    {
+        HideConfirmDelete();
+    }
+
+    // ═════════════════════════════════════════════════════════════
+    // Name panel
+    // ═════════════════════════════════════════════════════════════
+
+    private void OnNameConfirmed()
+    {
+        if (_selectedSlot < 0) return;
+
+        string enteredName = nameInputField != null
+            ? nameInputField.text.Trim()
+            : "";
+
+        if (string.IsNullOrEmpty(enteredName))
+            enteredName = $"Save {_selectedSlot + 1}";
+
+        // Tell GameManager to prepare a new game in this slot with this name.
+        // WeaponSelect will call GameManager.StartNewGame() after the player
+        // picks a weapon so the weapon choice is baked into the first save.
+        GameManager.Instance?.PrepareNewGame(_selectedSlot, enteredName, weaponSelectScene);
+    }
+
+    // ═════════════════════════════════════════════════════════════
+    // Main panel callbacks
+    // ═════════════════════════════════════════════════════════════
+
+    private void OnPlayContinue()
+    {
+        if (_anySaveExists)
+            GameManager.Instance?.ContinueGame(_mostRecentSlot);
+        else
+            ShowSlotPanel();
+    }
+
+    private void OnLoadGame() => ShowSlotPanel();
+
+    private void OnSettings()
+    {
+        Debug.Log("[MainMenuUI] Settings — wire to your settings panel.");
+    }
+
+    private void OnExit()
     {
 #if UNITY_EDITOR
         UnityEditor.EditorApplication.isPlaying = false;
@@ -194,9 +390,9 @@ public class MainMenuUI : MonoBehaviour
     // Helpers
     // ═════════════════════════════════════════════════════════════
 
-    private static void SetLabel(TMP_Text label, string text)
+    private static void SetLabel(TMP_Text t, string s)
     {
-        if (label != null) label.text = text;
+        if (t != null) t.text = s;
     }
 
     private static string FormatTime(float seconds)

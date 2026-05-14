@@ -68,10 +68,12 @@ public static class SaveSystem
         EntityStats stats,
         XPSystem     xp,
         string       sceneName,
-        float        playTime)
+        float        playTime,
+        string       saveName = "")
     {
         var data = new SaveData
         {
+            saveName         = saveName,
             currentSceneName = sceneName,
             currentFloor     = stats.CurrentFloor,
             currentLevel     = xp.CurrentLevel,

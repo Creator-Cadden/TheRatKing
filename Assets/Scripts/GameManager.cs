@@ -102,9 +102,16 @@ public class GameManager : MonoBehaviour
         if (deathScreen != null)
             deathScreen.Hide(instant: true);
 
-        // Apply save data if continuing
+        // Apply save data if continuing or starting new game
         if (HasActiveGame && _playerStats != null && _xpSystem != null)
+        {
             SaveSystem.ApplyToStats(ActiveSave, _playerStats, _xpSystem);
+
+            // Equip the weapon stored in the save (chosen in WeaponSelect
+            // for new games, restored from file on continue)
+            _playerStats.EquipWeapon(
+                (EntityStats.WeaponType)ActiveSave.equippedWeapon);
+        }
 
         // Checkpoint — record this scene as the current respawn point
         SaveCheckpoint(scene.name);
@@ -114,18 +121,43 @@ public class GameManager : MonoBehaviour
     // Start new / continue
     // ═════════════════════════════════════════════════════════════
 
-    public void StartNewGame(int slot, string sceneName = "")
+    public void StartNewGame(int slot, string sceneName = "", string saveName = "",
+        EntityStats.WeaponType startingWeapon = EntityStats.WeaponType.Blade)
     {
-        ActiveSlot = slot;
+        ActiveSlot     = slot;
+        _pendingWeapon = startingWeapon;
+
         ActiveSave = new SaveData
         {
             hasData          = true,
             currentSceneName = string.IsNullOrEmpty(sceneName) ? firstGameScene : sceneName,
-            currentFloor     = 1
+            currentFloor     = 1,
+            saveName         = saveName,
+            equippedWeapon   = (int)startingWeapon
         };
 
         SaveSystem.Delete(slot);
         LoadScene(ActiveSave.currentSceneName);
+    }
+
+    // ── Pending new game state (set before WeaponSelect, consumed after) ──
+    public int    PendingSlot    { get; private set; } = -1;
+    public string PendingName    { get; private set; } = "";
+    public string PendingFirstScene  { get; private set; } = "";
+    public EntityStats.WeaponType PendingWeapon { get; private set; } = EntityStats.WeaponType.Blade;
+    private EntityStats.WeaponType _pendingWeapon = EntityStats.WeaponType.Blade;
+
+    /// <summary>
+    /// Called by MainMenuUI after name is entered.
+    /// Stores slot + name then loads the weapon select scene.
+    /// WeaponSelect calls StartNewGame() once a weapon is picked.
+    /// </summary>
+    public void PrepareNewGame(int slot, string saveName, string weaponSelectScene)
+    {
+        PendingSlot       = slot;
+        PendingName       = saveName;
+        PendingFirstScene = firstGameScene;
+        LoadScene(weaponSelectScene);
     }
 
     public void ContinueGame(int slot)
@@ -145,7 +177,8 @@ public class GameManager : MonoBehaviour
 
         ActiveSave = SaveSystem.CaptureCurrentState(
             _playerStats, _xpSystem, sceneName,
-            ActiveSave?.totalPlayTime ?? 0f);
+            ActiveSave?.totalPlayTime ?? 0f,
+            ActiveSave?.saveName ?? "");
 
         SaveSystem.Save(ActiveSlot, ActiveSave);
         Debug.Log($"[GameManager] Checkpoint saved — slot {ActiveSlot}, scene '{sceneName}'");
