@@ -955,6 +955,7 @@ GameObject:
   - component: {fileID: 275918694}
   - component: {fileID: 275918693}
   - component: {fileID: 275918692}
+  - component: {fileID: 275918695}
   m_Layer: 0
   m_Name: EventSystem
   m_TagString: Untagged
@@ -1023,6 +1024,19 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &275918695
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 275918691}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6773afa25f11c0543abe6c4b0716dba1, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::CursorManager
+  _activeRequests: none
 --- !u!1 &334001371
 GameObject:
   m_ObjectHideFlags: 0
