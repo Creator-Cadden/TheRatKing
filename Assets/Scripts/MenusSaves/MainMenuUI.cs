@@ -308,11 +308,10 @@ public class MainMenuUI : MonoBehaviour
             confirmDeletePanel.SetActive(true);
 
         SaveData d    = SaveSystem.Load(slot);
-        string   name = !string.IsNullOrEmpty(d.saveName) ? d.saveName : $"Save {slot + 1}";
+        string   name = !string.IsNullOrEmpty(d.saveName) ? d.saveName : ("Save " + (slot + 1));
 
         if (confirmDeleteLabel != null)
-            confirmDeleteLabel.text = $"Delete "{name}"?
-This cannot be undone.";
+            confirmDeleteLabel.text = "Delete [" + name + "] - This cannot be undone.";
     }
 
     private void HideConfirmDelete()
