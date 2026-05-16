@@ -18,8 +18,9 @@ public class GameManager : MonoBehaviour
 
     // ── Scene names ───────────────────────────────────────────────
     [Header("Scene Names")]
-    public string mainMenuScene  = "MainMenu";
-    public string firstGameScene = "Floor1";
+    public string mainMenuScene     = "MainMenu";
+    public string weaponSelectScene = "PlayerCustom";
+    public string firstGameScene    = "lvl1";
 
     // ── Death screen ──────────────────────────────────────────────
     [Header("Death Screen")]
@@ -85,8 +86,9 @@ public class GameManager : MonoBehaviour
     {
         _isDead = false;
 
-        // Nothing to do in the main menu
+        // Nothing to do in menu or weapon select scenes — no player present
         if (scene.name == mainMenuScene) return;
+        if (scene.name == weaponSelectScene) return;
 
         // Re-find player references in the new scene
         CachePlayerReferences();

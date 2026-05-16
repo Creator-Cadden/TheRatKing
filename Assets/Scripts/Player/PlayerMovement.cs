@@ -77,6 +77,28 @@ public class PlayerMovement : MonoBehaviour
     private bool ground;
 
     // ─────────────────────────────────────────
+    void Awake()
+    {
+        // Cache base speeds in Awake so they are set before ANY Start() runs.
+        // EntityStats.Start() calls InitStats() which calls ApplySpeedBonus()
+        // on this component — if we wait until our own Start() to cache these,
+        // EntityStats.Start() may run first and ApplySpeedBonus multiplies from 0.
+        _baseWalkSpeed   = walkSpeed;
+        _baseSprintSpeed = sprintSpeed;
+
+        Debug.Log($"[PlayerMovement] Awake — base speeds cached: walk:{_baseWalkSpeed}  sprint:{_baseSprintSpeed}");
+
+        if (_baseWalkSpeed <= 0f)
+        {
+            Debug.LogWarning("[PlayerMovement] walkSpeed is 0 in Awake — using safe defaults. " +
+                             "Make sure walkSpeed is set in the Inspector.");
+            _baseWalkSpeed   = 6f;
+            _baseSprintSpeed = 10f;
+            walkSpeed        = _baseWalkSpeed;
+            sprintSpeed      = _baseSprintSpeed;
+        }
+    }
+
     void Start()
     {
         _controller    = GetComponent<CharacterController>();
@@ -88,9 +110,6 @@ public class PlayerMovement : MonoBehaviour
         if (_orbitalFollow == null)
             Debug.LogWarning("[PlayerMovement] CinemachineOrbitalFollow not found on freeLookCamera. " +
                              "Aim-exit yaw sync will not work.");
-
-        _baseWalkSpeed   = walkSpeed;
-        _baseSprintSpeed = sprintSpeed;
 
         freeLookCamera.Priority = activePriority;
         aimCamera.Priority      = defaultPriority;
@@ -172,6 +191,11 @@ public class PlayerMovement : MonoBehaviour
 
         float targetSpeed      = (canSprint ? sprintSpeed : walkSpeed) * weaponAimFraction;
         Vector3 targetVelocity = targetDirection * targetSpeed;
+
+        // Temporary debug — remove once movement is confirmed working
+        if (_moveInput.sqrMagnitude > 0.01f)
+            Debug.Log($"[PlayerMovement] moveInput:{_moveInput}  targetSpeed:{targetSpeed:F2}  " +
+                      $"walk:{walkSpeed:F2}  targetVel:{targetVelocity}");
         float accelRate        = targetDirection.sqrMagnitude > 0.01f ? acceleration : deceleration;
         float dot              = Vector3.Dot(_currentMoveVelocity.normalized, targetVelocity.normalized);
         float lerpRate         = dot < 0.5f ? 15f : accelRate;
