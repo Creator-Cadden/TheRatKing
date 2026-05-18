@@ -4,55 +4,73 @@ using UnityEngine.UI;
 using TMPro;
 
 /// <summary>
-/// Controls the death / game-over overlay.
-/// All cursor state goes through CursorManager.
+/// Death screen — references YOUR own Canvas hierarchy.
+/// No auto-building. Set up the UI however you want in the Editor,
+/// then drag the references in here.
 ///
-/// UI Hierarchy:
-///   Canvas  (Screen Space - Overlay, sort order 10)
-///   └── DeathScreenRoot          <- attach DeathScreen here
-///       ├── Backdrop             (Image, full-screen, black semi-transparent)
-///       ├── Panel                (Image, centered dark card)
-///       │   ├── TitleLabel       (TMP_Text "YOU DIED")
-///       │   ├── SubtitleLabel    (TMP_Text optional flavour)
-///       │   └── RetryButton      (Button -> TMP_Text child "RETRY")
-///       └── VignetteImage        (Image, full-screen, optional)
+/// Recommended hierarchy:
 ///
-/// Set autoBuiltLayout = true and the script builds the whole hierarchy at Start().
+///   Canvas (sort order 10, Screen Space Overlay)
+///   └── DeathScreenRoot          ← drag into deathMenuRoot
+///       ├── Backdrop             Image — full screen dark overlay
+///       └── Panel                Image — centered card
+///           ├── TitleLabel       TMP_Text  "YOU DIED"
+///           ├── SubtitleLabel    TMP_Text  flavour text
+///           ├── LevelInfoLabel   TMP_Text  last save info
+///           ├── RestartButton    Button    "RESTART LEVEL"
+///           ├── SettingsButton   Button    "SETTINGS"
+///           └── MenuButton       Button    "MAIN MENU"
+///
+/// IMPORTANT: deathMenuRoot must be ACTIVE in the Editor so child
+/// components initialize, then the script hides it at Start().
 /// </summary>
 [RequireComponent(typeof(CanvasGroup))]
 public class DeathScreen : MonoBehaviour
 {
-    [Header("References - leave null to auto-build")]
-    public Button   retryButton;
+    [Header("Root Panel")]
+    [Tooltip("Drag your DeathScreenRoot GameObject here. Must be active in Editor, hidden at runtime by Start().")]
+    public GameObject deathMenuRoot;
+
+    [Header("Labels")]
     public TMP_Text titleLabel;
     public TMP_Text subtitleLabel;
+    public TMP_Text levelInfoLabel;
+
+    [Header("Buttons")]
+    public Button restartButton;
+    public Button settingsButton;
+    public Button menuButton;
 
     [Header("Content")]
     public string titleText    = "YOU DIED";
     public string subtitleText = "The rats reclaim the dark.";
 
     [Header("Fade")]
-    public float fadeInDuration  = 0.6f;
-    public float fadeOutDuration = 0.35f;
-
-    [Header("Auto-build Layout")]
-    public bool autoBuiltLayout = true;
+    public float fadeInDuration  = 0.8f;
+    public float fadeOutDuration = 0.3f;
 
     private CanvasGroup _group;
     private Coroutine   _fadeRoutine;
-
-    // Cursor owner key
     private const string CURSOR_OWNER = "death";
+
+    // ─────────────────────────────────────────
 
     void Awake()
     {
         _group = GetComponent<CanvasGroup>();
 
-        if (autoBuiltLayout)
-            BuildLayout();
+        restartButton ?.onClick.AddListener(OnRestartClicked);
+        settingsButton?.onClick.AddListener(OnSettingsClicked);
+        menuButton    ?.onClick.AddListener(OnMenuClicked);
+    }
 
-        if (retryButton != null)
-            retryButton.onClick.AddListener(OnRetryClicked);
+    void Start()
+    {
+        // Hide at runtime — root must be active in Editor so children initialize
+        SetRootVisible(false);
+        _group.alpha          = 0f;
+        _group.interactable   = false;
+        _group.blocksRaycasts = false;
     }
 
     void OnDestroy()
@@ -60,43 +78,104 @@ public class DeathScreen : MonoBehaviour
         CursorManager.Release(CURSOR_OWNER);
     }
 
-    // ── Public API ────────────────────────────────────────────────────────────
+    // ─────────────────────────────────────────
+    // Public API — called by GameManager
+    // ─────────────────────────────────────────
 
     public void Show()
     {
-        gameObject.SetActive(true);
+        SetRootVisible(true);
         SetInteractable(true);
-        FadeTo(1f, fadeInDuration);
 
-        // Player died — we need the cursor so they can click Retry
+        // Fill static labels
+        if (titleLabel    != null) titleLabel.text    = titleText;
+        if (subtitleLabel != null) subtitleLabel.text = subtitleText;
+
+        // Fill last-save info
+        if (levelInfoLabel != null)
+            levelInfoLabel.text = BuildLevelInfoString();
+
+        FadeTo(1f, fadeInDuration);
         CursorManager.Request(CURSOR_OWNER);
     }
 
     public void Hide(bool instant)
     {
         SetInteractable(false);
-
-        // Release cursor before hiding — game is resuming
         CursorManager.Release(CURSOR_OWNER);
 
         if (instant)
         {
             StopAllCoroutines();
             _group.alpha = 0f;
-            gameObject.SetActive(false);
+            SetRootVisible(false);
         }
         else
         {
-            FadeTo(0f, fadeOutDuration, onComplete: () => gameObject.SetActive(false));
+            FadeTo(0f, fadeOutDuration, () => SetRootVisible(false));
         }
     }
 
-    // ── Private ───────────────────────────────────────────────────────────────
+    // ─────────────────────────────────────────
+    // Level info string
+    // ─────────────────────────────────────────
 
-    private void OnRetryClicked()
+    private string BuildLevelInfoString()
+    {
+        GameManager gm = GameManager.Instance;
+
+        if (gm == null || !gm.HasActiveGame || gm.ActiveSave == null)
+            return "Last save: unknown";
+
+        SaveData s       = gm.ActiveSave;
+        string saveName  = string.IsNullOrEmpty(s.saveName)
+                           ? "Save " + (gm.ActiveSlot + 1)
+                           : s.saveName;
+        string saveDate  = string.IsNullOrEmpty(s.saveDate) ? "unknown time" : s.saveDate;
+        string floor     = "Floor " + s.currentFloor;
+        string scene     = s.currentSceneName;
+
+        // e.g. "Last save: My Run  —  Floor 1  ·  lvl1  ·  May 13  14:32"
+        return "Last save: " + saveName
+             + "  —  " + floor + "  ·  " + scene
+             + "  ·  " + saveDate;
+    }
+
+    // ─────────────────────────────────────────
+    // Button callbacks
+    // ─────────────────────────────────────────
+
+    private void OnRestartClicked()
     {
         SetInteractable(false);
-        GameManager.Instance?.ResetToCheckpoint();  // was Retry()
+        Hide(instant: false);
+        GameManager.Instance?.ResetToCheckpoint();
+    }
+
+    private void OnSettingsClicked()
+    {
+        // Wire to your settings panel when ready
+        Debug.Log("[DeathScreen] Settings clicked — wire to your settings panel.");
+    }
+
+    private void OnMenuClicked()
+    {
+        SetInteractable(false);
+        Hide(instant: true);
+        GameManager.Instance?.ReturnToMainMenu();
+    }
+
+    // ─────────────────────────────────────────
+    // Helpers
+    // ─────────────────────────────────────────
+
+    private void SetRootVisible(bool visible)
+    {
+        if (deathMenuRoot != null)
+            deathMenuRoot.SetActive(visible);
+        else
+            Debug.LogWarning("[DeathScreen] deathMenuRoot is null — " +
+                             "drag your DeathScreenRoot into the Inspector.");
     }
 
     private void SetInteractable(bool state)
@@ -104,8 +183,6 @@ public class DeathScreen : MonoBehaviour
         _group.interactable   = state;
         _group.blocksRaycasts = state;
     }
-
-    // ── Fade ──────────────────────────────────────────────────────────────────
 
     private void FadeTo(float target, float duration, System.Action onComplete = null)
     {
@@ -117,116 +194,13 @@ public class DeathScreen : MonoBehaviour
     {
         float start   = _group.alpha;
         float elapsed = 0f;
-
         while (elapsed < duration)
         {
             elapsed      += Time.unscaledDeltaTime;
             _group.alpha  = Mathf.Lerp(start, target, elapsed / duration);
             yield return null;
         }
-
         _group.alpha = target;
         onComplete?.Invoke();
-    }
-
-    // ── Auto-build Layout ─────────────────────────────────────────────────────
-
-    private void BuildLayout()
-    {
-        GameObject backdropGO = CreateUIObject("Backdrop", transform);
-        Image backdrop        = backdropGO.AddComponent<Image>();
-        backdrop.color        = new Color(0f, 0f, 0f, 0.82f);
-        StretchFull(backdropGO.GetComponent<RectTransform>());
-
-        GameObject panelGO    = CreateUIObject("Panel", transform);
-        Image panelImg        = panelGO.AddComponent<Image>();
-        panelImg.color        = new Color(0.05f, 0.03f, 0.03f, 0.95f);
-
-        RectTransform panelRt    = panelGO.GetComponent<RectTransform>();
-        panelRt.anchorMin        = new Vector2(0.5f, 0.5f);
-        panelRt.anchorMax        = new Vector2(0.5f, 0.5f);
-        panelRt.pivot            = new Vector2(0.5f, 0.5f);
-        panelRt.sizeDelta        = new Vector2(480f, 320f);
-        panelRt.anchoredPosition = Vector2.zero;
-
-        GameObject titleGO    = CreateUIObject("TitleLabel", panelGO.transform);
-        titleLabel            = titleGO.AddComponent<TextMeshProUGUI>();
-        titleLabel.text       = titleText;
-        titleLabel.fontSize   = 64f;
-        titleLabel.fontStyle  = FontStyles.Bold;
-        titleLabel.alignment  = TextAlignmentOptions.Center;
-        titleLabel.color      = new Color(0.85f, 0.12f, 0.12f, 1f);
-
-        RectTransform titleRt = titleGO.GetComponent<RectTransform>();
-        titleRt.anchorMin     = new Vector2(0f, 0.55f);
-        titleRt.anchorMax     = new Vector2(1f, 0.9f);
-        titleRt.offsetMin     = new Vector2(20f, 0f);
-        titleRt.offsetMax     = new Vector2(-20f, 0f);
-
-        if (!string.IsNullOrEmpty(subtitleText))
-        {
-            GameObject subGO       = CreateUIObject("SubtitleLabel", panelGO.transform);
-            subtitleLabel          = subGO.AddComponent<TextMeshProUGUI>();
-            subtitleLabel.text     = subtitleText;
-            subtitleLabel.fontSize = 18f;
-            subtitleLabel.fontStyle  = FontStyles.Italic;
-            subtitleLabel.alignment  = TextAlignmentOptions.Center;
-            subtitleLabel.color    = new Color(0.65f, 0.55f, 0.55f, 1f);
-
-            RectTransform subRt   = subGO.GetComponent<RectTransform>();
-            subRt.anchorMin       = new Vector2(0f, 0.38f);
-            subRt.anchorMax       = new Vector2(1f, 0.55f);
-            subRt.offsetMin       = new Vector2(20f, 0f);
-            subRt.offsetMax       = new Vector2(-20f, 0f);
-        }
-
-        GameObject btnGO   = CreateUIObject("RetryButton", panelGO.transform);
-        retryButton        = btnGO.AddComponent<Button>();
-        Image btnImg       = btnGO.AddComponent<Image>();
-        btnImg.color       = new Color(0.72f, 0.08f, 0.08f, 1f);
-
-        ColorBlock cb         = retryButton.colors;
-        cb.normalColor        = new Color(0.72f, 0.08f, 0.08f, 1f);
-        cb.highlightedColor   = new Color(0.88f, 0.15f, 0.15f, 1f);
-        cb.pressedColor       = new Color(0.50f, 0.05f, 0.05f, 1f);
-        cb.selectedColor      = cb.normalColor;
-        cb.fadeDuration       = 0.1f;
-        retryButton.colors    = cb;
-        retryButton.targetGraphic = btnImg;
-
-        RectTransform btnRt      = btnGO.GetComponent<RectTransform>();
-        btnRt.anchorMin          = new Vector2(0.5f, 0f);
-        btnRt.anchorMax          = new Vector2(0.5f, 0f);
-        btnRt.pivot              = new Vector2(0.5f, 0.5f);
-        btnRt.sizeDelta          = new Vector2(200f, 52f);
-        btnRt.anchoredPosition   = new Vector2(0f, 32f);
-
-        GameObject btnTextGO = CreateUIObject("Label", btnGO.transform);
-        TMP_Text btnText     = btnTextGO.AddComponent<TextMeshProUGUI>();
-        btnText.text         = "RETRY";
-        btnText.fontSize     = 22f;
-        btnText.fontStyle    = FontStyles.Bold;
-        btnText.alignment    = TextAlignmentOptions.Center;
-        btnText.color        = Color.white;
-        StretchFull(btnTextGO.GetComponent<RectTransform>());
-
-        retryButton.onClick.RemoveAllListeners();
-        retryButton.onClick.AddListener(OnRetryClicked);
-    }
-
-    private static GameObject CreateUIObject(string name, Transform parent)
-    {
-        GameObject go = new GameObject(name);
-        go.transform.SetParent(parent, false);
-        go.AddComponent<RectTransform>();
-        return go;
-    }
-
-    private static void StretchFull(RectTransform rt)
-    {
-        rt.anchorMin = Vector2.zero;
-        rt.anchorMax = Vector2.one;
-        rt.offsetMin = Vector2.zero;
-        rt.offsetMax = Vector2.zero;
     }
 }

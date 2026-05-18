@@ -216,8 +216,9 @@ public class MainMenuUI : MonoBehaviour
         if (loadGameButton != null)
             loadGameButton.interactable = _anySaveExists;
 
-        if (loadGameLabel != null)
-            loadGameLabel.color = _anySaveExists ? normalTextColor : disabledTextColor;
+        // Don't touch the label color — let Unity's button interactable
+        // color block handle the visual state. This avoids the text
+        // going white or invisible against the button background.
     }
 
     // ═════════════════════════════════════════════════════════════
@@ -232,21 +233,34 @@ public class MainMenuUI : MonoBehaviour
         {
             SaveData d = SaveSystem.Load(i);
 
-            if (d.hasData)
+            if (slotNameLabels[i] == null)
+                Debug.LogWarning($"[MainMenuUI] slotNameLabels[{i}] is null — " +
+                                 "drag the TMP_Text into the slot in the Inspector.");
+            if (slotSubLabels[i] == null)
+                Debug.LogWarning($"[MainMenuUI] slotSubLabels[{i}] is null — " +
+                                 "drag the TMP_Text into the slot in the Inspector.");
+
+            if (d != null && d.hasData)
             {
-                string name = string.IsNullOrEmpty(d.saveName)
-                    ? $"Save {i + 1}"
+                string saveName = string.IsNullOrEmpty(d.saveName)
+                    ? ("Save " + (i + 1))
                     : d.saveName;
 
-                SetLabel(slotNameLabels[i],
-                    $"{name}  —  Floor {d.currentFloor}  Lv{d.currentLevel}");
-                SetLabel(slotSubLabels[i],
-                    $"{d.saveDate}   {FormatTime(d.totalPlayTime)}");
+                string floor = "Floor " + d.currentFloor;
+                string lv    = "Lv " + d.currentLevel;
+                string time  = FormatTime(d.totalPlayTime);
+
+                SetLabel(slotNameLabels[i], saveName + "  —  " + floor + "  " + lv);
+                SetLabel(slotSubLabels[i],  d.saveDate + "   " + time);
+
+                Debug.Log($"[MainMenuUI] Slot {i}: '{saveName}' floor:{d.currentFloor} lv:{d.currentLevel}");
             }
             else
             {
-                SetLabel(slotNameLabels[i], $"— Empty Slot {i + 1} —");
+                SetLabel(slotNameLabels[i], "— Empty Slot " + (i + 1) + " —");
                 SetLabel(slotSubLabels[i],  "Click to start a new game");
+
+                Debug.Log($"[MainMenuUI] Slot {i}: empty");
             }
         }
 

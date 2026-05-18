@@ -527,7 +527,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: Button
+  m_text: BACK
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
   m_sharedMaterial: {fileID: 2180264, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
@@ -1226,9 +1226,9 @@ MonoBehaviour:
   - {fileID: 1450200444}
   - {fileID: 1545075485}
   slotNameLabels:
-  - {fileID: 903658382}
-  - {fileID: 1223810967}
-  - {fileID: 872584572}
+  - {fileID: 1939331031}
+  - {fileID: 1752705718}
+  - {fileID: 789718159}
   slotSubLabels:
   - {fileID: 903658382}
   - {fileID: 1223810967}

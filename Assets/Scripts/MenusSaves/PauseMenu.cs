@@ -21,6 +21,7 @@ public class PauseMenu : MonoBehaviour
 
     [Header("Labels")]
     public TMP_Text titleLabel;
+    public TMP_Text levelInfoLabel;
 
     [Header("Buttons")]
     public Button resetButton;   // "Reset to Checkpoint"
@@ -82,6 +83,27 @@ public class PauseMenu : MonoBehaviour
     }
 
     // ── Callbacks ─────────────────────────────────────────────────
+
+    private string BuildLevelInfoString()
+    {
+        GameManager gm = GameManager.Instance;
+
+        if (gm == null || !gm.HasActiveGame || gm.ActiveSave == null)
+            return "Last save: unknown";
+
+        SaveData s       = gm.ActiveSave;
+        string saveName  = string.IsNullOrEmpty(s.saveName)
+                           ? "Save " + (gm.ActiveSlot + 1)
+                           : s.saveName;
+        string saveDate  = string.IsNullOrEmpty(s.saveDate) ? "unknown time" : s.saveDate;
+        string floor     = "Floor " + s.currentFloor;
+        string scene     = s.currentSceneName;
+
+        // e.g. "Last save: My Run  —  Floor 1  ·  lvl1  ·  May 13  14:32"
+        return "Last save: " + saveName
+             + "  —  " + floor + "  ·  " + scene
+             + "  ·  " + saveDate;
+    }
 
     private void OnReset()
     {
