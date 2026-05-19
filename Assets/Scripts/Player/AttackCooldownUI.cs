@@ -3,23 +3,23 @@ using UnityEngine.UI;
 
 /// <summary>
 /// Minecraft-style attack cooldown indicator.
-/// Shows a small sword icon with a fill bar that sweeps up from empty to full
-/// as the attack cooldown recharges. Fades out when fully charged.
+/// Supports both basic attack and jump attack bars on the same component.
 ///
 /// Setup:
-///   1. Create a Canvas child GameObject named "AttackCooldownHUD"
-///   2. Add these children:
-///        Icon       (Image — your sword/weapon sprite, or leave default)
-///        FillBar    (Image — Type: Filled, Fill Method: Vertical, Origin: Bottom)
-///        Background (Image — dark backing behind the fill)
-///   3. Attach this script and assign the references
-///   4. Position near bottom-center of screen
+///   Basic attack bar:
+///     Icon        (Image — sword/weapon sprite)
+///     FillBar     (Image — Type: Filled, Vertical, Origin: Bottom)
+///     Background  (Image — dark backing)
 ///
-/// The indicator:
-///   - Fades IN the moment you attack (cooldown starts)
-///   - Fill sweeps upward as cooldown recharges (like Minecraft sword)
-///   - Fades OUT once fully charged and fade delay passes
-///   - Tints the icon darker while on cooldown, white when ready
+///   Jump attack bar (optional — leave null to disable):
+///     JumpIcon        (Image)
+///     JumpFillBar     (Image — Type: Filled, Vertical, Origin: Bottom)
+///     JumpBackground  (Image)
+///
+/// Both bars:
+///   - Fade IN when the attack is used
+///   - Fill sweeps upward as cooldown recharges
+///   - Fade OUT once fully charged after fadeOutDelay
 /// </summary>
 public class AttackCooldownHUD : MonoBehaviour
 {
@@ -27,41 +27,42 @@ public class AttackCooldownHUD : MonoBehaviour
     [Tooltip("Leave null to auto-find by Player tag.")]
     public PlayerCombat playerCombat;
 
+    [Header("Basic Attack Bar")]
     public Image iconImage;
     public Image fillImage;
     public Image backgroundImage;
 
-    [Header("Appearance")]
-    [Tooltip("Color of the fill bar while recharging.")]
-    public Color fillColor       = new Color(0.95f, 0.90f, 0.55f, 1f);  // warm yellow like Minecraft
-    [Tooltip("Color of the fill bar when fully charged.")]
-    public Color fillReadyColor  = new Color(1f,    1f,    1f,    1f);
-    [Tooltip("Icon tint while on cooldown.")]
-    public Color iconCooldown    = new Color(0.45f, 0.45f, 0.45f, 1f);
-    [Tooltip("Icon tint when fully charged.")]
-    public Color iconReady       = new Color(1f,    1f,    1f,    1f);
+    [Header("Jump Attack Bar (leave null to disable)")]
+    public Image jumpIconImage;
+    public Image jumpFillImage;
+    public Image jumpBackgroundImage;
 
-    public Color backgroundColor = new Color(0f, 0f, 0f, 0.55f);
+    [Header("Appearance")]
+    public Color fillColor       = new Color(0.95f, 0.90f, 0.55f, 1f);
+    public Color fillReadyColor  = new Color(1f,    1f,    1f,    1f);
+    public Color jumpFillColor   = new Color(0.55f, 0.80f, 0.95f, 1f);  // blue tint for jump
+    public Color iconCooldown    = new Color(0.45f, 0.45f, 0.45f, 1f);
+    public Color iconReady       = new Color(1f,    1f,    1f,    1f);
+    public Color backgroundColor = new Color(0f,    0f,    0f,    0.55f);
 
     [Header("Fade")]
-    [Tooltip("Seconds after reaching full charge before the HUD fades out.")]
     public float fadeOutDelay = 0.6f;
     public float fadeInSpeed  = 12f;
     public float fadeOutSpeed = 4f;
 
-    [Header("Size")]
-    public Vector2 barSize  = new Vector2(12f, 40f);
-    public Vector2 iconSize = new Vector2(28f, 28f);
-
     // ── Private ──
-    private float _currentAlpha  = 0f;
-    private float _readySince    = -999f;
-    private bool  _wasReady      = true;
+    private float _basicAlpha    = 0f;
+    private float _jumpAlpha     = 0f;
+    private float _basicReady    = -999f;
+    private float _jumpReady     = -999f;
+    private bool  _wasBasicReady = true;
+    private bool  _wasJumpReady  = true;
     private bool  _initialized   = false;
 
     private static Sprite _squareSprite;
 
     // ─────────────────────────────────────────
+
     void Start()
     {
         if (playerCombat == null)
@@ -76,8 +77,11 @@ public class AttackCooldownHUD : MonoBehaviour
             return;
         }
 
-        SetupFillImage();
-        SetAlpha(0f);
+        SetupFillBar(fillImage, backgroundImage);
+        SetupFillBar(jumpFillImage, jumpBackgroundImage);
+
+        SetBasicAlpha(0f);
+        SetJumpAlpha(0f);
         _initialized = true;
     }
 
@@ -85,76 +89,97 @@ public class AttackCooldownHUD : MonoBehaviour
     {
         if (!_initialized || playerCombat == null) return;
 
-        float progress = playerCombat.AttackCooldownProgress; // 0 = just attacked, 1 = ready
-        bool  isReady  = progress >= 1f;
+        UpdateBar(
+            playerCombat.AttackCooldownProgress,
+            fillColor,
+            fillImage, backgroundImage, iconImage,
+            ref _basicAlpha, ref _basicReady, ref _wasBasicReady);
 
-        // Track when we first became ready so we can delay the fade-out
-        if (isReady && !_wasReady)
-            _readySince = Time.time;
-        _wasReady = isReady;
-
-        // Update fill
-        if (fillImage != null)
-        {
-            fillImage.fillAmount = progress;
-            fillImage.color      = Color.Lerp(fillColor, fillReadyColor, progress);
-        }
-
-        // Tint icon
-        if (iconImage != null)
-            iconImage.color = Color.Lerp(iconCooldown, iconReady, progress);
-
-        // Fade logic — show while on cooldown, hide after fully charged + delay
-        bool shouldHide = isReady && Time.time >= _readySince + fadeOutDelay;
-        float target    = shouldHide ? 0f : 1f;
-        float speed     = target > _currentAlpha ? fadeInSpeed : fadeOutSpeed;
-
-        _currentAlpha = Mathf.MoveTowards(_currentAlpha, target, speed * Time.deltaTime);
-        SetAlpha(_currentAlpha);
+        UpdateBar(
+            playerCombat.JumpAttackCooldownProgress,
+            jumpFillColor,
+            jumpFillImage, jumpBackgroundImage, jumpIconImage,
+            ref _jumpAlpha, ref _jumpReady, ref _wasJumpReady);
     }
 
     // ─────────────────────────────────────────
 
-    private void SetupFillImage()
+    private void UpdateBar(
+        float progress, Color barColor,
+        Image fill, Image bg, Image icon,
+        ref float alpha, ref float readySince, ref bool wasReady)
     {
-        if (fillImage == null) return;
+        if (fill == null) return;
 
-        // Force correct fill settings — vertical bottom-to-top sweep like Minecraft
-        fillImage.type       = Image.Type.Filled;
-        fillImage.fillMethod = Image.FillMethod.Vertical;
-        fillImage.fillOrigin = (int)Image.OriginVertical.Bottom;
+        bool isReady = progress >= 1f;
 
-        if (fillImage.sprite == null)
-            fillImage.sprite = GetSquareSprite();
+        if (isReady && !wasReady) readySince = Time.time;
+        wasReady = isReady;
 
-        if (backgroundImage != null)
+        fill.fillAmount = progress;
+        fill.color      = Color.Lerp(barColor, fillReadyColor, progress);
+
+        if (icon != null)
+            icon.color = Color.Lerp(iconCooldown, iconReady, progress);
+
+        bool  shouldHide = isReady && Time.time >= readySince + fadeOutDelay;
+        float target     = shouldHide ? 0f : 1f;
+        float speed      = target > alpha ? fadeInSpeed : fadeOutSpeed;
+        alpha = Mathf.MoveTowards(alpha, target, speed * Time.deltaTime);
+
+        // Apply alpha to all three images
+        SetImageAlpha(fill, alpha);
+        SetImageAlpha(icon, alpha);
+        if (bg != null)
         {
-            if (backgroundImage.sprite == null)
-                backgroundImage.sprite = GetSquareSprite();
-            backgroundImage.color = backgroundColor;
+            Color c = backgroundColor;
+            c.a = alpha * backgroundColor.a;
+            bg.color = c;
         }
     }
 
-    private void SetAlpha(float a)
+    private void SetBasicAlpha(float a)
     {
-        _currentAlpha = a;
-
-        if (fillImage != null)
-        {
-            Color c = fillImage.color; c.a = a;
-            fillImage.color = c;
-        }
-
+        _basicAlpha = a;
+        SetImageAlpha(fillImage, a);
+        SetImageAlpha(iconImage, a);
         if (backgroundImage != null)
         {
             Color c = backgroundColor; c.a = a * backgroundColor.a;
             backgroundImage.color = c;
         }
+    }
 
-        if (iconImage != null)
+    private void SetJumpAlpha(float a)
+    {
+        _jumpAlpha = a;
+        SetImageAlpha(jumpFillImage, a);
+        SetImageAlpha(jumpIconImage, a);
+        if (jumpBackgroundImage != null)
         {
-            Color c = iconImage.color; c.a = a;
-            iconImage.color = c;
+            Color c = backgroundColor; c.a = a * backgroundColor.a;
+            jumpBackgroundImage.color = c;
+        }
+    }
+
+    private static void SetImageAlpha(Image img, float a)
+    {
+        if (img == null) return;
+        Color c = img.color; c.a = a; img.color = c;
+    }
+
+    private static void SetupFillBar(Image fill, Image bg)
+    {
+        if (fill != null)
+        {
+            fill.type       = Image.Type.Filled;
+            fill.fillMethod = Image.FillMethod.Vertical;
+            fill.fillOrigin = (int)Image.OriginVertical.Bottom;
+            if (fill.sprite == null) fill.sprite = GetSquareSprite();
+        }
+        if (bg != null)
+        {
+            if (bg.sprite == null) bg.sprite = GetSquareSprite();
         }
     }
 

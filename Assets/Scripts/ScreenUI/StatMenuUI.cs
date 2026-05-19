@@ -3,22 +3,6 @@ using UnityEngine.UI;
 using TMPro;
 using UnityEngine.InputSystem;
 
-/// <summary>
-/// Tab-toggled stat screen for the player.
-/// All cursor state goes through CursorManager.
-///
-/// IMPORTANT: statMenuRoot must be ACTIVE in the Editor.
-/// The script hides it at runtime in Start(). If it starts inactive,
-/// child TMP/Image components never initialize and label refs will be null.
-///
-/// Input setup:
-///   1. Add a "StatMenu" Button action bound to Tab in your Input Action Asset.
-///   2. Drag that action into the [Toggle Action] field in the Inspector.
-///
-/// Plus buttons:
-///   Drag each + Button component (not the GameObject) into the matching slot.
-///   The script wires OnClick automatically — no manual Inspector event setup needed.
-/// </summary>
 public class StatMenuUI : MonoBehaviour
 {
     // =========================================================================
@@ -38,7 +22,6 @@ public class StatMenuUI : MonoBehaviour
     public TMP_Text levelLabel;
 
     [Header("XP Bar")]
-    [Tooltip("Script forces Image.Type.Filled at runtime so fillAmount works.")]
     public Image    xpFillImage;
     public TMP_Text xpLabel;
 
@@ -50,7 +33,6 @@ public class StatMenuUI : MonoBehaviour
     public TMP_Text toughnessValueLabel;
 
     [Header("Plus Buttons — drag the Button component, not the GameObject")]
-    [Tooltip("Script wires OnClick automatically. No Inspector event setup needed.")]
     public Button healthPlusButton;
     public Button strengthPlusButton;
     public Button staminaPlusButton;
@@ -59,8 +41,20 @@ public class StatMenuUI : MonoBehaviour
     [Header("Points Label")]
     public TMP_Text pointsAvailableLabel;
 
+    [Header("Side Panel — Damage")]
+    [Tooltip("Shows flat damage output for current weapon + Strength. e.g. '20'")]
+    public TMP_Text damageValueLabel;
+
+    [Header("Side Panel — Speed")]
+    [Tooltip("Shows walk speed in m/s. e.g. '6.0 m/s'")]
+    public TMP_Text moveSpeedLabel;
+    [Tooltip("Shows attack cooldown in seconds. e.g. '1.0s'")]
+    public TMP_Text attackSpeedLabel;
+
+    [Header("Damage Preview")]
+    [Tooltip("Label showing current weapon damage output based on Strength + weapon multiplier.")]
+
     [Header("Input")]
-    [Tooltip("Drag your 'StatMenu' InputActionReference here.")]
     public InputActionReference toggleAction;
 
     // =========================================================================
@@ -78,7 +72,6 @@ public class StatMenuUI : MonoBehaviour
 
     void Awake()
     {
-        // Wire input early so Tab works regardless of active state
         if (toggleAction != null)
         {
             toggleAction.action.performed += OnTogglePerformed;
@@ -86,11 +79,9 @@ public class StatMenuUI : MonoBehaviour
         }
         else
         {
-            Debug.LogWarning("[StatMenuUI] No toggleAction assigned. Drag your 'StatMenu' " +
-                             "InputActionReference into the Toggle Action field.");
+            Debug.LogWarning("[StatMenuUI] No toggleAction assigned.");
         }
 
-        // Auto-find player components
         if (playerStats == null || xpSystem == null)
         {
             GameObject player = GameObject.FindWithTag("Player");
@@ -107,14 +98,11 @@ public class StatMenuUI : MonoBehaviour
 
     void Start()
     {
-        // ── Wire button clicks in code so nothing needs setting up in Inspector ──
-        // This is why the fields are Button not GameObject — AddListener needs it.
         if (healthPlusButton   != null) healthPlusButton  .onClick.AddListener(OnSpendHealth);
         if (strengthPlusButton != null) strengthPlusButton.onClick.AddListener(OnSpendStrength);
         if (staminaPlusButton  != null) staminaPlusButton .onClick.AddListener(OnSpendStamina);
         if (speedPlusButton    != null) speedPlusButton   .onClick.AddListener(OnSpendSpeed);
 
-        // Force correct fill type — fillAmount is silently ignored on Simple images
         if (xpFillImage != null)
         {
             xpFillImage.type       = Image.Type.Filled;
@@ -122,7 +110,6 @@ public class StatMenuUI : MonoBehaviour
             xpFillImage.fillOrigin = (int)Image.OriginHorizontal.Left;
         }
 
-        // Subscribe to XP/level events for live refresh while menu is open
         if (xpSystem != null)
         {
             xpSystem.onXPGained.AddListener(OnXPGained);
@@ -130,13 +117,10 @@ public class StatMenuUI : MonoBehaviour
             xpSystem.onStatPointSpent.AddListener(OnStatPointSpent);
         }
 
-        // Subscribe to stat changes (weapon swaps, resets, etc.)
         if (playerStats != null)
             playerStats.onStatsChanged.AddListener(RefreshIfOpen);
 
         _initialized = true;
-
-        // Hide on first frame — root must be active in Editor so children init
         SetMenuVisible(false);
     }
 
@@ -158,7 +142,6 @@ public class StatMenuUI : MonoBehaviour
         if (playerStats != null)
             playerStats.onStatsChanged.RemoveListener(RefreshIfOpen);
 
-        // Remove button listeners to avoid ghost callbacks after destroy
         if (healthPlusButton   != null) healthPlusButton  .onClick.RemoveListener(OnSpendHealth);
         if (strengthPlusButton != null) strengthPlusButton.onClick.RemoveListener(OnSpendStrength);
         if (staminaPlusButton  != null) staminaPlusButton .onClick.RemoveListener(OnSpendStamina);
@@ -173,11 +156,9 @@ public class StatMenuUI : MonoBehaviour
 
     private void OnTogglePerformed(InputAction.CallbackContext ctx)
     {
-        if (ctx.phase == InputActionPhase.Performed)
-            ToggleMenu();
+        if (ctx.phase == InputActionPhase.Performed) ToggleMenu();
     }
 
-    // Fallback if PlayerInput Send Messages somehow reaches this object
     public void OnStatMenu(InputValue value)
     {
         if (value.isPressed) ToggleMenu();
@@ -200,15 +181,12 @@ public class StatMenuUI : MonoBehaviour
         if (statMenuRoot != null)
             statMenuRoot.SetActive(visible);
         else
-            Debug.LogWarning("[StatMenuUI] statMenuRoot is null — assign it in the Inspector.");
+            Debug.LogWarning("[StatMenuUI] statMenuRoot is null.");
 
-        if (visible)
-            CursorManager.Request(CURSOR_OWNER);
-        else
-            CursorManager.Release(CURSOR_OWNER);
+        if (visible) CursorManager.Request(CURSOR_OWNER);
+        else         CursorManager.Release(CURSOR_OWNER);
 
-        if (visible && _initialized)
-            RefreshAll();
+        if (visible && _initialized) RefreshAll();
     }
 
     private void RefreshIfOpen()
@@ -250,18 +228,14 @@ public class StatMenuUI : MonoBehaviour
             ? Mathf.Clamp01((float)xpSystem.CurrentXP / xpSystem.XPToNextLevel)
             : 1f;
 
-        if (xpFillImage != null)
-            xpFillImage.fillAmount = ratio;
-
-        if (xpLabel != null)
-            xpLabel.text = $"{xpSystem.CurrentXP} / {xpSystem.XPToNextLevel} XP";
+        if (xpFillImage != null) xpFillImage.fillAmount = ratio;
+        if (xpLabel != null)     xpLabel.text = $"{xpSystem.CurrentXP} / {xpSystem.XPToNextLevel} XP";
     }
 
     private void RefreshStats()
     {
         if (playerStats == null) return;
 
-        // Health shows current / max so the player always knows their ceiling
         SetLabel(healthValueLabel,    $"{playerStats.CurrentHealth} / {playerStats.MaxHealth}");
         SetLabel(strengthValueLabel,  playerStats.Strength.ToString());
         SetLabel(staminaValueLabel,   $"{playerStats.CurrentStamina} / {playerStats.MaxStamina}");
@@ -269,6 +243,8 @@ public class StatMenuUI : MonoBehaviour
         SetLabel(toughnessValueLabel, playerStats.Toughness.ToString());
     }
 
+    /// <summary>
+    /// Shows the player exactly what damage they will deal with their current
     private void RefreshPlusButtons()
     {
         bool hasPoints = xpSystem != null && xpSystem.UnspentPoints > 0;
@@ -277,7 +253,6 @@ public class StatMenuUI : MonoBehaviour
         SetButtonActive(strengthPlusButton, hasPoints);
         SetButtonActive(staminaPlusButton,  hasPoints);
         SetButtonActive(speedPlusButton,    hasPoints);
-        // Toughness has no + button — weapon-driven, not leveled
     }
 
     private void RefreshPointsLabel()
@@ -288,7 +263,7 @@ public class StatMenuUI : MonoBehaviour
     }
 
     // =========================================================================
-    // BUTTON CALLBACKS — wired in Start(), do not need Inspector OnClick setup
+    // BUTTON CALLBACKS
     // =========================================================================
 
     private void OnSpendHealth()   => SpendPoint("health");
@@ -298,19 +273,83 @@ public class StatMenuUI : MonoBehaviour
 
     private void SpendPoint(string stat)
     {
-        if (xpSystem == null)
+        if (xpSystem == null) return;
+        if (xpSystem.SpendPoint(stat)) RefreshAll();
+    }
+
+    // =========================================================================
+    // STAT PREVIEWS
+    // =========================================================================
+
+    private void RefreshPreviews()
+    {
+        RefreshDamagePreview();
+        RefreshMoveSpeedPreview();
+        RefreshAttackSpeedPreview();
+    }
+
+    /// <summary>
+    /// Flat damage number for the current weapon and Strength.
+    /// Blade/Hammer: Strength x multiplier.
+    /// Bow: shows "X  /  Y charged" for normal and aimed shot.
+    /// </summary>
+    private void RefreshDamagePreview()
+    {
+        if (damageValueLabel == null || playerStats == null ||
+            playerStats.playerStatBlock == null) return;
+
+        var sb  = playerStats.playerStatBlock;
+        int str = playerStats.Strength;
+
+        string text;
+        switch (playerStats.EquippedWeapon)
         {
-            Debug.LogError("[StatMenuUI] xpSystem is null — cannot spend point.");
-            return;
+            case EntityStats.WeaponType.Blade:
+                text = (str * sb.bladeStrengthMultiplier).ToString();
+                break;
+            case EntityStats.WeaponType.Hammer:
+                text = (str * sb.hammerStrengthMultiplier).ToString();
+                break;
+            case EntityStats.WeaponType.Bow:
+                int normal  = str * sb.bowStrengthMultiplier;
+                int charged = Mathf.RoundToInt(normal * sb.bowChargedMultiplier);
+                text = normal + "  /  " + charged;
+                break;
+            default:
+                text = "0";
+                break;
         }
 
-        bool spent = xpSystem.SpendPoint(stat);
+        damageValueLabel.text = text;
+    }
 
-        if (spent)
-        {
-            Debug.Log($"[StatMenuUI] Spent point on {stat}.");
-            RefreshAll();
-        }
+    /// <summary>
+    /// Walk speed in m/s pulled directly from PlayerMovement.
+    /// Reflects Speed stat bonuses and hammer penalty automatically.
+    /// </summary>
+    private void RefreshMoveSpeedPreview()
+    {
+        if (moveSpeedLabel == null || playerStats == null) return;
+
+        // Read live walkSpeed from PlayerMovement — already has stat bonuses applied
+        PlayerMovement pm = playerStats.GetComponent<PlayerMovement>();
+        if (pm == null) { moveSpeedLabel.text = "--"; return; }
+
+        moveSpeedLabel.text = pm.walkSpeed.ToString("F1") + " m/s";
+    }
+
+    /// <summary>
+    /// Attack cooldown in seconds from PlayerCombat.
+    /// Decreases with Speed stat, doubles with Hammer.
+    /// </summary>
+    private void RefreshAttackSpeedPreview()
+    {
+        if (attackSpeedLabel == null || playerStats == null) return;
+
+        PlayerCombat pc = playerStats.GetComponent<PlayerCombat>();
+        if (pc == null) { attackSpeedLabel.text = "--"; return; }
+
+        attackSpeedLabel.text = pc.CurrentAttackCooldown.ToString("F2") + "s";
     }
 
     // =========================================================================
@@ -322,7 +361,6 @@ public class StatMenuUI : MonoBehaviour
         if (label != null) label.text = text;
     }
 
-    // Hides/shows the button's GameObject via the Button component reference
     private static void SetButtonActive(Button btn, bool active)
     {
         if (btn != null) btn.gameObject.SetActive(active);

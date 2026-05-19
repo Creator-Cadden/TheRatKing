@@ -319,6 +319,12 @@ public class PlayerCombat : MonoBehaviour
 
     public float CurrentAttackCooldown => _currentAttackCooldown;
 
+    // Jump attack cooldown progress — 0 = just used, 1 = ready
+    public float JumpAttackCooldownProgress =>
+        Mathf.Clamp01((Time.time - _lastJumpAttackTime) / jumpAttackCooldown);
+
+    public float JumpAttackCooldown => jumpAttackCooldown;
+
     // ─────────────────────────────────────────
     // Gizmos
     // ─────────────────────────────────────────
