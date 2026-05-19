@@ -19,7 +19,7 @@ public class PlayerCombat : MonoBehaviour
 
     [Header("Jump Attack")]
     public float jumpAttackRadius   = 3.5f;
-    public float jumpAttackAngle    = 90f;
+    public float jumpAttackAngle    = 180f; // needs to be 180 for soem reason
     // Jump attack is a full 360 spin — no angle field needed, hits everything in radius
     public float jumpAttackCooldown = 1.2f;
     public float jumpAttackHeight   = 1.2f;
@@ -213,48 +213,9 @@ public class PlayerCombat : MonoBehaviour
     private void StartJumpSpin()
     {
         if (jumpSpinVisual == null) return;
-        if (_jumpSpinRoutine != null) StopCoroutine(_jumpSpinRoutine);
-        _jumpSpinRoutine = StartCoroutine(JumpSpinRoutine());
+        
     }
 
-    private System.Collections.IEnumerator JumpSpinRoutine()
-    {
-        Quaternion startLocalRot = jumpSpinVisual.localRotation;
-        float elapsed = 0f;
-
-        // ── Phase 1: Spin ─────────────────────────────────────────────
-        while (elapsed < jumpSpinDuration)
-        {
-            elapsed += Time.deltaTime;
-            float t     = Mathf.Clamp01(elapsed / jumpSpinDuration);
-            float angle = jumpSpinDegrees * t;
-
-            jumpSpinVisual.localRotation = startLocalRot
-                * Quaternion.Euler(0f, 0f, -90f)
-                * Quaternion.Euler(0f, angle, 0f);
-
-            yield return null;
-        }
-
-        // ── Phase 2: Ease back to normal stance ───────────────────────
-        // The rat finished the spin still tilted on its side.
-        // Smoothly slerp from the end-of-spin rotation back to startLocalRot
-        // so it doesn't snap instantly upright.
-        float recoverDuration = 0.1f;
-        float recoverElapsed  = 0f;
-        Quaternion spinEndRot = jumpSpinVisual.localRotation;
-
-        while (recoverElapsed < recoverDuration)
-        {
-            recoverElapsed += Time.deltaTime;
-            float t = Mathf.SmoothStep(0f, 1f, recoverElapsed / recoverDuration);
-            jumpSpinVisual.localRotation = Quaternion.Slerp(spinEndRot, startLocalRot, t);
-            yield return null;
-        }
-
-        jumpSpinVisual.localRotation = startLocalRot;
-        _jumpSpinRoutine = null;
-    }
 
     private void HitScan(float radius, float angle)
     {
