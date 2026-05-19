@@ -317,6 +317,11 @@ public class EntityStats : MonoBehaviour
     {
         if (IsDead) return;
         IsDead = true;
+
+        Debug.Log($"[EntityStats] {gameObject.name} died. " +
+                  $"onDeath listeners: {onDeath.GetPersistentEventCount()} persistent, " +
+                  $"isPlayer: {isPlayer}");
+
         onDeath?.Invoke();
     }
 

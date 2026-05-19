@@ -86,8 +86,6 @@ public class PlayerMovement : MonoBehaviour
         _baseWalkSpeed   = walkSpeed;
         _baseSprintSpeed = sprintSpeed;
 
-        Debug.Log($"[PlayerMovement] Awake — base speeds cached: walk:{_baseWalkSpeed}  sprint:{_baseSprintSpeed}");
-
         if (_baseWalkSpeed <= 0f)
         {
             Debug.LogWarning("[PlayerMovement] walkSpeed is 0 in Awake — using safe defaults. " +
@@ -192,10 +190,6 @@ public class PlayerMovement : MonoBehaviour
         float targetSpeed      = (canSprint ? sprintSpeed : walkSpeed) * weaponAimFraction;
         Vector3 targetVelocity = targetDirection * targetSpeed;
 
-        // Temporary debug — remove once movement is confirmed working
-        if (_moveInput.sqrMagnitude > 0.01f)
-            Debug.Log($"[PlayerMovement] moveInput:{_moveInput}  targetSpeed:{targetSpeed:F2}  " +
-                      $"walk:{walkSpeed:F2}  targetVel:{targetVelocity}");
         float accelRate        = targetDirection.sqrMagnitude > 0.01f ? acceleration : deceleration;
         float dot              = Vector3.Dot(_currentMoveVelocity.normalized, targetVelocity.normalized);
         float lerpRate         = dot < 0.5f ? 15f : accelRate;

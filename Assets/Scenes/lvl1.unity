@@ -4217,9 +4217,9 @@ GameObject:
   m_Component:
   - component: {fileID: 330585546}
   - component: {fileID: 330585545}
-  - component: {fileID: 330585544}
   - component: {fileID: 330585547}
   - component: {fileID: 330585548}
+  - component: {fileID: 330585549}
   m_Layer: 0
   m_Name: Main Camera
   m_TagString: MainCamera
@@ -4227,14 +4227,6 @@ GameObject:
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
---- !u!81 &330585544
-AudioListener:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 330585543}
-  m_Enabled: 1
 --- !u!20 &330585545
 Camera:
   m_ObjectHideFlags: 0
@@ -4395,6 +4387,14 @@ MonoBehaviour:
       m_PostInfinity: 2
       m_RotationOrder: 4
   CustomBlends: {fileID: 0}
+--- !u!81 &330585549
+AudioListener:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 330585543}
+  m_Enabled: 1
 --- !u!1 &335790241
 GameObject:
   m_ObjectHideFlags: 0
@@ -7227,7 +7227,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!65 &518145997
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -9544,7 +9544,7 @@ Canvas:
   m_AdditionalShaderChannelsFlag: 25
   m_UpdateRectTransformForStandalone: 0
   m_SortingLayerID: 0
-  m_SortingOrder: 0
+  m_SortingOrder: 9
   m_TargetDisplay: 0
 --- !u!1001 &790575525
 PrefabInstance:
@@ -12756,8 +12756,8 @@ MonoBehaviour:
   titleLabel: {fileID: 1569406605}
   levelInfoLabel: {fileID: 398413902}
   resetButton: {fileID: 1180782386}
-  menuButton: {fileID: 15341074}
-  quitButton: {fileID: 2082438536}
+  settingsButton: {fileID: 15341074}
+  mainMenuButton: {fileID: 2082438536}
 --- !u!1 &1087571667
 GameObject:
   m_ObjectHideFlags: 0
@@ -15519,7 +15519,7 @@ Canvas:
   m_AdditionalShaderChannelsFlag: 25
   m_UpdateRectTransformForStandalone: 0
   m_SortingLayerID: 0
-  m_SortingOrder: 0
+  m_SortingOrder: 10
   m_TargetDisplay: 0
 --- !u!114 &1343195587
 MonoBehaviour:
@@ -22667,7 +22667,6 @@ GameObject:
   m_Component:
   - component: {fileID: 2099453112}
   - component: {fileID: 2099453111}
-  - component: {fileID: 2099453110}
   - component: {fileID: 2099453109}
   m_Layer: 0
   m_Name: Camera
@@ -22720,14 +22719,6 @@ MonoBehaviour:
     m_VarianceClampScale: 0.9
     m_ContrastAdaptiveSharpening: 0
   m_Version: 2
---- !u!81 &2099453110
-AudioListener:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 2099453108}
-  m_Enabled: 1
 --- !u!20 &2099453111
 Camera:
   m_ObjectHideFlags: 0

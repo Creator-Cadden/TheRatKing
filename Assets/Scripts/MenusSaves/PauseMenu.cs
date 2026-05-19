@@ -5,18 +5,22 @@ using TMPro;
 
 /// <summary>
 /// Pause menu shown on Escape.
-/// Also used as the post-death overlay by calling ShowDeathState().
 ///
 /// Hierarchy:
-///   PauseMenuRoot
-///   ├── TitleLabel          (TMP_Text) — "PAUSED" or "YOU DIED"
-///   ├── ResetButton         (Button)   — reset to checkpoint
-///   ├── MenuButton          (Button)   — back to main menu
-///   └── QuitButton          (Button)   — quit to desktop (small, subtle)
+///   [Any GameObject]              ← attach this script
+///   └── PauseMenuRoot             ← drag into pauseMenuRoot (active in Editor, hidden at Start)
+///       ├── TitleLabel            (TMP_Text) "PAUSED"
+///       ├── LevelInfoLabel        (TMP_Text) last save info
+///       ├── ResetButton           (Button)   "RESTART LEVEL"
+///       ├── SettingsButton        (Button)   "SETTINGS"  (stub)
+///       └── MainMenuButton        (Button)   "MAIN MENU"
+///
+/// Press Escape again to resume — no resume button needed.
 /// </summary>
 public class PauseMenu : MonoBehaviour
 {
     [Header("Root")]
+    [Tooltip("Must be active in Editor so children initialize. Script hides it at Start.")]
     public GameObject pauseMenuRoot;
 
     [Header("Labels")]
@@ -24,24 +28,34 @@ public class PauseMenu : MonoBehaviour
     public TMP_Text levelInfoLabel;
 
     [Header("Buttons")]
-    public Button resetButton;   // "Reset to Checkpoint"
-    public Button menuButton;    // "Main Menu"
-    public Button quitButton;    // small quit button
+    public Button resetButton;
+    public Button settingsButton;
+    public Button mainMenuButton;
 
     public bool IsPaused { get; private set; }
 
     private const string CURSOR_OWNER = "pause";
 
+    // ─────────────────────────────────────────
+
     void Start()
     {
-        resetButton?.onClick.AddListener(OnReset);
-        menuButton ?.onClick.AddListener(OnMainMenu);
-        quitButton ?.onClick.AddListener(OnQuit);
+        resetButton   ?.onClick.AddListener(OnReset);
+        settingsButton?.onClick.AddListener(OnSettings);
+        mainMenuButton?.onClick.AddListener(OnMainMenu);
 
+        // Start hidden — root must be active in Editor so children initialize
         SetVisible(false);
     }
 
-    // ── Input — bound to Escape / Pause action ────────────────────
+    void OnDestroy()
+    {
+        CursorManager.Release(CURSOR_OWNER);
+    }
+
+    // ─────────────────────────────────────────
+    // Input — bound to Escape / Pause action via PlayerInput Send Messages
+    // ─────────────────────────────────────────
 
     public void OnPause(InputValue value)
     {
@@ -50,65 +64,47 @@ public class PauseMenu : MonoBehaviour
         else          Pause();
     }
 
-    // ── Public API ────────────────────────────────────────────────
+    // ─────────────────────────────────────────
+    // Public API
+    // ─────────────────────────────────────────
 
     public void Pause()
     {
-        IsPaused = true;
+        IsPaused       = true;
         Time.timeScale = 0f;
-        SetLabel(titleLabel, "PAUSED");
+
         SetVisible(true);
+
+        // Set labels AFTER making root visible — guarantees the Canvas
+        // layout is active and TMP can calculate text correctly
+        SetLabel(titleLabel, "PAUSED");
+        SetLabel(levelInfoLabel, BuildLevelInfoString());
+
         CursorManager.Request(CURSOR_OWNER);
     }
 
     public void Resume()
     {
-        IsPaused = false;
+        IsPaused       = false;
         Time.timeScale = 1f;
         SetVisible(false);
         CursorManager.Release(CURSOR_OWNER);
     }
 
-    /// <summary>
-    /// Called by DeathScreen to reuse this menu after death.
-    /// Removes the resume option — only reset or menu available.
-    /// </summary>
-    public void ShowDeathState()
-    {
-        IsPaused = true;
-        Time.timeScale = 0f;
-        SetLabel(titleLabel, "YOU DIED");
-        SetVisible(true);
-        CursorManager.Request(CURSOR_OWNER);
-    }
-
-    // ── Callbacks ─────────────────────────────────────────────────
-
-    private string BuildLevelInfoString()
-    {
-        GameManager gm = GameManager.Instance;
-
-        if (gm == null || !gm.HasActiveGame || gm.ActiveSave == null)
-            return "Last save: unknown";
-
-        SaveData s       = gm.ActiveSave;
-        string saveName  = string.IsNullOrEmpty(s.saveName)
-                           ? "Save " + (gm.ActiveSlot + 1)
-                           : s.saveName;
-        string saveDate  = string.IsNullOrEmpty(s.saveDate) ? "unknown time" : s.saveDate;
-        string floor     = "Floor " + s.currentFloor;
-        string scene     = s.currentSceneName;
-
-        // e.g. "Last save: My Run  —  Floor 1  ·  lvl1  ·  May 13  14:32"
-        return "Last save: " + saveName
-             + "  —  " + floor + "  ·  " + scene
-             + "  ·  " + saveDate;
-    }
+    // ─────────────────────────────────────────
+    // Button callbacks
+    // ─────────────────────────────────────────
 
     private void OnReset()
     {
         Resume();
         GameManager.Instance?.ResetToCheckpoint();
+    }
+
+    private void OnSettings()
+    {
+        // Stub — wire to your settings panel when ready
+        Debug.Log("[PauseMenu] Settings clicked — wire to your settings panel.");
     }
 
     private void OnMainMenu()
@@ -117,23 +113,38 @@ public class PauseMenu : MonoBehaviour
         GameManager.Instance?.ReturnToMainMenu();
     }
 
-    private void OnQuit()
+    // ─────────────────────────────────────────
+    // Level info
+    // ─────────────────────────────────────────
+
+    private static string BuildLevelInfoString()
     {
-#if UNITY_EDITOR
-        UnityEditor.EditorApplication.isPlaying = false;
-#else
-        Application.Quit();
-#endif
+        GameManager gm = GameManager.Instance;
+        if (gm == null || !gm.HasActiveGame || gm.ActiveSave == null)
+            return "";
+
+        SaveData s      = gm.ActiveSave;
+        string saveName = string.IsNullOrEmpty(s.saveName)
+                          ? "Save " + (gm.ActiveSlot + 1)
+                          : s.saveName;
+        string saveDate = string.IsNullOrEmpty(s.saveDate) ? "" : "  ·  " + s.saveDate;
+
+        return "Last save: " + saveName
+             + "  —  Floor " + s.currentFloor
+             + "  ·  " + s.currentSceneName
+             + saveDate;
     }
+
+    // ─────────────────────────────────────────
+    // Helpers
+    // ─────────────────────────────────────────
 
     private void SetVisible(bool v)
     {
-        if (pauseMenuRoot != null) pauseMenuRoot.SetActive(v);
-    }
-
-    void OnDestroy()
-    {
-        CursorManager.Release(CURSOR_OWNER);
+        if (pauseMenuRoot != null)
+            pauseMenuRoot.SetActive(v);
+        else
+            Debug.LogWarning("[PauseMenu] pauseMenuRoot is null — drag it into the Inspector.");
     }
 
     private static void SetLabel(TMP_Text t, string s)

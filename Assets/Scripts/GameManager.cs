@@ -23,9 +23,11 @@ public class GameManager : MonoBehaviour
     public string firstGameScene    = "lvl1";
 
     // ── Death screen ──────────────────────────────────────────────
-    [Header("Death Screen")]
-    [Tooltip("Assign the DeathScreen component. Can be left null in the MainMenu scene.")]
+    [Header("In-Game UI — auto-found on scene load, do not assign in Inspector")]
+    [Tooltip("Found automatically in each game scene. Leave null.")]
     public DeathScreen deathScreen;
+    [Tooltip("Found automatically in each game scene. Leave null.")]
+    public PauseMenu   pauseMenu;
 
     [Header("Timing")]
     [Tooltip("Seconds after death before the overlay appears.")]
@@ -95,14 +97,29 @@ public class GameManager : MonoBehaviour
         CacheSpawnPoint();
 
         if (_playerStats != null)
+        {
+            // Remove first to prevent double-subscription on scene reload
+            _playerStats.onDeath.RemoveListener(OnPlayerDeath);
             _playerStats.onDeath.AddListener(OnPlayerDeath);
+            Debug.Log("[GameManager] Subscribed to player onDeath.");
+        }
 
-        // Re-find death screen in the new scene if not already assigned
-        if (deathScreen == null)
-            deathScreen = FindFirstObjectByType<DeathScreen>();
+        // Re-find scene UI — searches inactive objects too so hidden roots are found
+        deathScreen = FindFirstObjectByType<DeathScreen>(FindObjectsInactive.Include);
+        pauseMenu   = FindFirstObjectByType<PauseMenu>(FindObjectsInactive.Include);
 
         if (deathScreen != null)
+        {
             deathScreen.Hide(instant: true);
+            Debug.Log("[GameManager] DeathScreen found: " + deathScreen.gameObject.name);
+        }
+        else
+            Debug.LogWarning("[GameManager] No DeathScreen in scene '" + scene.name + "'.");
+
+        if (pauseMenu != null)
+            Debug.Log("[GameManager] PauseMenu found: " + pauseMenu.gameObject.name);
+        else
+            Debug.LogWarning("[GameManager] No PauseMenu in scene '" + scene.name + "'.");
 
         // Apply save data if continuing or starting new game
         if (HasActiveGame && _playerStats != null && _xpSystem != null)
