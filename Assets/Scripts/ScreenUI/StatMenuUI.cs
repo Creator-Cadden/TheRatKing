@@ -210,6 +210,7 @@ public class StatMenuUI : MonoBehaviour
         RefreshLevel();
         RefreshXPBar();
         RefreshStats();
+        RefreshPreviews();
         RefreshPlusButtons();
         RefreshPointsLabel();
     }
