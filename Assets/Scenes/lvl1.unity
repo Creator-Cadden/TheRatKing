@@ -9025,9 +9025,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 678775183}
-  - component: {fileID: 678775186}
   - component: {fileID: 678775185}
-  - component: {fileID: 678775184}
   m_Layer: 0
   m_Name: UIs
   m_TagString: Untagged
@@ -9054,29 +9052,6 @@ Transform:
   - {fileID: 518066955}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &678775184
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 678775182}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 8b5af3b808533924fa85155c0fe37c49, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::DeathScreen
-  deathMenuRoot: {fileID: 1343195580}
-  titleLabel: {fileID: 90646536}
-  subtitleLabel: {fileID: 941779306}
-  levelInfoLabel: {fileID: 1787487760}
-  restartButton: {fileID: 515819322}
-  settingsButton: {fileID: 914129105}
-  menuButton: {fileID: 417166176}
-  titleText: YOU DIED
-  subtitleText: The rats reclaim the dark.
-  fadeInDuration: 0.8
-  fadeOutDuration: 0.3
 --- !u!225 &678775185
 CanvasGroup:
   m_ObjectHideFlags: 0
@@ -9089,24 +9064,6 @@ CanvasGroup:
   m_Interactable: 1
   m_BlocksRaycasts: 1
   m_IgnoreParentGroups: 0
---- !u!114 &678775186
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 678775182}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: d79d9111f43c9d847b2dbbda69e3ace6, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::PauseMenu
-  pauseMenuRoot: {fileID: 772722947}
-  titleLabel: {fileID: 1569406605}
-  levelInfoLabel: {fileID: 398413902}
-  resetButton: {fileID: 1180782386}
-  menuButton: {fileID: 15341074}
-  quitButton: {fileID: 2082438536}
 --- !u!1 &721710050
 GameObject:
   m_ObjectHideFlags: 0
@@ -12569,6 +12526,7 @@ GameObject:
   - component: {fileID: 1075244677}
   - component: {fileID: 1075244679}
   - component: {fileID: 1075244680}
+  - component: {fileID: 1075244681}
   m_Layer: 3
   m_Name: Player
   m_TagString: Player
@@ -12782,6 +12740,24 @@ CanvasGroup:
   m_Interactable: 1
   m_BlocksRaycasts: 1
   m_IgnoreParentGroups: 0
+--- !u!114 &1075244681
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1075244671}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d79d9111f43c9d847b2dbbda69e3ace6, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::PauseMenu
+  pauseMenuRoot: {fileID: 772722947}
+  titleLabel: {fileID: 1569406605}
+  levelInfoLabel: {fileID: 398413902}
+  resetButton: {fileID: 1180782386}
+  menuButton: {fileID: 15341074}
+  quitButton: {fileID: 2082438536}
 --- !u!1 &1087571667
 GameObject:
   m_ObjectHideFlags: 0
@@ -15442,6 +15418,7 @@ GameObject:
   - component: {fileID: 1343195585}
   - component: {fileID: 1343195584}
   - component: {fileID: 1343195583}
+  - component: {fileID: 1343195587}
   m_Layer: 0
   m_Name: DeathUI
   m_TagString: Untagged
@@ -15544,6 +15521,29 @@ Canvas:
   m_SortingLayerID: 0
   m_SortingOrder: 0
   m_TargetDisplay: 0
+--- !u!114 &1343195587
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1343195580}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8b5af3b808533924fa85155c0fe37c49, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::DeathScreen
+  deathMenuRoot: {fileID: 1837676693}
+  titleLabel: {fileID: 90646536}
+  subtitleLabel: {fileID: 941779306}
+  levelInfoLabel: {fileID: 1787487760}
+  restartButton: {fileID: 515819322}
+  settingsButton: {fileID: 914129105}
+  menuButton: {fileID: 417166176}
+  titleText: YOU DIED
+  subtitleText: The rats reclaim the dark.
+  fadeInDuration: 0.8
+  fadeOutDuration: 0.3
 --- !u!1 &1349599404
 GameObject:
   m_ObjectHideFlags: 0
