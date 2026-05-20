@@ -10,7 +10,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: cddbe9ff30055fe44ac23a486a3194ae, type: 3}
-  m_Name: BossFloor1
+  m_Name: Captain
   m_EditorClassIdentifier: Assembly-CSharp::EnemyStatBlock
   baseHealth: 300
   baseStrength: 10
@@ -28,9 +28,9 @@ MonoBehaviour:
   rectWidth: 1.5
   rectLength: 2.5
   attackCooldown: 4
-  attackWindupTime: 2
+  attackWindupTime: 1.5
   attackAnimTimeout: 2.5
-  aggroRange: 12
+  aggroRange: 20
   stopRange: 5
   moveSpeed: 4
   toughnessReductionPerPoint: 1

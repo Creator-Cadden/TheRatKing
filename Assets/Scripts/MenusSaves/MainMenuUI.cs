@@ -81,6 +81,13 @@ public class MainMenuUI : MonoBehaviour
     public Button[]   deleteXButtons = new Button[3];
     public Button     slotBackButton;
 
+    [Header("Test Arena")]
+    [Tooltip("Fourth button in the slot panel — opens WeaponSelect then loads TestingArena. " +
+             "Bypasses save slots entirely.")]
+    public Button     testWorldButton;
+    [Tooltip("Optional sub-label on the Test Arena button.")]
+    public TMP_Text   testWorldLabel;
+
     [Header("Confirm Delete Panel")]
     public GameObject confirmDeletePanel;
     public TMP_Text   confirmDeleteLabel;
@@ -133,6 +140,10 @@ public class MainMenuUI : MonoBehaviour
         slotBackButton  ?.onClick.AddListener(ShowMainPanel);
         confirmYesButton?.onClick.AddListener(OnConfirmDeleteYes);
         confirmNoButton ?.onClick.AddListener(OnConfirmDeleteNo);
+
+        // Test Arena — sits in the slot panel as the 4th option
+        testWorldButton?.onClick.AddListener(OnTestWorld);
+        if (testWorldLabel != null) testWorldLabel.text = "ENTER TEST ARENA";
 
         // Name panel
         confirmButton ?.onClick.AddListener(OnNameConfirmed);
@@ -384,6 +395,13 @@ public class MainMenuUI : MonoBehaviour
     }
 
     private void OnLoadGame() => ShowSlotPanel();
+
+    private void OnTestWorld()
+    {
+        // Routes through WeaponSelect first so the player can pick a weapon.
+        // GameManager handles the no-save plumbing.
+        GameManager.Instance?.EnterTestWorld();
+    }
 
     private void OnSettings()
     {

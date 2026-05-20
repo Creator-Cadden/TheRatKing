@@ -21,6 +21,9 @@ public class GameManager : MonoBehaviour
     public string mainMenuScene     = "MainMenu";
     public string weaponSelectScene = "PlayerCustom";
     public string firstGameScene    = "lvl1";
+    [Tooltip("Scene loaded when the player enters the enemy test arena. " +
+             "Goes through WeaponSelect first. Never writes to a save slot.")]
+    public string testWorldScene    = "TestingArena";
 
     // ── Death screen ──────────────────────────────────────────────
     [Header("In-Game UI — auto-found on scene load, do not assign in Inspector")]
@@ -37,6 +40,13 @@ public class GameManager : MonoBehaviour
     public int      ActiveSlot  { get; private set; } = -1;
     public SaveData ActiveSave  { get; private set; }
     public bool     HasActiveGame => ActiveSlot >= 0 && ActiveSave != null && ActiveSave.hasData;
+
+    // ── Test mode ─────────────────────────────────────────────────
+    // When true, player is in the TestingArena. No save file is written,
+    // no play time is accumulated, ActiveSlot stays at -1.
+    public bool IsTestMode        { get; private set; } = false;
+    public bool IsPendingTestMode => _pendingTestMode;
+    private bool _pendingTestMode = false;
 
     // ── Runtime player references (re-cached on each scene load) ──
     private Transform           _playerTransform;
@@ -75,8 +85,9 @@ public class GameManager : MonoBehaviour
 
     void Update()
     {
-        // Accumulate play time while a game is active
-        if (HasActiveGame && ActiveSave != null)
+        // Accumulate play time while a real game is active.
+        // Test mode never touches a save slot, so don't bump play time.
+        if (HasActiveGame && ActiveSave != null && !IsTestMode)
             ActiveSave.totalPlayTime += Time.unscaledDeltaTime;
     }
 
@@ -131,8 +142,16 @@ public class GameManager : MonoBehaviour
             _playerStats.EquipWeapon(
                 (EntityStats.WeaponType)ActiveSave.equippedWeapon);
         }
+        else if (IsTestMode && _playerStats != null)
+        {
+            // Test mode — no save file. Reset to full and equip the
+            // weapon the player picked on the WeaponSelect screen.
+            _playerStats.ResetToFull();
+            _playerStats.EquipWeapon(_pendingWeapon);
+        }
 
-        // Checkpoint — record this scene as the current respawn point
+        // Checkpoint — record this scene as the current respawn point.
+        // SaveCheckpoint internally no-ops in test mode.
         SaveCheckpoint(scene.name);
     }
 
@@ -183,7 +202,47 @@ public class GameManager : MonoBehaviour
     {
         ActiveSlot = slot;
         ActiveSave = SaveSystem.Load(slot);
+        IsTestMode = false;
         LoadScene(ActiveSave.currentSceneName);
+    }
+
+    // ═════════════════════════════════════════════════════════════
+    // Test world flow — no save slot, weapon select then arena
+    // ═════════════════════════════════════════════════════════════
+
+    /// <summary>
+    /// Called by MainMenuUI when the "Test Arena" button is clicked.
+    /// Flags the next WeaponSelect confirm as a test run, then loads
+    /// WeaponSelect so the player can pick a weapon.
+    /// </summary>
+    public void EnterTestWorld()
+    {
+        // Wipe any active save state so test mode doesn't leak.
+        ActiveSlot        = -1;
+        ActiveSave        = null;
+        IsTestMode        = false;          // set true on StartTestWorld()
+        _pendingTestMode  = true;
+        PendingSlot       = -1;
+        PendingName       = "";
+        PendingFirstScene = testWorldScene;
+
+        LoadScene(weaponSelectScene);
+    }
+
+    /// <summary>
+    /// Called by WeaponSelectUI.OnConfirm() when IsPendingTestMode is true.
+    /// Loads the test arena with the chosen weapon. No save file, no save slot.
+    /// </summary>
+    public void StartTestWorld(EntityStats.WeaponType chosenWeapon)
+    {
+        ActiveSlot       = -1;
+        ActiveSave       = null;
+        IsTestMode       = true;
+        _pendingTestMode = false;
+        _pendingWeapon   = chosenWeapon;
+
+        string scene = string.IsNullOrEmpty(testWorldScene) ? "TestingArena" : testWorldScene;
+        LoadScene(scene);
     }
 
     // ═════════════════════════════════════════════════════════════
@@ -192,6 +251,8 @@ public class GameManager : MonoBehaviour
 
     public void SaveCheckpoint(string sceneName)
     {
+        // Test mode never writes to a save slot.
+        if (IsTestMode) return;
         if (ActiveSlot < 0 || _playerStats == null || _xpSystem == null) return;
 
         ActiveSave = SaveSystem.CaptureCurrentState(
@@ -242,6 +303,14 @@ public class GameManager : MonoBehaviour
 
         yield return null;
 
+        // In test mode, just reload the test scene with the same weapon.
+        if (IsTestMode)
+        {
+            string scene = string.IsNullOrEmpty(testWorldScene) ? "TestingArena" : testWorldScene;
+            LoadScene(scene);
+            yield break;
+        }
+
         // If we have a save, reload the checkpoint scene with stats restored.
         // Otherwise fall back to in-scene respawn (original behaviour).
         if (HasActiveGame)
@@ -263,6 +332,13 @@ public class GameManager : MonoBehaviour
     {
         Time.timeScale = 1f;
 
+        if (IsTestMode)
+        {
+            string scene = string.IsNullOrEmpty(testWorldScene) ? "TestingArena" : testWorldScene;
+            LoadScene(scene);
+            return;
+        }
+
         if (HasActiveGame)
             LoadScene(ActiveSave.currentSceneName);
         else
@@ -273,6 +349,11 @@ public class GameManager : MonoBehaviour
     {
         Time.timeScale = 1f;
         CursorManager.ForceReset();
+
+        // Clear test-mode flags so the main menu starts clean.
+        IsTestMode       = false;
+        _pendingTestMode = false;
+
         LoadScene(mainMenuScene);
     }
 

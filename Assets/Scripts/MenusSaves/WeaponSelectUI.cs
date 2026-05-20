@@ -307,6 +307,13 @@ public class WeaponSelectUI : MonoBehaviour
             return;
         }
 
+        // Test Arena was queued from the main menu — skip save slot entirely.
+        if (gm.IsPendingTestMode)
+        {
+            gm.StartTestWorld(WeaponTypes[_selectedIndex]);
+            return;
+        }
+
         gm.StartNewGame(
             gm.PendingSlot,
             gm.PendingFirstScene,
