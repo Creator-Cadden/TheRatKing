@@ -17,22 +17,23 @@ MonoBehaviour:
   baseStamina: 0
   baseSpeed: 7
   baseToughness: 8
-  attackDamageMin: 8
-  attackDamageMax: 12
+  attackDamageMin: 10
+  attackDamageMax: 15
   attackStrengthBonus: 1
   attackShape: 0
   attackHeight: 0.12
   attackRadius: 8
-  attackAngle: 87
-  circleRadius: 2
-  rectWidth: 1.5
-  rectLength: 2.5
-  attackCooldown: 4
+  attackAngle: 75
+  circleRadius: 6
+  rectWidth: 4
+  rectLength: 8
+  attackCooldown: 2.5
   attackWindupTime: 1.5
   attackAnimTimeout: 2.5
   aggroRange: 20
   stopRange: 5
   moveSpeed: 4
+  damagedAggroDuration: 60
   toughnessReductionPerPoint: 1
   knockbackDuration: 0.1
   bladeKnockbackForce: 5

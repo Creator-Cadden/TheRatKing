@@ -68,6 +68,12 @@ public class PlayerMovement : MonoBehaviour
     private float   _lastRollTime = -999f;
     private Vector3 _rollDirection;
 
+    // Knockback (from boss attacks, contact damage, etc.)
+    private Vector3 _knockbackDir;         // unit-length push direction
+    private float   _knockbackForce;       // peak speed at t = 0 of the push
+    private float   _knockbackTimer;       // remaining seconds of push
+    private float   _knockbackInitialTimer;// total duration of this push
+
     private Coroutine _suppressCoroutine;
 
     // Animation state
@@ -126,6 +132,7 @@ public class PlayerMovement : MonoBehaviour
         }
 
         HandleJumpAndGravity();
+        HandleKnockback();
 
         if (_isAiming)
             DriveAimLook();
@@ -150,6 +157,43 @@ public class PlayerMovement : MonoBehaviour
         sprintSpeed = (_baseSprintSpeed + sprintBonus) * weaponFraction;
 
         Debug.Log($"[PlayerMovement] Speed updated — walk:{walkSpeed:F1}  sprint:{sprintSpeed:F1}  weaponFraction:{weaponFraction:F2}");
+    }
+
+    // ─────────────────────────────────────────
+    // Knockback (called by boss attacks, hazards, etc.)
+    // ─────────────────────────────────────────
+
+    /// <summary>
+    /// Push the player along <paramref name="direction"/> at <paramref name="force"/>
+    /// units/sec, decaying linearly to zero over <paramref name="duration"/> seconds.
+    /// Stacks with normal input — the player can still steer a little during the push.
+    /// Vertical (y) component is ignored.
+    /// </summary>
+    public void TakeKnockback(Vector3 direction, float force, float duration)
+    {
+        direction.y = 0f;
+        if (direction.sqrMagnitude < 0.0001f || force <= 0f || duration <= 0f) return;
+
+        _knockbackDir          = direction.normalized;
+        _knockbackForce        = force;
+        _knockbackTimer        = duration;
+        _knockbackInitialTimer = duration;
+    }
+
+    /// <summary>Applies and decays the current knockback impulse each frame.</summary>
+    private void HandleKnockback()
+    {
+        if (_knockbackTimer <= 0f) return;
+
+        // t = 1 at start, 0 at end → speed ramps from full force down to zero.
+        float t     = _knockbackTimer / Mathf.Max(0.0001f, _knockbackInitialTimer);
+        float speed = _knockbackForce * t;
+
+        _controller.Move(_knockbackDir * speed * Time.deltaTime);
+
+        _knockbackTimer -= Time.deltaTime;
+        if (_knockbackTimer <= 0f)
+            _knockbackTimer = 0f;
     }
 
     // ─────────────────────────────────────────

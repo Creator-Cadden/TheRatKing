@@ -1,0 +1,41 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: cddbe9ff30055fe44ac23a486a3194ae, type: 3}
+  m_Name: FatRatBoss
+  m_EditorClassIdentifier: Assembly-CSharp::EnemyStatBlock
+  baseHealth: 500
+  baseStrength: 15
+  baseStamina: 50
+  baseSpeed: 5
+  baseToughness: 12
+  attackDamageMin: 8
+  attackDamageMax: 10
+  attackStrengthBonus: 2
+  attackShape: 0
+  attackHeight: 1.5
+  attackRadius: 1.8
+  attackAngle: 60
+  circleRadius: 2
+  rectWidth: 1.5
+  rectLength: 2.5
+  attackCooldown: 1.5
+  attackWindupTime: 0.6
+  attackAnimTimeout: 2.5
+  aggroRange: 8
+  stopRange: 1.5
+  moveSpeed: 3.5
+  damagedAggroDuration: 120
+  toughnessReductionPerPoint: 1
+  knockbackDuration: 0.2
+  bladeKnockbackForce: 0
+  hammerKnockbackForce: 0
+  bowKnockbackForce: 0

@@ -117,6 +117,13 @@ public class EnemyStatBlock : BaseStatBlock
     [Tooltip("NavMesh movement speed toward the player.")]
     public float moveSpeed = 3.5f;
 
+    [Header("Damage Memory")]
+    [Tooltip("Seconds the enemy stays aggro'd after being damaged, even if the player walks " +
+             "out of aggroRange. Prevents ranged 'plink-from-safety' cheese — the enemy will " +
+             "actively hunt anyone who hits it for this long.\n" +
+             "Set to 0 to disable persistent aggro and rely only on aggroRange.")]
+    public float damagedAggroDuration = 60f;
+
     // ─────────────────────────────────────────
     // KNOCKBACK RESPONSE
     // ─────────────────────────────────────────

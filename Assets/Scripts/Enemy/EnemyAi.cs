@@ -32,6 +32,10 @@ public class EnemyAI : MonoBehaviour
     private Vector3 _knockbackVelocity;
     private float _knockbackTimer;
 
+    // Persistent aggro — once damaged, the enemy stays angry for damagedAggroDuration
+    // seconds even if the player runs out of aggroRange. Set by OnDamaged callback.
+    private float _damagedAggroUntil = -1f;
+
     // Tracks whether we were locked last frame so we can detect the
     // exact frame the lock releases and start the post-attack pause.
     private bool _wasRotationLocked;
@@ -64,7 +68,20 @@ public class EnemyAI : MonoBehaviour
         }
 
         _stats.onDeath.AddListener(OnDeath);
+        _stats.onDamageTaken.AddListener(OnDamaged);
         _combat.ConfigureRuntime(_player, _playerStats, attackOrigin, playerLayer, verboseAttackLog);
+    }
+
+    private void OnDamaged(int _)
+    {
+        if (_sb == null) return;
+        if (_sb.damagedAggroDuration <= 0f) return;
+
+        _damagedAggroUntil = Time.time + _sb.damagedAggroDuration;
+
+        if (verboseAttackLog)
+            Debug.Log($"[EnemyAI] {gameObject.name} aggro extended → " +
+                      $"chasing for {_sb.damagedAggroDuration:F0}s after being damaged.");
     }
 
     void Update()
@@ -107,7 +124,12 @@ public class EnemyAI : MonoBehaviour
 
         float dist = FlatDist(transform.position, _player.position);
 
-        if (dist <= _sb.aggroRange)
+        // Aggro if either: (a) player is within normal aggroRange,
+        // OR (b) enemy was hit recently and is still in its damage-memory window.
+        bool inAggroRange    = dist <= _sb.aggroRange;
+        bool rememberDamager = Time.time < _damagedAggroUntil;
+
+        if (inAggroRange || rememberDamager)
         {
             _isAggroed = true;
             _animator.SetFloat("Running", 1);
@@ -122,7 +144,9 @@ public class EnemyAI : MonoBehaviour
         if (!_isAggroed) return;
 
         float walkThreshold   = _sb.stopRange;
-        float attackThreshold = _sb.AttackReach + 0.35f;
+        // Use combat's CurrentAttackReach (not _sb.AttackReach) so dynamic
+        // shape switching on a Captain actually affects approach distance.
+        float attackThreshold = _combat.CurrentAttackReach + 0.35f;
 
         if (dist > walkThreshold)
         {

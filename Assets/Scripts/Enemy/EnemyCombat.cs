@@ -34,6 +34,42 @@ public class EnemyCombat : MonoBehaviour
     private Quaternion _lockedRotation;
     public  bool       IsRotationLocked => _isWindingUp || _isAttacking;
 
+    // ── Runtime shape override ─────────────────────────────────────────
+    // Lets a controller (e.g. CaptainCombat) swap which attack shape this
+    // EnemyCombat uses on a per-attack basis without editing the SO.
+    // Set to null to fall back to the stat block's configured shape.
+    public AttackShape? RuntimeShapeOverride;
+
+    /// <summary>The shape this enemy will actually use for its next/current attack.</summary>
+    public AttackShape ActiveShape =>
+        RuntimeShapeOverride.HasValue ? RuntimeShapeOverride.Value :
+        (_sb != null ? _sb.attackShape : AttackShape.Cone);
+
+    /// <summary>
+    /// Reach distance for the currently-active attack shape.
+    /// EnemyAI reads this instead of EnemyStatBlock.AttackReach so dynamic
+    /// shape switching (Captain) actually changes the chase/attack range.
+    /// </summary>
+    public float CurrentAttackReach
+    {
+        get
+        {
+            if (_sb == null) return 1.8f;
+            return ActiveShape switch
+            {
+                AttackShape.Circle    => _sb.circleRadius,
+                AttackShape.Rectangle => _sb.rectLength,
+                _                     => _sb.attackRadius,   // Cone
+            };
+        }
+    }
+
+    /// <summary>
+    /// Fires the moment a new windup is about to start. Lets controllers
+    /// (CaptainCombat, future variants) pick a fresh shape just-in-time.
+    /// </summary>
+    public System.Action OnBeforeWindup;
+
     // ── Indicator ──────────────────────────────────────────────────────
     private GameObject            _indicator;
     private MeshFilter            _indicatorFilter;
@@ -138,7 +174,12 @@ public class EnemyCombat : MonoBehaviour
         if (_sb == null || _player == null)                   return;
         if (_isAttacking || _isWindingUp)                     return;
         if (Time.time < _lastAttackTime + _sb.attackCooldown) return;
-        if (distToPlayer > _sb.AttackReach + 0.35f)           return;
+
+        // Pick the shape for THIS attack first — controllers (e.g. CaptainCombat)
+        // hook in here to cycle/randomize before reach is evaluated.
+        OnBeforeWindup?.Invoke();
+
+        if (distToPlayer > CurrentAttackReach + 0.35f)        return;
 
         _lastAttackTime  = Time.time;
         _isWindingUp     = true;
@@ -192,7 +233,8 @@ public class EnemyCombat : MonoBehaviour
     {
         if (_sb == null || _playerStats == null || _selfStats == null) return;
 
-        bool hit = _sb.attackShape switch
+        AttackShape shape = ActiveShape;
+        bool hit = shape switch
         {
             AttackShape.Circle    => CheckCircleHit(),
             AttackShape.Rectangle => CheckRectHit(),
@@ -207,7 +249,7 @@ public class EnemyCombat : MonoBehaviour
         _playerStats.TakeDamage(damage);
 
         if (verboseAttackLog)
-            Debug.Log($"[EnemyCombat] {gameObject.name} hit player for {damage} ({_sb.attackShape})");
+            Debug.Log($"[EnemyCombat] {gameObject.name} hit player for {damage} ({shape})");
     }
 
     public void OnAttackEnd()
@@ -276,7 +318,9 @@ public class EnemyCombat : MonoBehaviour
 
         EnsureIndicatorObject();
 
-        bool needsRebuild = _lastBuiltShape != _sb.attackShape
+        AttackShape shape = ActiveShape;
+
+        bool needsRebuild = _lastBuiltShape != shape
             || !Mathf.Approximately(_cachedRadius,  _sb.attackRadius)
             || !Mathf.Approximately(_cachedAngle,   _sb.attackAngle)
             || !Mathf.Approximately(_cachedCircleR, _sb.circleRadius)
@@ -285,14 +329,14 @@ public class EnemyCombat : MonoBehaviour
 
         if (needsRebuild)
         {
-            _indicatorFilter.sharedMesh = _sb.attackShape switch
+            _indicatorFilter.sharedMesh = shape switch
             {
                 AttackShape.Circle    => BuildDiskMesh(_sb.circleRadius, 48),
                 AttackShape.Rectangle => BuildRectMesh(_sb.rectWidth, _sb.rectLength),
                 _                     => BuildConeMesh(_sb.attackRadius, _sb.attackAngle, 32),
             };
 
-            _lastBuiltShape = _sb.attackShape;
+            _lastBuiltShape = shape;
             _cachedRadius   = _sb.attackRadius;
             _cachedAngle    = _sb.attackAngle;
             _cachedCircleR  = _sb.circleRadius;
