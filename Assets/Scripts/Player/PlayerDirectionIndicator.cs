@@ -35,10 +35,24 @@ public class PlayerDirectionRing : MonoBehaviour
     [Header("Colors")]
     [Tooltip("Ring color on the front (facing) side.")]
     public Color ringFrontColor = new Color(1f,   1f,   1f,   0.55f);
-    [Tooltip("Ring color on the back side — set alpha low to fade it out.")]
+    [Tooltip("Ring color right at the visible→invisible cutoff. Set alpha low for a fast fade-out.")]
     public Color ringBackColor  = new Color(1f,   1f,   1f,   0.04f);
     [Tooltip("Triangle pointer color.")]
     public Color triangleColor  = new Color(1f,  0.65f, 0.1f, 0.90f);
+
+    [Header("Back Fade")]
+    [Tooltip("Fraction of the ring's circumference that is fully transparent at the back.\n" +
+             "0.25 = back quarter (a 90° arc directly behind the player) is invisible.\n" +
+             "0    = entire ring visible.")]
+    [Range(0f, 0.5f)]
+    public float backInvisibleFraction = 0.25f;
+
+    [Tooltip("Curve shape from the invisible cutoff out to the front.\n" +
+             "< 1 = sharp ramp right at the cutoff (back ends look almost-cut).\n" +
+             "1   = linear fade.\n" +
+             "> 1 = soft, gradual fade toward the front.")]
+    [Range(0.25f, 4f)]
+    public float fadePower = 0.6f;
 
     // ── Private ──
     private MeshFilter   _ringFilter;
@@ -114,25 +128,40 @@ public class PlayerDirectionRing : MonoBehaviour
         var colors = new Color[vertCount];
         var tris   = new int[ringSegments * 6];
 
+        // Convert "fraction of ring invisible at the back" into a sin() cutoff.
+        // For backInvisibleFraction = 0.25 → 90° invisible arc → cutoff at sin = -cos(45°) ≈ -0.707.
+        // Any vertex whose sin (forward dot) is below this is clamped to alpha 0.
+        float cutoffSin = -Mathf.Cos(backInvisibleFraction * Mathf.PI);
+
+        // Fully transparent color used inside the invisible arc.
+        Color invisible = new Color(ringBackColor.r, ringBackColor.g, ringBackColor.b, 0f);
+
         for (int i = 0; i < ringSegments; i++)
         {
-            // angle 0 = forward (+Z), PI = backward (-Z)
+            // angle 0 = +X (right), PI/2 = +Z (forward), 3PI/2 = -Z (back).
             float angle = (float)i / ringSegments * Mathf.PI * 2f;
             float cos   = Mathf.Cos(angle);   // X
-            float sin   = Mathf.Sin(angle);   // Z
+            float sin   = Mathf.Sin(angle);   // Z  (dot with forward)
 
             verts[i * 2]     = new Vector3(cos * innerR, 0f, sin * innerR);
             verts[i * 2 + 1] = new Vector3(cos * outerR, 0f, sin * outerR);
 
-            // sin(angle): +1 at front (Z+), -1 at back (Z-)
-            // Remap 0..1 then apply power curve for aggressive back fade.
-            // Squaring makes the front stay bright longer and the back
-            // drop to invisible much faster. The back quarter (sin < -0.5)
-            // clamps to fully transparent.
-            float frontness = (sin + 1f) * 0.5f;          // 0 = back, 1 = front
-            frontness = Mathf.Pow(frontness, 3f);          // sharp falloff
-            frontness = Mathf.Clamp01(frontness);
-            Color c = Color.Lerp(ringBackColor, ringFrontColor, frontness);
+            Color c;
+            if (sin <= cutoffSin)
+            {
+                // Inside the back invisible arc — hard cut.
+                c = invisible;
+            }
+            else
+            {
+                // Visible zone — sin maps from cutoff (0) to forward (+1).
+                // fadePower < 1 makes the transition sharp right at the cutoff
+                // (i.e. the "back ends" look almost-clipped rather than gradual).
+                float t = Mathf.InverseLerp(cutoffSin, 1f, sin);
+                t = Mathf.Pow(t, fadePower);
+                c = Color.Lerp(ringBackColor, ringFrontColor, t);
+            }
+
             colors[i * 2]     = c;
             colors[i * 2 + 1] = c;
         }
