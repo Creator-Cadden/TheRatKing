@@ -1568,6 +1568,7 @@ GameObject:
   - component: {fileID: 5416373164332205964}
   - component: {fileID: 4135014532374583229}
   - component: {fileID: 747923703369521346}
+  - component: {fileID: 4163007971985225271}
   m_Layer: 5
   m_Name: MainUI
   m_TagString: Untagged
@@ -1662,6 +1663,21 @@ MonoBehaviour:
   m_BlockingMask:
     serializedVersion: 2
     m_Bits: 4294967295
+--- !u!114 &4163007971985225271
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1766775980204988754}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: adb3c68a97ec42d48ab3fd92b85c9e0b, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::CanvasCameraBinder
+  targetCameraTag: MainCamera
+  planeDistanceOverride: -1
+  verbose: 1
 --- !u!1 &1791703837302490661
 GameObject:
   m_ObjectHideFlags: 0
