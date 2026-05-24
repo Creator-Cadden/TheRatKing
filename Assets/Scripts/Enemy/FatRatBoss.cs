@@ -412,7 +412,7 @@ public class FatRatBoss : MonoBehaviour
         SetRectColor(new Color(windupColor.r, windupColor.g, windupColor.b, 0f));
         _rectIndicator.SetActive(true);
 
-        if (_animator != null) _animator.SetTrigger("RollWindup");
+        if (_animator != null) _animator.SetBool("Roll", true);
 
         _stateUntil = Time.time + rollWindupDuration;
         SetState(BossState.RollWindup);
@@ -441,7 +441,7 @@ public class FatRatBoss : MonoBehaviour
         _rollDistTravelled         = 0f;
         _rollHitPlayerThisAttack   = false;
 
-        if (_animator != null) _animator.SetTrigger("Roll");
+       
 
         SetState(BossState.Rolling);
     }
@@ -473,6 +473,8 @@ public class FatRatBoss : MonoBehaviour
     {
         if (_rectIndicator != null) _rectIndicator.SetActive(false);
 
+        if (_animator != null) _animator.SetBool("Roll", false);
+
         _stateUntil = Time.time + rollRecoverDuration;
         SetState(BossState.RollRecover);
     }
@@ -483,7 +485,6 @@ public class FatRatBoss : MonoBehaviour
 
         // Resume NavMeshAgent control
         if (_agent != null) _agent.enabled = true;
-        if (_animator != null) _animator.SetFloat("Running", 1f);
         SetState(BossState.Chase);
     }
 
@@ -509,7 +510,7 @@ public class FatRatBoss : MonoBehaviour
         // Lock movement during the whole slam sequence
         if (_agent != null) _agent.enabled = false;
 
-        if (_animator != null) _animator.SetTrigger("JumpWindup");
+        if (_animator != null) _animator.SetTrigger("Jump");
 
         _stateUntil = Time.time + jumpWindupDuration;
         SetState(BossState.JumpWindup);
@@ -533,7 +534,9 @@ public class FatRatBoss : MonoBehaviour
         SetCircleColor(windupColor);
         _circleIndicator.SetActive(true);
 
-        if (_animator != null) _animator.SetTrigger("InAir");
+        if (_animator != null) _animator.SetTrigger("Jump");
+
+ 
 
         _stateUntil = Time.time + airDuration;
         SetState(BossState.InAir);
@@ -549,6 +552,8 @@ public class FatRatBoss : MonoBehaviour
         Vector3 pos     = Vector3.Lerp(_slamGroundPos, _slamLandingPos, t);
         pos.y           = _slamStartY + arc * jumpHeight;
         transform.position = pos;
+
+        if (_animator != null) _animator.SetTrigger("InAir");
 
         // Indicator slowly ramps to the committed color as impact nears
         Color c = Color.Lerp(windupColor, committedColor, t);
@@ -597,6 +602,8 @@ public class FatRatBoss : MonoBehaviour
         c.a            *= fade;
         SetCircleColor(c);
 
+        
+
         if (Time.time >= _stateUntil)
             EndSlam();
     }
@@ -614,7 +621,10 @@ public class FatRatBoss : MonoBehaviour
         if (Time.time < _stateUntil) return;
 
         if (_agent != null) _agent.enabled = true;
-        if (_animator != null) _animator.SetFloat("Running", 1f);
+        if (_animator != null) _animator.SetFloat("Running", 0f);
+
+        _animator.ResetTrigger("Jump");
+
         SetState(BossState.Chase);
     }
 
