@@ -104,7 +104,16 @@ public class PlayerHealthBar : MonoBehaviour
 
     private void OnDamageTaken(int _) => _targetFill = GetFillRatio();
     private void OnHealed(int _)      => _targetFill = GetFillRatio();
-    private void OnDeath()            => _targetFill = 0f;
+    private void OnDeath()
+    {
+        _targetFill = 0f;
+
+        Animator anim = playerStats.GetComponentInChildren<Animator>();
+        if (anim != null)
+            anim.SetTrigger("Dead");
+    }
+
+
 
     // ─────────────────────────────────────────
     // Helpers — identical logic to EnemyHealthBar
