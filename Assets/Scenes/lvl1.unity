@@ -5909,6 +5909,10 @@ PrefabInstance:
       propertyPath: m_Center.y
       value: 3.3766391
       objectReference: {fileID: 0}
+    - target: {fileID: 6724531195612432227, guid: d6f730da83f38ec499b02149f11806ba, type: 3}
+      propertyPath: delayBeforeFade
+      value: 1.01
+      objectReference: {fileID: 0}
     - target: {fileID: 6947543698175673537, guid: d6f730da83f38ec499b02149f11806ba, type: 3}
       propertyPath: m_LocalPosition.y
       value: 1.83
