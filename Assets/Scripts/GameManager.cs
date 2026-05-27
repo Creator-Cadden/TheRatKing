@@ -207,6 +207,76 @@ public class GameManager : MonoBehaviour
     }
 
     // ═════════════════════════════════════════════════════════════
+    // Level transition — used by LevelTransition triggers
+    // ═════════════════════════════════════════════════════════════
+
+    /// <summary>
+    /// Called by a LevelTransition trigger when the player crosses into
+    /// the next level. Captures the player's CURRENT in-game stats (HP,
+    /// stamina, XP, weapon, etc.) into ActiveSave with the destination
+    /// scene name and the new floor, then loads that scene.
+    ///
+    /// OnSceneLoaded will then:
+    ///   1. Apply ActiveSave to the freshly-instantiated player in the new
+    ///      scene (so all your stats carry over).
+    ///   2. Call SaveCheckpoint(scene.name) — writes ActiveSave to disk so
+    ///      Continue / Retry both bring you back to the START of this new
+    ///      level with the stats you had at the moment of transition.
+    ///
+    /// In test mode, no save is captured — just loads the scene.
+    /// </summary>
+    /// <param name="sceneName">The scene to transition into.</param>
+    /// <param name="floorMode">
+    ///   <c>0</c> = leave currentFloor alone.
+    ///   <c>-1</c> = advance currentFloor by 1 (clamped to 3).
+    ///   <c>1..3</c> = set currentFloor to this explicit value.
+    /// </param>
+    public void TransitionToLevel(string sceneName, int floorMode = -1)
+    {
+        if (string.IsNullOrEmpty(sceneName))
+        {
+            Debug.LogWarning("[GameManager] TransitionToLevel called with empty sceneName.");
+            return;
+        }
+
+        // Test mode — no save, just load. The new TestingArena reload will
+        // reset the player to full / re-equip the weapon as usual.
+        if (IsTestMode)
+        {
+            LoadScene(sceneName);
+            return;
+        }
+
+        // Real game — capture the player's current state into ActiveSave
+        // with the DESTINATION scene name as the new checkpoint.
+        if (HasActiveGame && _playerStats != null && _xpSystem != null)
+        {
+            ActiveSave = SaveSystem.CaptureCurrentState(
+                _playerStats, _xpSystem, sceneName,
+                ActiveSave?.totalPlayTime ?? 0f,
+                ActiveSave?.saveName ?? "");
+
+            // Floor handling
+            if (floorMode == -1)
+                ActiveSave.currentFloor = Mathf.Min(ActiveSave.currentFloor + 1, 3);
+            else if (floorMode >= 1 && floorMode <= 3)
+                ActiveSave.currentFloor = floorMode;
+            // floorMode == 0 → leave currentFloor as-captured
+
+            Debug.Log($"[GameManager] Transitioning → '{sceneName}' " +
+                      $"with stats HP:{ActiveSave.currentHealth}/{ActiveSave.maxHealth} " +
+                      $"STR:{ActiveSave.strength} Floor:{ActiveSave.currentFloor}");
+        }
+        else
+        {
+            Debug.LogWarning("[GameManager] TransitionToLevel: no active save / player — " +
+                             "loading scene without stat capture.");
+        }
+
+        LoadScene(sceneName);
+    }
+
+    // ═════════════════════════════════════════════════════════════
     // Test world flow — no save slot, weapon select then arena
     // ═════════════════════════════════════════════════════════════
 

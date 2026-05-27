@@ -125,6 +125,31 @@ public class EnemyStatBlock : BaseStatBlock
     public float damagedAggroDuration = 60f;
 
     // ─────────────────────────────────────────
+    // FLOOR SCALING — multiplies stats per dungeon floor above floor 1
+    // ─────────────────────────────────────────
+
+    [Header("Floor Scaling")]
+    [Tooltip("Multiplier compounded onto baseHealth per dungeon floor above floor 1.\n" +
+             "Floor 1: HP × 1\n" +
+             "Floor 2: HP × healthScalePerFloor\n" +
+             "Floor 3: HP × healthScalePerFloor²\n" +
+             "1.0 = no scaling. 1.25 = +25% per floor (1.56× by floor 3).")]
+    [Range(0.5f, 3f)]
+    public float healthScalePerFloor = 1.25f;
+
+    [Tooltip("Same scaling rule, applied to Strength. Because attack damage = " +
+             "Random(min,max) + Strength × attackStrengthBonus, scaling Strength " +
+             "automatically scales the enemy's damage output too.")]
+    [Range(0.5f, 3f)]
+    public float strengthScalePerFloor = 1.20f;
+
+    [Tooltip("Same scaling rule, applied to MaxStamina. Mostly cosmetic for enemies " +
+             "since they don't use stamina the way the player does — leave at 1.0 " +
+             "unless you've wired enemy stamina into something.")]
+    [Range(0.5f, 3f)]
+    public float staminaScalePerFloor = 1.0f;
+
+    // ─────────────────────────────────────────
     // KNOCKBACK RESPONSE
     // ─────────────────────────────────────────
 

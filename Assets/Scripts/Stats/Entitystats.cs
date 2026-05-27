@@ -83,6 +83,32 @@ public class EntityStats : MonoBehaviour
         BaseToughness = b.baseToughness;
         Toughness     = BaseToughness;
 
+        // ── Per-floor enemy scaling ───────────────────────────────────
+        // Enemies get harder the deeper the player is.
+        // Floor 1 = baseline, Floor 2 = ×multiplier, Floor 3 = ×multiplier²
+        // Player stats are never scaled this way.
+        if (!isPlayer && enemyStatBlock != null)
+        {
+            int floor = (GameManager.Instance != null && GameManager.Instance.ActiveSave != null)
+                ? GameManager.Instance.ActiveSave.currentFloor
+                : 1;
+
+            int floorsAbove = Mathf.Max(0, floor - 1);
+            if (floorsAbove > 0)
+            {
+                float hpMult  = Mathf.Pow(enemyStatBlock.healthScalePerFloor,   floorsAbove);
+                float strMult = Mathf.Pow(enemyStatBlock.strengthScalePerFloor, floorsAbove);
+                float staMult = Mathf.Pow(enemyStatBlock.staminaScalePerFloor,  floorsAbove);
+
+                MaxHealth  = Mathf.Max(1, Mathf.RoundToInt(MaxHealth  * hpMult));
+                Strength   = Mathf.Max(0, Mathf.RoundToInt(Strength   * strMult));
+                MaxStamina = Mathf.Max(0, Mathf.RoundToInt(MaxStamina * staMult));
+
+                Debug.Log($"[EntityStats] {gameObject.name} scaled to Floor {floor} → " +
+                          $"HP × {hpMult:F2}, STR × {strMult:F2}");
+            }
+        }
+
         CurrentHealth  = MaxHealth;
         CurrentStamina = MaxStamina;
 
