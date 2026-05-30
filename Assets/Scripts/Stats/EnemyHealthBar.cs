@@ -78,8 +78,29 @@ public class EnemyHealthBar : MonoBehaviour
         }
 
         if (_stats == null)
-            Debug.LogError($"[EnemyHealthBar] No EntityStats found in the hierarchy above '{gameObject.name}'. " +
-                           "Make sure EnemyHealthBar is placed somewhere inside the enemy GameObject that has EntityStats.");
+        {
+            // Build a full hierarchy path so you can click straight to the offending object.
+            string path = gameObject.name;
+            Transform p = transform.parent;
+            while (p != null)
+            {
+                path = p.name + "/" + path;
+                p = p.parent;
+            }
+            string sceneName = gameObject.scene.IsValid() ? gameObject.scene.name : "(prefab asset)";
+
+            Debug.LogError(
+                $"[EnemyHealthBar] No EntityStats found in the hierarchy above '{gameObject.name}'.\n" +
+                $"  Full path : {path}\n" +
+                $"  Scene     : {sceneName}\n" +
+                $"  → Make sure EnemyHealthBar lives somewhere inside the enemy GameObject that has EntityStats.\n" +
+                $"  → If this is a stray copy left in the scene, delete it.",
+                this);   // 'this' makes the log clickable → pings the object in the Hierarchy
+
+            // Disable so we don't keep complaining every frame.
+            enabled = false;
+            return;
+        }
 
         _canvasGroup = GetComponentInChildren<CanvasGroup>();
         if (_canvasGroup == null)

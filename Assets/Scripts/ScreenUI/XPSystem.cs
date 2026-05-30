@@ -29,8 +29,9 @@ public class XPSystem : MonoBehaviour
     // ─────────────────────────────────────────
 
     public UnityEvent          onLevelUp;
-    public UnityEvent<int>     onXPGained;      // passes amount gained
-    public UnityEvent<int>     onStatPointSpent; // passes remaining points
+    public UnityEvent<int>     onXPGained;            // passes amount gained
+    public UnityEvent<int, string> onXPGainedFromSource; // (amount, sourceName)
+    public UnityEvent<int>     onStatPointSpent;      // passes remaining points
 
     // ─────────────────────────────────────────
     // RUNTIME STATE  (read-only from outside)
@@ -59,14 +60,21 @@ public class XPSystem : MonoBehaviour
     // ─────────────────────────────────────────
 
     /// <summary>Call this whenever the player kills an enemy (or picks up XP).</summary>
-    public void AddXP(int amount)
+    public void AddXP(int amount) => AddXP(amount, "");
+
+    /// <summary>
+    /// Same as AddXP(amount) but also fires onXPGainedFromSource so the
+    /// floating "+X XP from {source}" indicator can show what killed the player got it from.
+    /// </summary>
+    public void AddXP(int amount, string sourceName)
     {
         if (amount <= 0) return;
 
         CurrentXP += amount;
         onXPGained?.Invoke(amount);
+        onXPGainedFromSource?.Invoke(amount, sourceName ?? "");
 
-        Debug.Log($"[XPSystem] +{amount} XP — total {CurrentXP}/{XPToNextLevel} (Lv{CurrentLevel})");
+        Debug.Log($"[XPSystem] +{amount} XP from '{sourceName}' — total {CurrentXP}/{XPToNextLevel} (Lv{CurrentLevel})");
 
         // Level up as many times as warranted
         while (CurrentXP >= XPToNextLevel)

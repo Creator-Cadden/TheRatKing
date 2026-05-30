@@ -604,6 +604,7 @@ GameObject:
   - component: {fileID: 690490550371013028}
   - component: {fileID: 4743675850094771312}
   - component: {fileID: 6278274226051628948}
+  - component: {fileID: -3773040863204444635}
   m_Layer: 6
   m_Name: ToughRectangle
   m_TagString: Untagged
@@ -827,7 +828,32 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::EnemyXPDrop
   xpValue: 10
+  displayName: 
   playerTag: Player
+--- !u!114 &-3773040863204444635
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3490854156909493202}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9857714318dd95146af6e025f65f00f9, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::DamageNumberSpawner
+  spawnOffset: {x: 0, y: 1.6, z: 0}
+  scatterRadius: 0.35
+  lifetime: 1.2
+  floatSpeed: 1.5
+  horizontalDrift: 0.25
+  fontSize: 5
+  lowColor: {r: 1, g: 1, b: 1, a: 1}
+  highColor: {r: 1, g: 0.35, b: 0.1, a: 1}
+  lowDamage: 5
+  highDamage: 40
+  billboardToCamera: 1
+  verbose: 0
 --- !u!1 &3645069787774387888
 GameObject:
   m_ObjectHideFlags: 0

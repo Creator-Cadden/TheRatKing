@@ -19,6 +19,10 @@ public class EnemyXPDrop : MonoBehaviour
              "Tune this per-prefab to control difficulty pacing.")]
     public int xpValue = 10;
 
+    [Tooltip("Display name shown in the floating '+X XP from {name}' indicator.\n" +
+             "Leave blank to use the GameObject's name (with '(Clone)' stripped).")]
+    public string displayName = "";
+
     [Tooltip("Tag used to find the player. Must match your Player GameObject's tag.")]
     public string playerTag = "Player";
 
@@ -61,7 +65,11 @@ public class EnemyXPDrop : MonoBehaviour
             return;
         }
 
-        xpSystem.AddXP(xpValue);
-        Debug.Log($"[EnemyXPDrop] '{gameObject.name}' dropped {xpValue} XP.");
+        string sourceName = !string.IsNullOrEmpty(displayName)
+            ? displayName
+            : gameObject.name.Replace("(Clone)", "").Trim();
+
+        xpSystem.AddXP(xpValue, sourceName);
+        Debug.Log($"[EnemyXPDrop] '{sourceName}' dropped {xpValue} XP.");
     }
 }

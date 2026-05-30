@@ -534,6 +534,17 @@
                 },
                 {
                     "name": "",
+                    "id": "2e5f4b71-9d36-4a8c-bf72-eb14dc2c1b85",
+                    "path": "<Keyboard>/e",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": ";Keyboard&Mouse",
+                    "action": "Roll",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
                     "id": "49c8ff2a-94fb-4656-af69-790104084279",
                     "path": "<Keyboard>/escape",
                     "interactions": "",
