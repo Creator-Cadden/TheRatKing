@@ -1,8 +1,45 @@
 using UnityEngine;
 using System.Collections.Generic;
+using System.Collections;
 
 public class AudioManager : MonoBehaviour
 {
+
+    private void Start()
+    {
+        PlayLooping(SoundType.Eviro);
+    }
+
+    public void PlayLooping(SoundType type)
+    {
+        if (!_soundDictionary.TryGetValue(type, out Sound s))
+        {
+            Debug.LogWarning($"Sound type {type} not found!");
+            return;
+        }
+
+        var soundObj = new GameObject($"Sound_{type}_Loop");
+        var audioSrc = soundObj.AddComponent<AudioSource>();
+        audioSrc.clip = s.Clip;
+        audioSrc.volume = s.Volume;
+        audioSrc.loop = true;          // Loop it
+        DontDestroyOnLoad(soundObj);   // Persist across scenes if needed
+        audioSrc.Play();
+
+        s.Source = audioSrc; // Store reference so you can stop it later
+    }
+
+    public void PlayDelayed(SoundType type, float delay)
+    {
+        StartCoroutine(DelayedPlay(type, delay));
+    }
+
+    private IEnumerator DelayedPlay(SoundType type, float delay)
+    {
+        yield return new WaitForSeconds(delay);
+        Play(type);
+    }
+
     public enum SoundType
     {
         Jump,
@@ -12,6 +49,7 @@ public class AudioManager : MonoBehaviour
         Eviro,
         AirAttk,
         EnemyAttk,
+        EnemyDeath,
         // Add more sound types as needed
     }
 

@@ -1,5 +1,6 @@
 using System.Collections;
 using UnityEngine;
+using static AudioManager;
 
 public class EnemyDeathFade : MonoBehaviour
 {
@@ -30,6 +31,8 @@ public class EnemyDeathFade : MonoBehaviour
     private void OnDeath()
     {
         StartCoroutine(DeathSequence());
+
+        AudioManager.Instance.PlayDelayed(SoundType.EnemyDeath, 0.6f);
     }
 
     private IEnumerator DeathSequence()
