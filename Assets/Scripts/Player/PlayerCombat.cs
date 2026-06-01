@@ -51,6 +51,7 @@ public class PlayerCombat : MonoBehaviour
 
     private CharacterController _controller;
     private EntityStats         _stats;
+    private BowController       _bow;        // optional — only used when weapon == Bow
     private float               _lastAttackTime;
     private float               _lastJumpAttackTime;
     private bool                _hasJumpAttacked;
@@ -67,6 +68,7 @@ public class PlayerCombat : MonoBehaviour
         // Cache in Awake so these are never null when input fires before Start
         _controller = GetComponent<CharacterController>();
         _stats      = GetComponent<EntityStats>();
+        _bow        = GetComponent<BowController>();
 
         if (jumpSpinVisual == null && _primaryAnimator != null)
             jumpSpinVisual = _primaryAnimator.transform;
@@ -154,17 +156,40 @@ public class PlayerCombat : MonoBehaviour
 
     public void OnAttack(InputValue value)
     {
-        if (!value.isPressed) return;
+        // Bow attacks take both edges of the button (press starts charge,
+        // release fires). All other weapons only care about press.
+        bool isPressed       = value.isPressed;
+        bool isGrounded      = _controller.isGrounded;
+        bool weaponIsBow     = _stats != null && _stats.EquippedWeapon == EntityStats.WeaponType.Bow;
 
-        bool isGrounded = _controller.isGrounded;
-
-        // Bow charged shot: attack while aiming fires the charged version
-        if (_isAiming && _stats != null && _stats.EquippedWeapon == EntityStats.WeaponType.Bow)
+        // ── Bow path ───────────────────────────────────────────────
+        if (weaponIsBow && _bow != null)
         {
-            if (Time.time >= _lastAttackTime + _currentAttackCooldown)
-                ChargedBowShot();
+            if (!isPressed) return;   // release is handled inside BowController
+
+            if (!isGrounded && !_hasJumpAttacked)
+            {
+                // Mid-air → triple shot toward the ground in front
+                _hasJumpAttacked    = true;
+                _lastJumpAttackTime = Time.time;
+                _primaryAnimator?.SetTrigger("AirAttk");
+                _secondaryAnimator?.SetTrigger("AirAttk");
+                _bow.JumpTripleShot();
+                return;
+            }
+
+            if (Time.time < _lastAttackTime + _currentAttackCooldown) return;
+            _lastAttackTime = Time.time;
+            _primaryAnimator?.SetTrigger("Attk");
+            _secondaryAnimator?.SetTrigger("Attk");
+
+            if (_isAiming) _bow.BeginAimedShot();   // hold-to-charge, BowController.Update releases
+            else           _bow.FreeLookShot();
             return;
         }
+
+        // ── Blade / Hammer path (existing HitScan behaviour) ───────
+        if (!isPressed) return;
 
         if (!isGrounded && !_hasJumpAttacked)
             JumpAttack();
