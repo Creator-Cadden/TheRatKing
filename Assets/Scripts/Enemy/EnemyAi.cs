@@ -186,41 +186,65 @@ public class EnemyAI : MonoBehaviour
         }
     }
 
-    public void TakeKnockback(Vector3 sourcePosition, int staggerForce = 3)
+    /// <summary>
+    /// Primary entry — call this when the player hits this enemy.
+    ///
+    ///   sourcePosition    = world position the hit came from (for push direction)
+    ///   staggerForce      = weapon-specific stagger force (PlayerCombat passes
+    ///                       blade/hammer/bow stagger forces). Determines if the
+    ///                       attack also cancels this enemy's windup.
+    ///   attackerToughness = the player's current Toughness. The knockback push
+    ///                       only fires if attackerToughness > THIS enemy's
+    ///                       Toughness. The attack-cancel only fires when the
+    ///                       stagger check also passes (staggerForce > enemy
+    ///                       Toughness). Keeps lighter weapons honest and
+    ///                       prevents stunlock combos on tougher enemies.
+    /// </summary>
+    public void TakeKnockback(Vector3 sourcePosition, int staggerForce, int attackerToughness)
     {
         if (_sb == null) return;
 
-        int toughness = _stats?.Toughness ?? 0;
+        int enemyToughness = _stats?.Toughness ?? 0;
 
+        // ── 1. Knockback gate: attacker must be tougher than the target ──
+        if (attackerToughness <= enemyToughness) return;
+
+        // ── 2. Pick the weapon's base force from the enemy's stat block ──
         float baseForce = staggerForce switch
         {
             int f when f >= 8 => _sb.hammerKnockbackForce,
             int f when f <= 2 => _sb.bowKnockbackForce,
-            _ => _sb.bladeKnockbackForce
+            _                 => _sb.bladeKnockbackForce
         };
 
-        float finalForce = baseForce - (toughness * _sb.toughnessReductionPerPoint);
+        float finalForce = baseForce - (enemyToughness * _sb.toughnessReductionPerPoint);
+        if (finalForce <= 0f) return;
 
+        // ── 3. Apply the physical push ──
         Vector3 direction = (transform.position - sourcePosition).normalized;
         direction.y = 0.3f;
+        _knockbackVelocity = direction * finalForce;
+        _knockbackTimer    = _sb.knockbackDuration;
+        _isKnockedBack     = true;
 
-        bool staggers = _stats == null || _stats.ShouldStagger(staggerForce);
-
-        if (finalForce > 0f)
+        // ── 4. Cancel windup + play stun anim only if THIS weapon can stagger
+        //       this enemy (staggerForce > enemy Toughness).
+        bool canStagger = _stats != null && _stats.ShouldStagger(staggerForce);
+        if (canStagger)
         {
-            _knockbackVelocity = direction * finalForce;
-            _knockbackTimer = _sb.knockbackDuration;
-            _isKnockedBack = true;
-
             _combat.CancelAttackState();
-
-            if (staggers)
-                _animator.SetTrigger("Stun");
+            _animator.SetTrigger("Stun");
         }
     }
 
+    // ── Backward-compatible overloads ───────────────────────────────────
+    // Any older caller that doesn't pass attackerToughness assumes a very high
+    // attacker toughness so knockback always fires (preserves old behavior).
+    public void TakeKnockback(Vector3 sourcePosition, int staggerForce)
+        => TakeKnockback(sourcePosition, staggerForce, int.MaxValue);
+
     public void TakeKnockback(Vector3 sourcePosition)
-        => TakeKnockback(sourcePosition, 3);
+        => TakeKnockback(sourcePosition, 3, int.MaxValue);
 
     private void OnDeath()
     {

@@ -54,11 +54,18 @@ public class BowController : MonoBehaviour
 
     // ─────────────────────────────────────────
     [Header("Aim Direction (for aim-mode shots)")]
-    [Tooltip("Drag the cameraPitch transform here (the one PlayerMovement rotates " +
-             "for aim pitch). Its forward direction is used for shots while aiming, " +
-             "so the player can shoot up at air enemies. If left null, falls back " +
-             "to the player's transform.forward (no vertical aim).")]
+    [Tooltip("OPTIONAL — drag a transform whose forward direction is the aim " +
+             "direction (e.g. the cameraPitch transform from PlayerMovement). " +
+             "If left null, the script automatically uses Camera.main.transform.forward, " +
+             "which means arrows fly exactly where the camera is looking. " +
+             "Most users want auto (null) — only set this manually if you have a " +
+             "custom aim rig.")]
     public Transform aimDirectionSource;
+
+    [Tooltip("If true and aimDirectionSource is null, fall back to Camera.main's " +
+             "forward direction in aim mode. Recommended ON — gives proper " +
+             "shoot-where-camera-looks behavior automatically.")]
+    public bool useMainCameraIfUnset = true;
 
     // ─────────────────────────────────────────
     [Header("Charge (Aimed Shot)")]
@@ -256,11 +263,25 @@ public class BowController : MonoBehaviour
                       $"dmg ×{dmgMult:F2} ({dmg}), speed ×{speedMult:F2} ({spd:F0}), dir {dir}.");
     }
 
-    /// <summary>Returns the world-space aim direction used for shots while aiming.</summary>
+    /// <summary>
+    /// Returns the world-space aim direction used for shots while aiming.
+    /// Priority order:
+    ///   1. aimDirectionSource.forward (manual Inspector override)
+    ///   2. Camera.main.transform.forward (the actual rendering camera —
+    ///      this is what the player SEES, so arrows match the view)
+    ///   3. transform.forward (last resort if no camera is tagged MainCamera)
+    /// </summary>
     private Vector3 GetAimDirection()
     {
         if (aimDirectionSource != null)
             return aimDirectionSource.forward;
+
+        if (useMainCameraIfUnset)
+        {
+            Camera cam = Camera.main;
+            if (cam != null) return cam.transform.forward;
+        }
+
         return transform.forward;
     }
 

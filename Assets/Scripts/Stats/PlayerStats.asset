@@ -26,8 +26,8 @@ MonoBehaviour:
   floorThreeCap: 15
   bladeStrengthMultiplier: 2
   bladeToughnessBonus: 1
-  hammerStrengthMultiplier: 4
-  hammerToughnessBonus: 4
+  hammerStrengthMultiplier: 3
+  hammerToughnessBonus: 6
   hammerMoveSpeedFraction: 0.667
   hammerAttackSpeedFraction: 0.5
   bowStrengthMultiplier: 1

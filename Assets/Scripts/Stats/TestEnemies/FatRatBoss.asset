@@ -16,7 +16,7 @@ MonoBehaviour:
   baseStrength: 15
   baseStamina: 50
   baseSpeed: 5
-  baseToughness: 12
+  baseToughness: 20
   attackDamageMin: 8
   attackDamageMax: 10
   attackStrengthBonus: 2
@@ -34,6 +34,9 @@ MonoBehaviour:
   stopRange: 1.5
   moveSpeed: 3.5
   damagedAggroDuration: 120
+  healthScalePerFloor: 1.25
+  strengthScalePerFloor: 1.2
+  staminaScalePerFloor: 1
   toughnessReductionPerPoint: 1
   knockbackDuration: 0.2
   bladeKnockbackForce: 0

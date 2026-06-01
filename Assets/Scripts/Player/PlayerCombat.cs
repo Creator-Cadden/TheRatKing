@@ -31,9 +31,17 @@ public class PlayerCombat : MonoBehaviour
     public Transform jumpSpinVisual;
 
     [Header("Stagger Force Per Weapon")]
-    public int bladeStaggerForce  = 3;
+    [Tooltip("Stagger force is compared against the enemy's Toughness in " +
+             "EnemyAI.TakeKnockback. If staggerForce > enemyToughness, the " +
+             "enemy's current attack windup is cancelled and the stun animation " +
+             "plays. Otherwise they keep swinging.\n\n" +
+             "Blade and Bow default to 0 (never interrupt) so combat rewards " +
+             "dodging instead of stun-locking. Hammer keeps a high value so " +
+             "it interrupts low-Toughness enemies (Bait/Grunts) but NOT " +
+             "Tough/Captain/Boss who are designed to push through.")]
+    public int bladeStaggerForce  = 0;
     public int hammerStaggerForce = 8;
-    public int bowStaggerForce    = 2;
+    public int bowStaggerForce    = 0;
 
     [Header("Attack Origin")]
     public Transform attackOrigin;
@@ -297,7 +305,7 @@ public class PlayerCombat : MonoBehaviour
                 Debug.Log($"[PlayerCombat] Hit: {hit.name} for {damage} damage");
 
                 hit.GetComponent<EntityStats>()?.TakeDamage(damage);
-                hit.GetComponent<EnemyAI>()?.TakeKnockback(attackOrigin.position, staggerForce);
+                hit.GetComponent<EnemyAI>()?.TakeKnockback(attackOrigin.position, staggerForce, _stats?.Toughness ?? 0);
             }
         }
     }
@@ -414,7 +422,7 @@ public class PlayerCombat : MonoBehaviour
             {
                 int staggerForce = GetCurrentStaggerForce();
                 hit.GetComponent<EntityStats>()?.TakeDamage(damage);
-                hit.GetComponent<EnemyAI>()?.TakeKnockback(attackOrigin.position, staggerForce);
+                hit.GetComponent<EnemyAI>()?.TakeKnockback(attackOrigin.position, staggerForce, _stats?.Toughness ?? 0);
             }
         }
     }
