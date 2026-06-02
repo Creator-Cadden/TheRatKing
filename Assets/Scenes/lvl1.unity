@@ -5083,35 +5083,35 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 6199130361271467518, guid: a12230b9074c5f24081cc304a5f3e59d, type: 3}
       propertyPath: m_LocalPosition.x
-      value: 0.70713
+      value: 1.94713
       objectReference: {fileID: 0}
     - target: {fileID: 6199130361271467518, guid: a12230b9074c5f24081cc304a5f3e59d, type: 3}
       propertyPath: m_LocalPosition.y
-      value: 5.7799997
+      value: 3.94
       objectReference: {fileID: 0}
     - target: {fileID: 6199130361271467518, guid: a12230b9074c5f24081cc304a5f3e59d, type: 3}
       propertyPath: m_LocalPosition.z
-      value: -2.79287
+      value: -2.09287
       objectReference: {fileID: 0}
     - target: {fileID: 6199130361271467518, guid: a12230b9074c5f24081cc304a5f3e59d, type: 3}
       propertyPath: m_LocalRotation.w
-      value: 0.95947343
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 6199130361271467518, guid: a12230b9074c5f24081cc304a5f3e59d, type: 3}
       propertyPath: m_LocalRotation.x
-      value: 0.28179917
+      value: 0.000000038910013
       objectReference: {fileID: 0}
     - target: {fileID: 6199130361271467518, guid: a12230b9074c5f24081cc304a5f3e59d, type: 3}
       propertyPath: m_LocalRotation.y
-      value: 0.00000002585037
+      value: -0.000000014591255
       objectReference: {fileID: 0}
     - target: {fileID: 6199130361271467518, guid: a12230b9074c5f24081cc304a5f3e59d, type: 3}
       propertyPath: m_LocalRotation.z
-      value: -0.000000007592303
+      value: 5.677459e-16
       objectReference: {fileID: 0}
     - target: {fileID: 7226773179003947898, guid: a12230b9074c5f24081cc304a5f3e59d, type: 3}
       propertyPath: field of view
-      value: 90
+      value: 75
       objectReference: {fileID: 0}
     - target: {fileID: 7226773179003947898, guid: a12230b9074c5f24081cc304a5f3e59d, type: 3}
       propertyPath: m_TargetTexture
@@ -5235,6 +5235,10 @@ PrefabInstance:
       propertyPath: playerStats
       value: 
       objectReference: {fileID: 1075244677}
+    - target: {fileID: 3471651503314546479, guid: d80e301a0ea1ef14193c38c1b0bbb7ea, type: 3}
+      propertyPath: canvasGroup
+      value: 
+      objectReference: {fileID: 0}
     - target: {fileID: 4647444544004847077, guid: d80e301a0ea1ef14193c38c1b0bbb7ea, type: 3}
       propertyPath: m_AnchoredPosition.x
       value: -96.1

@@ -116,9 +116,25 @@ public class BossHealthBarUI : MonoBehaviour
 
     void Awake()
     {
+        // Safety: if the user assigned a CanvasGroup that lives on a DIFFERENT
+        // GameObject (typically the whole UI root), using it here would hide
+        // the entire UI when we set alpha = 0. Detect that and fall back to
+        // a CanvasGroup on this GameObject so only THIS bar fades.
+        if (canvasGroup != null && canvasGroup.gameObject != gameObject)
+        {
+            Debug.LogWarning(
+                $"[BossHealthBarUI] '{name}' had its Canvas Group field set to a " +
+                $"CanvasGroup on '{canvasGroup.gameObject.name}', which would hide " +
+                $"that whole hierarchy (not just this bar). Falling back to a local " +
+                $"CanvasGroup on this GameObject instead. Clear the field in the " +
+                $"Inspector or assign one that lives on this GameObject.", this);
+            canvasGroup = null;
+        }
+
         if (canvasGroup == null) canvasGroup = GetComponent<CanvasGroup>();
         if (canvasGroup == null) canvasGroup = gameObject.AddComponent<CanvasGroup>();
-        canvasGroup.alpha = 0f;
+
+        canvasGroup.alpha          = 0f;
         canvasGroup.interactable   = false;
         canvasGroup.blocksRaycasts = false;
     }
