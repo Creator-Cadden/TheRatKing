@@ -27,12 +27,16 @@ MonoBehaviour:
   circleRadius: 4
   rectWidth: 2
   rectLength: 5
-  attackCooldown: 1.8
-  attackWindupTime: 1
+  attackCooldown: 1.24
+  attackWindupTime: 0.76
   attackAnimTimeout: 2.5
   aggroRange: 15
   stopRange: 3
   moveSpeed: 3.5
+  damagedAggroDuration: 60
+  healthScalePerFloor: 1.25
+  strengthScalePerFloor: 1.2
+  staminaScalePerFloor: 1
   toughnessReductionPerPoint: 1
   knockbackDuration: 0.2
   bladeKnockbackForce: 5

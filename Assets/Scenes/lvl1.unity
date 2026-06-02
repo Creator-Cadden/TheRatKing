@@ -2641,8 +2641,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::BowController
   arrowPrefab: {fileID: 5601159848352641252, guid: 866ca58bf1f52954d84437bcb0d8f003, type: 3}
   arrowSpawnPoint: {fileID: 1797229875069604151}
-  arrowSpeed: 28
-  arrowLifetime: 2.5
+  arrowSpeed: 100
+  arrowLifetime: 10
   enemyLayer:
     serializedVersion: 2
     m_Bits: 64
@@ -2659,7 +2659,7 @@ MonoBehaviour:
   tripleShotCount: 3
   tripleShotInterval: 0.08
   tripleShotSpread: 6
-  jumpShotPitchDown: 30
+  jumpShotPitchDown: 50
   verbose: 0
 --- !u!1 &1086652135 stripped
 GameObject:
@@ -4817,6 +4817,18 @@ PrefabInstance:
       value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 1303362881654007255, guid: 914f7101e2e3ab940ac23fba30adf473, type: 3}
+      propertyPath: jumpAttackAngle
+      value: 360
+      objectReference: {fileID: 0}
+    - target: {fileID: 1303362881654007255, guid: 914f7101e2e3ab940ac23fba30adf473, type: 3}
+      propertyPath: jumpAttackHeight
+      value: 4.42
+      objectReference: {fileID: 0}
+    - target: {fileID: 1303362881654007255, guid: 914f7101e2e3ab940ac23fba30adf473, type: 3}
+      propertyPath: jumpAttackRadius
+      value: 3.22
+      objectReference: {fileID: 0}
+    - target: {fileID: 1303362881654007255, guid: 914f7101e2e3ab940ac23fba30adf473, type: 3}
       propertyPath: bladeStaggerForce
       value: 0
       objectReference: {fileID: 0}
@@ -4896,6 +4908,10 @@ PrefabInstance:
       propertyPath: aimCamera
       value: 
       objectReference: {fileID: 419371210}
+    - target: {fileID: 7007591616936203130, guid: 914f7101e2e3ab940ac23fba30adf473, type: 3}
+      propertyPath: walkSpeed
+      value: 6
+      objectReference: {fileID: 0}
     - target: {fileID: 7007591616936203130, guid: 914f7101e2e3ab940ac23fba30adf473, type: 3}
       propertyPath: freeLookCamera
       value: 
@@ -5083,35 +5099,35 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 6199130361271467518, guid: a12230b9074c5f24081cc304a5f3e59d, type: 3}
       propertyPath: m_LocalPosition.x
-      value: 1.94713
+      value: 0.70713
       objectReference: {fileID: 0}
     - target: {fileID: 6199130361271467518, guid: a12230b9074c5f24081cc304a5f3e59d, type: 3}
       propertyPath: m_LocalPosition.y
-      value: 3.94
+      value: 5.7799997
       objectReference: {fileID: 0}
     - target: {fileID: 6199130361271467518, guid: a12230b9074c5f24081cc304a5f3e59d, type: 3}
       propertyPath: m_LocalPosition.z
-      value: -2.09287
+      value: -2.79287
       objectReference: {fileID: 0}
     - target: {fileID: 6199130361271467518, guid: a12230b9074c5f24081cc304a5f3e59d, type: 3}
       propertyPath: m_LocalRotation.w
-      value: 1
+      value: 0.95947343
       objectReference: {fileID: 0}
     - target: {fileID: 6199130361271467518, guid: a12230b9074c5f24081cc304a5f3e59d, type: 3}
       propertyPath: m_LocalRotation.x
-      value: 0.000000038910013
+      value: 0.28179917
       objectReference: {fileID: 0}
     - target: {fileID: 6199130361271467518, guid: a12230b9074c5f24081cc304a5f3e59d, type: 3}
       propertyPath: m_LocalRotation.y
-      value: -0.000000014591255
+      value: 0.00000002585037
       objectReference: {fileID: 0}
     - target: {fileID: 6199130361271467518, guid: a12230b9074c5f24081cc304a5f3e59d, type: 3}
       propertyPath: m_LocalRotation.z
-      value: 5.677459e-16
+      value: -0.000000007592303
       objectReference: {fileID: 0}
     - target: {fileID: 7226773179003947898, guid: a12230b9074c5f24081cc304a5f3e59d, type: 3}
       propertyPath: field of view
-      value: 75
+      value: 90
       objectReference: {fileID: 0}
     - target: {fileID: 7226773179003947898, guid: a12230b9074c5f24081cc304a5f3e59d, type: 3}
       propertyPath: m_TargetTexture
