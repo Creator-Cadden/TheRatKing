@@ -167,7 +167,9 @@ public class PlayerCombat : MonoBehaviour
 
             if (Time.time < _lastAttackTime + _currentAttackCooldown) return;
             _lastAttackTime = Time.time;
-            FireAttackAnims("Attk");
+            _swapper?.ActiveWeaponAnimator?.ResetTrigger("BowAttk");
+            FireAttackAnims("Attk", "BowAttk");
+
 
             if (_isAiming) _bow.BeginAimedShot();
             else           _bow.FreeLookShot();
@@ -191,7 +193,9 @@ public class PlayerCombat : MonoBehaviour
             }
 
             if (isGrounded && _hammer.TryBasicSwing())
-                FireAttackAnims("Attk");
+                 FireAttackAnims("Attk");
+                //FireAttackAnims("HamAttk");
+           
             return;
         }
 
@@ -234,10 +238,16 @@ public class PlayerCombat : MonoBehaviour
     // Animator helper
     // ═════════════════════════════════════════════════════════════
 
-    private void FireAttackAnims(string trigger)
+    private void FireAttackAnims(string trigger, string secondTrigger = null)
     {
         _primaryAnimator?.SetTrigger(trigger);
         _swapper?.ActiveWeaponAnimator?.SetTrigger(trigger);
+
+        if (secondTrigger != null)
+        {
+            _primaryAnimator?.SetTrigger(secondTrigger);
+            _swapper?.ActiveWeaponAnimator?.SetTrigger(secondTrigger);
+        }
     }
 
     // ═════════════════════════════════════════════════════════════
