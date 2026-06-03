@@ -5131,6 +5131,10 @@ PrefabInstance:
       propertyPath: hammerStaggerForce
       value: 8
       objectReference: {fileID: 0}
+    - target: {fileID: 1303362881654007255, guid: 914f7101e2e3ab940ac23fba30adf473, type: 3}
+      propertyPath: attackCooldownPerSpeed
+      value: -0.42
+      objectReference: {fileID: 0}
     - target: {fileID: 1313619994705357618, guid: 914f7101e2e3ab940ac23fba30adf473, type: 3}
       propertyPath: jumpShotPitchDown
       value: 41.7
@@ -5159,6 +5163,10 @@ PrefabInstance:
       propertyPath: settingsButton
       value: 
       objectReference: {fileID: 15341074}
+    - target: {fileID: 2707531549045194775, guid: 914f7101e2e3ab940ac23fba30adf473, type: 3}
+      propertyPath: m_StepOffset
+      value: 0.74
+      objectReference: {fileID: 0}
     - target: {fileID: 3002817899119560023, guid: 914f7101e2e3ab940ac23fba30adf473, type: 3}
       propertyPath: m_LocalPosition.x
       value: -19.7
@@ -5263,6 +5271,10 @@ PrefabInstance:
       propertyPath: hammerAnimator
       value: 
       objectReference: {fileID: 411431341}
+    - target: {fileID: 6566954334880360577, guid: 914f7101e2e3ab940ac23fba30adf473, type: 3}
+      propertyPath: weaponAnimator
+      value: 
+      objectReference: {fileID: 1797229875069604153}
     - target: {fileID: 6926598294484334303, guid: 914f7101e2e3ab940ac23fba30adf473, type: 3}
       propertyPath: titleLabel
       value: 
@@ -5288,6 +5300,10 @@ PrefabInstance:
       value: 
       objectReference: {fileID: 15341074}
     - target: {fileID: 7007591616936203130, guid: 914f7101e2e3ab940ac23fba30adf473, type: 3}
+      propertyPath: pitchMin
+      value: -39.702454
+      objectReference: {fileID: 0}
+    - target: {fileID: 7007591616936203130, guid: 914f7101e2e3ab940ac23fba30adf473, type: 3}
       propertyPath: aimCamera
       value: 
       objectReference: {fileID: 419371210}
@@ -5299,9 +5315,17 @@ PrefabInstance:
       propertyPath: freeLookCamera
       value: 
       objectReference: {fileID: 1240517820}
+    - target: {fileID: 7007591616936203130, guid: 914f7101e2e3ab940ac23fba30adf473, type: 3}
+      propertyPath: _secondaryAnimator
+      value: 
+      objectReference: {fileID: 1518703021}
     - target: {fileID: 7476827831976075340, guid: 914f7101e2e3ab940ac23fba30adf473, type: 3}
       propertyPath: m_Name
       value: Blade
+      objectReference: {fileID: 0}
+    - target: {fileID: 8525128706489102541, guid: 914f7101e2e3ab940ac23fba30adf473, type: 3}
+      propertyPath: swingAngle
+      value: 60.5765
       objectReference: {fileID: 0}
     - target: {fileID: 8525128706489102541, guid: 914f7101e2e3ab940ac23fba30adf473, type: 3}
       propertyPath: attackOrigin
@@ -5343,6 +5367,11 @@ PrefabInstance:
 --- !u!4 &1797229875069604152 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 6321704820724103676, guid: 914f7101e2e3ab940ac23fba30adf473, type: 3}
+  m_PrefabInstance: {fileID: 1797229875069604150}
+  m_PrefabAsset: {fileID: 0}
+--- !u!95 &1797229875069604153 stripped
+Animator:
+  m_CorrespondingSourceObject: {fileID: 5138894990430837496, guid: 914f7101e2e3ab940ac23fba30adf473, type: 3}
   m_PrefabInstance: {fileID: 1797229875069604150}
   m_PrefabAsset: {fileID: 0}
 --- !u!1001 &2433090198303014304
