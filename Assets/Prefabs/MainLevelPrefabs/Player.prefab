@@ -150,6 +150,7 @@ GameObject:
   - component: {fileID: 3628817058282218742}
   - component: {fileID: 6566954334880360577}
   - component: {fileID: 4408546908635524378}
+  - component: {fileID: 2186466306947690145}
   m_Layer: 3
   m_Name: Player
   m_TagString: Player
@@ -566,6 +567,24 @@ MonoBehaviour:
   bowKey: 43
   testModeOnly: 0
   verbose: 1
+--- !u!114 &2186466306947690145
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3149465941695762636}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d79d9111f43c9d847b2dbbda69e3ace6, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::PauseMenu
+  pauseMenuRoot: {fileID: 0}
+  titleLabel: {fileID: 0}
+  levelInfoLabel: {fileID: 0}
+  resetButton: {fileID: 0}
+  settingsButton: {fileID: 0}
+  mainMenuButton: {fileID: 0}
 --- !u!1 &3333923889273384047
 GameObject:
   m_ObjectHideFlags: 0

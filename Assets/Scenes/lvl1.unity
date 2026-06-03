@@ -5131,6 +5131,34 @@ PrefabInstance:
       propertyPath: hammerStaggerForce
       value: 8
       objectReference: {fileID: 0}
+    - target: {fileID: 1313619994705357618, guid: 914f7101e2e3ab940ac23fba30adf473, type: 3}
+      propertyPath: jumpShotPitchDown
+      value: 15
+      objectReference: {fileID: 0}
+    - target: {fileID: 2186466306947690145, guid: 914f7101e2e3ab940ac23fba30adf473, type: 3}
+      propertyPath: titleLabel
+      value: 
+      objectReference: {fileID: 1569406605}
+    - target: {fileID: 2186466306947690145, guid: 914f7101e2e3ab940ac23fba30adf473, type: 3}
+      propertyPath: resetButton
+      value: 
+      objectReference: {fileID: 1180782386}
+    - target: {fileID: 2186466306947690145, guid: 914f7101e2e3ab940ac23fba30adf473, type: 3}
+      propertyPath: pauseMenuRoot
+      value: 
+      objectReference: {fileID: 6220256034986225757}
+    - target: {fileID: 2186466306947690145, guid: 914f7101e2e3ab940ac23fba30adf473, type: 3}
+      propertyPath: levelInfoLabel
+      value: 
+      objectReference: {fileID: 398413902}
+    - target: {fileID: 2186466306947690145, guid: 914f7101e2e3ab940ac23fba30adf473, type: 3}
+      propertyPath: mainMenuButton
+      value: 
+      objectReference: {fileID: 2082438536}
+    - target: {fileID: 2186466306947690145, guid: 914f7101e2e3ab940ac23fba30adf473, type: 3}
+      propertyPath: settingsButton
+      value: 
+      objectReference: {fileID: 15341074}
     - target: {fileID: 3002817899119560023, guid: 914f7101e2e3ab940ac23fba30adf473, type: 3}
       propertyPath: m_LocalPosition.x
       value: -19.7
@@ -5781,6 +5809,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: f4688fdb7df04437aeb418b961361dc5, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Unity.TextMeshPro::TMPro.TextMeshProUGUI
+--- !u!1 &6220256034986225757 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 1535992268143206557, guid: d80e301a0ea1ef14193c38c1b0bbb7ea, type: 3}
+  m_PrefabInstance: {fileID: 6220256034986225754}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1001 &6568635731023328033
 PrefabInstance:
   m_ObjectHideFlags: 0
