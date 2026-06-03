@@ -43,6 +43,21 @@ public class Arrow : MonoBehaviour
              "destroys the arrow too. If false, the arrow only dies on enemy hit.")]
     public bool dieOnWorldHit = true;
 
+    [Header("Hit Flash (visual on enemy hit)")]
+    [Tooltip("If true, a brief white flash disc spawns at the impact point on " +
+             "every enemy hit. Subtle confirmation that the shot connected.")]
+    public bool spawnHitFlash = true;
+
+    [Tooltip("Color of the hit flash.")]
+    public Color hitFlashColor = new Color(1f, 1f, 1f, 0.85f);
+
+    [Tooltip("Radius of the hit flash in world units. Small = subtle, " +
+             "big = punchy.")]
+    public float hitFlashRadius = 0.4f;
+
+    [Tooltip("How long the hit flash stays visible.")]
+    public float hitFlashLifetime = 0.15f;
+
     [Header("Stick on Enemy Hit")]
     [Tooltip("If true, the arrow lodges in the enemy on hit instead of " +
              "destroying immediately. Looks great visually — quivers full of " +
@@ -138,6 +153,11 @@ public class Arrow : MonoBehaviour
                 if (verbose)
                     Debug.Log($"[Arrow] Hit {other.name} for {damage} dmg.");
             }
+
+            // Visual: quick flash at the impact point so the player sees the hit
+            if (spawnHitFlash)
+                AttackRipple.SpawnFlash(transform.position, hitFlashRadius,
+                                        hitFlashColor, hitFlashLifetime);
 
             _spent = true;
 

@@ -66,11 +66,22 @@ public class BossHealthBarUI : MonoBehaviour
              "Examples: '{0} / {1}', '{0}', 'HP {0}/{1}'.")]
     public string hpLabelFormat = "{0} / {1}";
 
-    [Tooltip("Color the bar tints at full HP.")]
+    [Tooltip("Bar color. With Use Color Ramp OFF (default), this is the only color used.")]
     public Color fullColor = new Color(0.85f, 0.15f, 0.15f);
 
-    [Tooltip("Color the bar tints when nearly empty.")]
+    [Tooltip("Only used when Use Color Ramp is ON — color the bar fades toward as HP drops.")]
     public Color lowColor  = new Color(0.95f, 0.6f, 0.1f);
+
+    [Tooltip("If on, the bar tints from fullColor → lowColor as HP drops. " +
+             "If off (default), the bar stays at fullColor regardless of HP — " +
+             "only the fill amount shrinks.")]
+    public bool useColorRamp = false;
+
+    [Tooltip("If on (default), the script replaces the Fill image's sprite with a " +
+             "1×1 white square at Awake — gives clean rectangular edges instead of " +
+             "Unity's default rounded UISprite. Turn off if you've assigned a custom " +
+             "sprite to the Fill image you want to keep.")]
+    public bool forceSquareFillSprite = true;
 
     [Tooltip("How fast the displayed fill catches up to the actual HP. " +
              "Higher = snappier. 0 = instant.")]
@@ -325,7 +336,9 @@ public class BossHealthBarUI : MonoBehaviour
     {
         if (fillImage == null) return;
         fillImage.fillAmount = fraction;
-        fillImage.color      = Color.Lerp(lowColor, fullColor, fraction);
+        fillImage.color      = useColorRamp
+            ? Color.Lerp(lowColor, fullColor, fraction)
+            : fullColor;
     }
 
     private void ApplyText()

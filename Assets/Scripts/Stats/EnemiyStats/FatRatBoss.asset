@@ -12,7 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: cddbe9ff30055fe44ac23a486a3194ae, type: 3}
   m_Name: FatRatBoss
   m_EditorClassIdentifier: Assembly-CSharp::EnemyStatBlock
-  baseHealth: 500
+  baseHealth: 1000
   baseStrength: 15
   baseStamina: 50
   baseSpeed: 5
@@ -30,9 +30,9 @@ MonoBehaviour:
   attackCooldown: 1.5
   attackWindupTime: 0.6
   attackAnimTimeout: 2.5
-  aggroRange: 8
-  stopRange: 1.5
-  moveSpeed: 3.5
+  aggroRange: 100
+  stopRange: 1.87
+  moveSpeed: 5
   damagedAggroDuration: 120
   healthScalePerFloor: 1.25
   strengthScalePerFloor: 1.2

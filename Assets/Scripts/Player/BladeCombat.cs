@@ -74,6 +74,17 @@ public class BladeCombat : MonoBehaviour
     public int staggerForce = 0;
 
     // ─────────────────────────────────────────
+    [Header("Visual Ripple")]
+    [Tooltip("Color of the arc ripple shown on the basic swing.")]
+    public Color swingRippleColor = new Color(1f, 1f, 1f, 0.55f);
+
+    [Tooltip("Color of the ring ripple shown on the jump spin attack.")]
+    public Color jumpRippleColor  = new Color(1f, 1f, 1f, 0.55f);
+
+    [Tooltip("How long the ripple effect stays visible.")]
+    public float rippleLifetime   = 0.3f;
+
+    // ─────────────────────────────────────────
     [Header("Debug")]
     public bool showGizmos = true;
     public bool verbose    = false;
@@ -165,6 +176,12 @@ public class BladeCombat : MonoBehaviour
         _lastSwingTime = Time.time;
         HitScan(swingRadius, swingAngle);
 
+        // Visual: arc ripple along the swing cone
+        if (attackOrigin != null)
+            AttackRipple.SpawnArc(attackOrigin.position, transform.forward,
+                                  swingRadius, swingAngle,
+                                  swingRippleColor, rippleLifetime);
+
         if (verbose) Debug.Log("[BladeCombat] Basic swing fired.");
         return true;
     }
@@ -177,6 +194,11 @@ public class BladeCombat : MonoBehaviour
 
         StartJumpSpin();
         HitScan(jumpAttackRadius, 360f);   // 360 = no angle filter — hits all around
+
+        // Visual: 360 ring ripple at the spin radius
+        if (attackOrigin != null)
+            AttackRipple.SpawnRing(attackOrigin.position, jumpAttackRadius,
+                                   jumpRippleColor, rippleLifetime);
 
         if (verbose) Debug.Log("[BladeCombat] Jump attack fired.");
         return true;
@@ -264,12 +286,22 @@ public class BladeCombat : MonoBehaviour
     {
         if (!showGizmos || attackOrigin == null) return;
 
+        // Basic swing — red cone facing forward
         Gizmos.color = new Color(1f, 0f, 0f, 0.3f);
         DrawConeGizmo(attackOrigin.position, transform.forward, swingRadius,
                       swingAngle, swingHeight);
 
+        // Jump spin — orange vertical wheel in the player's forward-up plane.
+        // Visualizes the forward-flip spin attack: circle goes through front,
+        // top, back, and bottom of the player rather than orbiting them
+        // horizontally.
         Gizmos.color = new Color(1f, 0.5f, 0f, 0.2f);
-        DrawCylinderGizmo(attackOrigin.position, jumpAttackRadius, jumpAttackHeight);
+        DrawVerticalWheelGizmo(attackOrigin.position,
+                               transform.right,
+                               transform.forward,
+                               transform.up,
+                               jumpAttackRadius,
+                               jumpAttackHeight);
     }
 
     private static void DrawConeGizmo(Vector3 origin, Vector3 forward, float radius,
@@ -296,26 +328,45 @@ public class BladeCombat : MonoBehaviour
         }
     }
 
-    private static void DrawCylinderGizmo(Vector3 origin, float radius, float height)
+    /// <summary>
+    /// Draws a wheel-shaped gizmo whose axle is along <paramref name="axisDir"/>.
+    /// The wheel itself lies in the plane spanned by <paramref name="forward"/>
+    /// and <paramref name="up"/>. For the blade jump spin, this is the
+    /// player's forward-up plane — circle goes through front, top, back,
+    /// and bottom of the player.
+    ///
+    /// <paramref name="thickness"/> is how far the two side circles sit apart
+    /// along the axle direction (gives the wheel some volume so it doesn't
+    /// look like a flat decal).
+    /// </summary>
+    private static void DrawVerticalWheelGizmo(Vector3 origin, Vector3 axisDir,
+                                               Vector3 forward, Vector3 up,
+                                               float radius, float thickness)
     {
         int segments = 32;
-        float halfH  = height * 0.5f;
-        Vector3 top  = origin + Vector3.up * halfH;
-        Vector3 bot  = origin - Vector3.up * halfH;
-        Vector3 prevTop = top + Vector3.right * radius;
-        Vector3 prevBot = bot + Vector3.right * radius;
+        float halfT  = thickness * 0.5f;
+
+        Vector3 sideA = origin + axisDir * halfT;
+        Vector3 sideB = origin - axisDir * halfT;
+
+        Vector3 prevA = sideA + forward * radius;
+        Vector3 prevB = sideB + forward * radius;
 
         for (int i = 1; i <= segments; i++)
         {
-            float a = (float)i / segments * 360f * Mathf.Deg2Rad;
-            Vector3 offset = new Vector3(Mathf.Cos(a), 0f, Mathf.Sin(a)) * radius;
-            Vector3 curTop = top + offset;
-            Vector3 curBot = bot + offset;
-            Gizmos.DrawLine(prevTop, curTop);
-            Gizmos.DrawLine(prevBot, curBot);
-            if (i % 8 == 0) Gizmos.DrawLine(curBot, curTop);
-            prevTop = curTop;
-            prevBot = curBot;
+            float a       = (float)i / segments * 360f * Mathf.Deg2Rad;
+            Vector3 off   = forward * Mathf.Cos(a) * radius + up * Mathf.Sin(a) * radius;
+            Vector3 curA  = sideA + off;
+            Vector3 curB  = sideB + off;
+
+            Gizmos.DrawLine(prevA, curA);     // outer ring (A side)
+            Gizmos.DrawLine(prevB, curB);     // outer ring (B side)
+
+            // Cross-strut every 8 segments to show the wheel's thickness.
+            if (i % 8 == 0) Gizmos.DrawLine(curA, curB);
+
+            prevA = curA;
+            prevB = curB;
         }
     }
 }

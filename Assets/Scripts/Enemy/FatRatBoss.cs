@@ -195,6 +195,7 @@ public class FatRatBoss : MonoBehaviour
     private Vector3       _rollDir;
     private Vector3       _rollStart;
     private float         _rollDistTravelled;
+    private float         _effectiveRollDistance;   // capped to NavMesh edge so the boss never rolls off the arena
     private bool          _rollHitPlayerThisAttack;
 
     // Slam state
@@ -441,7 +442,26 @@ public class FatRatBoss : MonoBehaviour
         _rollDistTravelled         = 0f;
         _rollHitPlayerThisAttack   = false;
 
-       
+        // Cap the roll distance to the NavMesh edge so the boss can't fly off
+        // the arena. NavMesh.Raycast walks along the navigable surface from
+        // the start toward the target. If it hits an edge (i.e. there's no
+        // walkable surface that far), hit.position is the edge intersection.
+        _effectiveRollDistance = rollDistance;
+        Vector3 target = transform.position + _rollDir * rollDistance;
+        if (UnityEngine.AI.NavMesh.Raycast(transform.position, target,
+                                           out UnityEngine.AI.NavMeshHit hit,
+                                           UnityEngine.AI.NavMesh.AllAreas))
+        {
+            // hit.position is the edge of the navigable area along the roll path.
+            // Subtract a small buffer so the boss doesn't end up exactly on the
+            // edge (where collisions sometimes catch funny).
+            float edgeDist = Vector3.Distance(transform.position, hit.position);
+            _effectiveRollDistance = Mathf.Max(1f, edgeDist - 0.5f);
+
+            if (verbose)
+                Debug.Log($"[FatRatBoss] Roll capped from {rollDistance:F1} → " +
+                          $"{_effectiveRollDistance:F1} (NavMesh edge).");
+        }
 
         SetState(BossState.Rolling);
     }
@@ -465,7 +485,7 @@ public class FatRatBoss : MonoBehaviour
             KnockbackPlayer(_rollDir, rollKnockbackForce, rollKnockbackDuration);
         }
 
-        if (_rollDistTravelled >= rollDistance)
+        if (_rollDistTravelled >= _effectiveRollDistance)
             EndRoll();
     }
 

@@ -135,8 +135,10 @@ public class PlayerCombat : MonoBehaviour
                                                basicAttackCooldownBase - reduction);
         }
 
-        // Forward to BladeCombat — it has its OWN speed-affected cooldown logic
+        // Forward to BladeCombat AND HammerCombat — both have their own
+        // speed-affected cooldown logic that needs to re-derive from Speed.
         _blade?.RecalculateCooldown();
+        _hammer?.RecalculateCooldown();
     }
 
     // ═════════════════════════════════════════════════════════════
@@ -281,7 +283,7 @@ public class PlayerCombat : MonoBehaviour
             switch (_stats.EquippedWeapon)
             {
                 case EntityStats.WeaponType.Hammer:
-                    return _hammer != null ? _hammer.swingCooldown : basicAttackCooldownBase;
+                    return _hammer != null ? _hammer.CurrentSwingCooldown : basicAttackCooldownBase;
                 case EntityStats.WeaponType.Bow:
                     return _currentAttackCooldown;
                 default:

@@ -40,8 +40,14 @@ public class PlayerMovement : MonoBehaviour
     public int activePriority  = 20;
 
     [Header("Animators")]
+    [Tooltip("The rat BODY animator — drives running, jumping, attack pose, etc. " +
+             "This is always fed every animator parameter PlayerMovement sets.")]
     [SerializeField] private Animator _primaryAnimator;
-    [SerializeField] private Animator _secondaryAnimator;
+
+    // The currently-equipped weapon's animator is fetched dynamically from
+    // WeaponModelSwapper.ActiveWeaponAnimator so it always matches whichever
+    // weapon is in the player's hand right now. No serialized field needed.
+    private WeaponModelSwapper _swapper;
 
     // ── Private State ──
     private CharacterController            _controller;
@@ -108,6 +114,7 @@ public class PlayerMovement : MonoBehaviour
         _controller    = GetComponent<CharacterController>();
         _freeLookInput = freeLookCamera.GetComponent<CinemachineInputAxisController>();
         _stats         = GetComponent<EntityStats>();
+        _swapper       = GetComponent<WeaponModelSwapper>();
 
         // Cache the OrbitalFollow so we can write HorizontalAxis.Value on aim-exit
         _orbitalFollow = freeLookCamera.GetComponent<CinemachineOrbitalFollow>();
@@ -390,13 +397,14 @@ public class PlayerMovement : MonoBehaviour
     private void SetBool(string param, bool value)
     {
         _primaryAnimator?.SetBool(param, value);
-        _secondaryAnimator?.SetBool(param, value);
+        // Fire on whichever weapon is currently equipped — auto-resolves via swapper.
+        _swapper?.ActiveWeaponAnimator?.SetBool(param, value);
     }
 
     private void SetFloat(string param, float value)
     {
         _primaryAnimator?.SetFloat(param, value);
-        _secondaryAnimator?.SetFloat(param, value);
+        _swapper?.ActiveWeaponAnimator?.SetFloat(param, value);
     }
 
     // ─────────────────────────────────────────

@@ -96,29 +96,29 @@ public class WeaponSelectUI : MonoBehaviour
         new WeaponInfo
         {
             name        = "Hammer",
-            tag         = "Slow  ·  Heavy  ·  High Damage",
+            tag         = "Heavy  ·  Slow Swing  ·  High Damage",
             description = "A crushing weight that breaks bones and floors. " +
-                          "Each swing hits twice as hard as a blade at the same Strength, " +
-                          "but you pay for it — your movement and attacks both suffer while equipped.",
-            damage      = "Damage:      Strength  ×  4  per hit",
-            attack      = "Attack Speed:  1 hit / 2 sec  (half normal speed)",
-            move        = "Move Speed:  Reduced by  ⅓  while equipped",
+                          "Each swing hits three times as hard as a blade at the same Strength. " +
+                          "Slower swing rhythm — but your footwork is unaffected, so platforming and " +
+                          "dodging stay nimble.",
+            damage      = "Damage:      Strength  ×  3  per hit",
+            attack      = "Attack Speed:  ~2.0s per swing  (about half a blade's — improves with Speed)",
+            move        = "Move Speed:  Full speed  (no penalty)",
             toughness   = "Toughness:   +4  (heavy armor bonus)",
-            special     = "Knockback:   Staggers nearly all enemies on hit"
+            special     = "Jump Attack:  360° slam dealing ×1.5 damage"
         },
         new WeaponInfo
         {
             name        = "Bow",
             tag         = "Ranged  ·  Tactical  ·  Burst Damage",
             description = "Strike from a distance before they can reach you. " +
-                          "Normal shots are light but safe. " +
-                          "Hold aim and release for a charged shot that triples your damage " +
-                          "— at the cost of slowed movement while aiming.",
-            damage      = "Normal Shot:   Strength  ×  1  per hit",
-            attack      = "Charged Shot:  Strength  ×  3  (aim then attack)",
+                          "Free-look shots gently auto-target enemies in front. " +
+                          "Hold RMB to aim, then hold LMB for a charged shot — full charge triples your damage.",
+            damage      = "Normal Shot:   Strength  ×  1  per arrow",
+            attack      = "Charged Shot:  Strength  ×  3  (hold LMB while aiming)",
             move        = "Move Speed:  Reduced by  ⅓  while aiming",
             toughness   = "Toughness:   +0  (no armor bonus)",
-            special     = "Range:   Hits enemies outside melee reach"
+            special     = "Jump Attack:  3-arrow burst aimed at the ground below"
         },
     };
 

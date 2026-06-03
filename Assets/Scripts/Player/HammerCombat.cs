@@ -35,9 +35,19 @@ public class HammerCombat : MonoBehaviour
              "against enemies on slight slopes or ledges.")]
     public float swingHeight = 0.7f;
 
-    [Tooltip("Fixed cooldown between swings, in seconds. Speed stat does NOT " +
-             "reduce this — the hammer is heavy regardless of how nimble you are.")]
-    public float swingCooldown = 1.4f;
+    [Tooltip("Swing cooldown at base Speed, in seconds. About double the blade's " +
+             "base — the hammer is heavy. Speed points reduce this toward " +
+             "swingCooldownMin.")]
+    public float swingCooldown = 2.0f;
+
+    [Tooltip("Fastest possible swing cooldown regardless of Speed. The hammer " +
+             "never gets as fast as a blade even at max Speed.")]
+    public float swingCooldownMin = 0.8f;
+
+    [Tooltip("Seconds shaved off the cooldown per Speed point above base. " +
+             "Smaller than the blade's per-Speed reduction so the hammer scales " +
+             "less aggressively with Speed.")]
+    public float swingCooldownPerSpeed = 0.08f;
 
     [Tooltip("How long before the hit lands — visual telegraph time. Bigger windup " +
              "= more committed swing = punishable if the enemy dodges.")]
@@ -80,6 +90,17 @@ public class HammerCombat : MonoBehaviour
     public int staggerForce = 8;
 
     // ─────────────────────────────────────────
+    [Header("Visual Ripple")]
+    [Tooltip("Color of the arc ripple shown on the basic swing — orange feels weighty.")]
+    public Color swingRippleColor = new Color(1f, 0.55f, 0.15f, 0.6f);
+
+    [Tooltip("Color of the ring ripple shown on the slam attack.")]
+    public Color slamRippleColor  = new Color(1f, 0.45f, 0.15f, 0.7f);
+
+    [Tooltip("How long the ripple effect stays visible.")]
+    public float rippleLifetime   = 0.35f;
+
+    // ─────────────────────────────────────────
     [Header("Debug")]
     public bool showGizmos = true;
     public bool verbose = false;
@@ -91,19 +112,22 @@ public class HammerCombat : MonoBehaviour
     private EntityStats _stats;
     private float       _lastSwingTime  = -999f;
     private float       _lastSlamTime   = -999f;
+    private float       _currentSwingCooldown;   // recalculated by RecalculateCooldown()
 
     // ─────────────────────────────────────────
     // Public read-only — for HUD cooldown bars / debug
     // ─────────────────────────────────────────
 
     public float SwingCooldownProgress =>
-        Mathf.Clamp01((Time.time - _lastSwingTime) / Mathf.Max(0.0001f, swingCooldown));
+        Mathf.Clamp01((Time.time - _lastSwingTime) / Mathf.Max(0.0001f, _currentSwingCooldown));
 
     public float SlamCooldownProgress =>
         Mathf.Clamp01((Time.time - _lastSlamTime) / Mathf.Max(0.0001f, slamCooldown));
 
-    public bool IsSwingReady => Time.time >= _lastSwingTime + swingCooldown;
+    public bool IsSwingReady => Time.time >= _lastSwingTime + _currentSwingCooldown;
     public bool IsSlamReady  => Time.time >= _lastSlamTime  + slamCooldown;
+
+    public float CurrentSwingCooldown => _currentSwingCooldown;
 
     // ═════════════════════════════════════════════════════════════
 
@@ -119,6 +143,37 @@ public class HammerCombat : MonoBehaviour
             if (attackOrigin == null)       attackOrigin = pc.attackOrigin;
             if (enemyLayer.value == 0)      enemyLayer   = pc.enemyLayer;
         }
+    }
+
+    void Start()
+    {
+        RecalculateCooldown();
+    }
+
+    // ═════════════════════════════════════════════════════════════
+    // Cooldown recalc — called by PlayerCombat.RecalculateAttackCooldown
+    // which is hooked to EntityStats.onStatsChanged
+    // ═════════════════════════════════════════════════════════════
+
+    /// <summary>
+    /// Recalculates the swing cooldown based on the player's current Speed.
+    /// Hammer scales less aggressively with Speed than the blade (smaller
+    /// per-Speed reduction, higher minimum floor) so it stays distinctly
+    /// heavier even at high Speed investment.
+    /// </summary>
+    public void RecalculateCooldown()
+    {
+        if (_stats == null) { _currentSwingCooldown = swingCooldown; return; }
+
+        int   baseSpd    = _stats.playerStatBlock != null ? _stats.playerStatBlock.baseSpeed : 5;
+        int   speedBonus = Mathf.Max(0, _stats.Speed - baseSpd);
+        float reduction  = speedBonus * swingCooldownPerSpeed;
+
+        _currentSwingCooldown = Mathf.Max(swingCooldownMin, swingCooldown - reduction);
+
+        if (verbose)
+            Debug.Log($"[HammerCombat] Cooldown → {_currentSwingCooldown:F2}s " +
+                      $"(Speed {_stats.Speed}, base {baseSpd})");
     }
 
     // ═════════════════════════════════════════════════════════════
@@ -185,6 +240,11 @@ public class HammerCombat : MonoBehaviour
             hitsLanded++;
         }
 
+        // Visual: arc ripple along the swing cone
+        AttackRipple.SpawnArc(attackOrigin.position, transform.forward,
+                              swingRadius, swingAngle,
+                              swingRippleColor, rippleLifetime);
+
         if (verbose) Debug.Log($"[HammerCombat] Swing landed on {hitsLanded} target(s), {damage} dmg each.");
     }
 
@@ -205,6 +265,10 @@ public class HammerCombat : MonoBehaviour
             hit.GetComponent<EnemyAI>()?.TakeKnockback(attackOrigin.position, staggerForce, tough);
             hitsLanded++;
         }
+
+        // Visual: 360 ring ripple at the slam radius
+        AttackRipple.SpawnRing(attackOrigin.position, slamRadius,
+                               slamRippleColor, rippleLifetime);
 
         if (verbose) Debug.Log($"[HammerCombat] Slam landed on {hitsLanded} target(s), {damage} dmg each.");
     }
