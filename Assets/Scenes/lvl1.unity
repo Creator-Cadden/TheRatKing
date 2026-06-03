@@ -4899,6 +4899,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 0}
     m_Modifications:
+    - target: {fileID: 999368586203356973, guid: 914f7101e2e3ab940ac23fba30adf473, type: 3}
+      propertyPath: bowModel
+      value: 
+      objectReference: {fileID: 1518703020}
     - target: {fileID: 1303362881654007255, guid: 914f7101e2e3ab940ac23fba30adf473, type: 3}
       propertyPath: bowStaggerForce
       value: 0
@@ -5047,9 +5051,14 @@ PrefabInstance:
       propertyPath: m_Name
       value: Blade
       objectReference: {fileID: 0}
+    - target: {fileID: 9121512483891922644, guid: 914f7101e2e3ab940ac23fba30adf473, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 2.83
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects:
     - {fileID: 6912181249771807848, guid: 914f7101e2e3ab940ac23fba30adf473, type: 3}
+    - {fileID: 8493173076792122478, guid: 914f7101e2e3ab940ac23fba30adf473, type: 3}
     m_AddedGameObjects:
     - targetCorrespondingSourceObject: {fileID: 6321704820724103676, guid: 914f7101e2e3ab940ac23fba30adf473, type: 3}
       insertIndex: 14
