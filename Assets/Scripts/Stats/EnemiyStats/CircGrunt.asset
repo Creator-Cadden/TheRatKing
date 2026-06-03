@@ -12,7 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: cddbe9ff30055fe44ac23a486a3194ae, type: 3}
   m_Name: CircGrunt
   m_EditorClassIdentifier: Assembly-CSharp::EnemyStatBlock
-  baseHealth: 40
+  baseHealth: 50
   baseStrength: 4
   baseStamina: 0
   baseSpeed: 5
@@ -33,6 +33,10 @@ MonoBehaviour:
   aggroRange: 10
   stopRange: 3
   moveSpeed: 3.5
+  damagedAggroDuration: 60
+  healthScalePerFloor: 1.25
+  strengthScalePerFloor: 1.2
+  staminaScalePerFloor: 1
   toughnessReductionPerPoint: 1
   knockbackDuration: 0.2
   bladeKnockbackForce: 5

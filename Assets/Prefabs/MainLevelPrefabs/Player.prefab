@@ -135,20 +135,20 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 5678574542009669243}
-  - component: {fileID: 2707531549045194775}
-  - component: {fileID: 8915293774414679729}
-  - component: {fileID: 7007591616936203130}
-  - component: {fileID: 1303362881654007255}
-  - component: {fileID: 4102869489145848168}
-  - component: {fileID: 6748938887598329430}
-  - component: {fileID: 1460294036571929265}
-  - component: {fileID: 6926598294484334303}
   - component: {fileID: 643303897697215202}
   - component: {fileID: 8205474042422023552}
-  - component: {fileID: 3628817058282218742}
+  - component: {fileID: 2707531549045194775}
+  - component: {fileID: 1460294036571929265}
+  - component: {fileID: 8915293774414679729}
+  - component: {fileID: 4102869489145848168}
+  - component: {fileID: 6748938887598329430}
+  - component: {fileID: 7007591616936203130}
+  - component: {fileID: 1303362881654007255}
+  - component: {fileID: 8525128706489102541}
+  - component: {fileID: 8577627138676567095}
   - component: {fileID: 1313619994705357618}
+  - component: {fileID: 3628817058282218742}
   - component: {fileID: 6566954334880360577}
-  - component: {fileID: 2062765270422680091}
   - component: {fileID: 4408546908635524378}
   m_Layer: 3
   m_Name: Player
@@ -176,214 +176,6 @@ Transform:
   - {fileID: 6722706351869090219}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!143 &2707531549045194775
-CharacterController:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 3149465941695762636}
-  m_Material: {fileID: 0}
-  m_IncludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_ExcludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_LayerOverridePriority: 0
-  m_ProvidesContacts: 0
-  m_Enabled: 1
-  serializedVersion: 3
-  m_Height: 1.8
-  m_Radius: 0.59
-  m_SlopeLimit: 45.63
-  m_StepOffset: 0.3
-  m_SkinWidth: 0.08
-  m_MinMoveDistance: 0.001
-  m_Center: {x: -0.22, y: -0.17, z: -0.1}
---- !u!114 &8915293774414679729
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 3149465941695762636}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 62899f850307741f2a39c98a8b639597, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Unity.InputSystem::UnityEngine.InputSystem.PlayerInput
-  m_Actions: {fileID: -944628639613478452, guid: 052faaac586de48259a63d0c4782560b, type: 3}
-  m_NotificationBehavior: 0
-  m_UIInputModule: {fileID: 0}
-  m_DeviceLostEvent:
-    m_PersistentCalls:
-      m_Calls: []
-  m_DeviceRegainedEvent:
-    m_PersistentCalls:
-      m_Calls: []
-  m_ControlsChangedEvent:
-    m_PersistentCalls:
-      m_Calls: []
-  m_ActionEvents: []
-  m_NeverAutoSwitchControlSchemes: 0
-  m_DefaultControlScheme: 
-  m_DefaultActionMap: 
-  m_SplitScreenIndex: -1
-  m_Camera: {fileID: 0}
---- !u!114 &7007591616936203130
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 3149465941695762636}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: d8655f1006d8a1c43b70b7cddb0db9f4, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::PlayerMovement
-  walkSpeed: 5
-  sprintSpeed: 15
-  acceleration: 8
-  deceleration: 10
-  gravity: -35
-  jumpForce: 3
-  rotationSpeed: 10
-  rollSpeed: 30
-  rollDuration: 0.35
-  rollCooldown: 0.8
-  freeLookCamera: {fileID: 0}
-  aimCamera: {fileID: 0}
-  cameraPitch: {fileID: 5741871270216070017}
-  shoulderPos: {fileID: 5240225094562366872}
-  aimSensitivity: 0.5
-  pitchMin: -40
-  pitchMax: 60
-  defaultPriority: 10
-  activePriority: 20
-  _primaryAnimator: {fileID: 5138894990430837496}
-  _secondaryAnimator: {fileID: 7141978780787423949}
---- !u!114 &1303362881654007255
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 3149465941695762636}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 99c58152c8aad3044ad11eef649688c3, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::PlayerCombat
-  basicAttackRadius: 2.74
-  basicAttackAngle: 144.4
-  basicAttackHeight: 0.74
-  basicAttackCooldownBase: 1
-  basicAttackCooldownMin: 0.3
-  attackCooldownPerSpeed: 0.1
-  jumpAttackRadius: 4
-  jumpAttackAngle: 180
-  jumpAttackCooldown: 1.2
-  jumpAttackHeight: 3
-  jumpSpinDuration: 0.35
-  jumpSpinDegrees: 360
-  jumpSpinVisual: {fileID: 6321704820724103676}
-  bladeStaggerForce: 3
-  hammerStaggerForce: 8
-  bowStaggerForce: 2
-  attackOrigin: {fileID: 2395526412917817003}
-  enemyLayer:
-    serializedVersion: 2
-    m_Bits: 64
-  showAttackGizmos: 1
-  _primaryAnimator: {fileID: 5138894990430837496}
---- !u!114 &4102869489145848168
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 3149465941695762636}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 165750a70e684c743b657df9eaa07351, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::EntityStats
-  isPlayer: 1
-  playerStatBlock: {fileID: 11400000, guid: 22ab682eccafb084d86976e4f84edfea, type: 2}
-  enemyStatBlock: {fileID: 0}
-  onDeath:
-    m_PersistentCalls:
-      m_Calls: []
-  onDamageTaken:
-    m_PersistentCalls:
-      m_Calls: []
-  onHeal:
-    m_PersistentCalls:
-      m_Calls: []
-  onLevelUp:
-    m_PersistentCalls:
-      m_Calls: []
-  onStatsChanged:
-    m_PersistentCalls:
-      m_Calls: []
---- !u!114 &6748938887598329430
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 3149465941695762636}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 3a2e370d3f8dd064eb79f09c4ebbc0c1, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::XPSystem
-  baseXPPerLevel: 10
-  xpScalingPerLevel: 5
-  onLevelUp:
-    m_PersistentCalls:
-      m_Calls: []
-  onXPGained:
-    m_PersistentCalls:
-      m_Calls: []
-  onXPGainedFromSource:
-    m_PersistentCalls:
-      m_Calls: []
-  onStatPointSpent:
-    m_PersistentCalls:
-      m_Calls: []
---- !u!225 &1460294036571929265
-CanvasGroup:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 3149465941695762636}
-  m_Enabled: 1
-  m_Alpha: 1
-  m_Interactable: 1
-  m_BlocksRaycasts: 1
-  m_IgnoreParentGroups: 0
---- !u!114 &6926598294484334303
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 3149465941695762636}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: d79d9111f43c9d847b2dbbda69e3ace6, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::PauseMenu
-  pauseMenuRoot: {fileID: 0}
-  titleLabel: {fileID: 0}
-  levelInfoLabel: {fileID: 0}
-  resetButton: {fileID: 0}
-  settingsButton: {fileID: 0}
-  mainMenuButton: {fileID: 0}
 --- !u!33 &643303897697215202
 MeshFilter:
   m_ObjectHideFlags: 0
@@ -441,7 +233,44 @@ MeshRenderer:
   m_SortingOrder: 0
   m_MaskInteraction: 0
   m_AdditionalVertexStreams: {fileID: 0}
---- !u!114 &3628817058282218742
+--- !u!143 &2707531549045194775
+CharacterController:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3149465941695762636}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 3
+  m_Height: 1.8
+  m_Radius: 0.59
+  m_SlopeLimit: 45.63
+  m_StepOffset: 0.3
+  m_SkinWidth: 0.08
+  m_MinMoveDistance: 0.001
+  m_Center: {x: -0.22, y: -0.17, z: -0.1}
+--- !u!225 &1460294036571929265
+CanvasGroup:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3149465941695762636}
+  m_Enabled: 1
+  m_Alpha: 1
+  m_Interactable: 1
+  m_BlocksRaycasts: 1
+  m_IgnoreParentGroups: 0
+--- !u!114 &8915293774414679729
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -450,20 +279,196 @@ MonoBehaviour:
   m_GameObject: {fileID: 3149465941695762636}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 9857714318dd95146af6e025f65f00f9, type: 3}
+  m_Script: {fileID: 11500000, guid: 62899f850307741f2a39c98a8b639597, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::DamageNumberSpawner
-  spawnOffset: {x: 0, y: 1.6, z: 0}
-  scatterRadius: 0.35
-  lifetime: 1.2
-  floatSpeed: 1.5
-  horizontalDrift: 0.25
-  fontSize: 5
-  lowColor: {r: 1, g: 1, b: 1, a: 1}
-  highColor: {r: 1, g: 0.35, b: 0.1, a: 1}
-  lowDamage: 5
-  highDamage: 40
-  billboardToCamera: 1
+  m_EditorClassIdentifier: Unity.InputSystem::UnityEngine.InputSystem.PlayerInput
+  m_Actions: {fileID: -944628639613478452, guid: 052faaac586de48259a63d0c4782560b, type: 3}
+  m_NotificationBehavior: 0
+  m_UIInputModule: {fileID: 0}
+  m_DeviceLostEvent:
+    m_PersistentCalls:
+      m_Calls: []
+  m_DeviceRegainedEvent:
+    m_PersistentCalls:
+      m_Calls: []
+  m_ControlsChangedEvent:
+    m_PersistentCalls:
+      m_Calls: []
+  m_ActionEvents: []
+  m_NeverAutoSwitchControlSchemes: 0
+  m_DefaultControlScheme: 
+  m_DefaultActionMap: 
+  m_SplitScreenIndex: -1
+  m_Camera: {fileID: 0}
+--- !u!114 &4102869489145848168
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3149465941695762636}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 165750a70e684c743b657df9eaa07351, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::EntityStats
+  isPlayer: 1
+  playerStatBlock: {fileID: 11400000, guid: 22ab682eccafb084d86976e4f84edfea, type: 2}
+  enemyStatBlock: {fileID: 0}
+  onDeath:
+    m_PersistentCalls:
+      m_Calls: []
+  onDamageTaken:
+    m_PersistentCalls:
+      m_Calls: []
+  onHeal:
+    m_PersistentCalls:
+      m_Calls: []
+  onLevelUp:
+    m_PersistentCalls:
+      m_Calls: []
+  onStatsChanged:
+    m_PersistentCalls:
+      m_Calls: []
+--- !u!114 &6748938887598329430
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3149465941695762636}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3a2e370d3f8dd064eb79f09c4ebbc0c1, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::XPSystem
+  baseXPPerLevel: 10
+  xpScalingPerLevel: 5
+  onLevelUp:
+    m_PersistentCalls:
+      m_Calls: []
+  onXPGained:
+    m_PersistentCalls:
+      m_Calls: []
+  onXPGainedFromSource:
+    m_PersistentCalls:
+      m_Calls: []
+  onStatPointSpent:
+    m_PersistentCalls:
+      m_Calls: []
+--- !u!114 &7007591616936203130
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3149465941695762636}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d8655f1006d8a1c43b70b7cddb0db9f4, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::PlayerMovement
+  walkSpeed: 5
+  sprintSpeed: 15
+  acceleration: 8
+  deceleration: 10
+  gravity: -35
+  jumpForce: 3
+  rotationSpeed: 10
+  rollSpeed: 30
+  rollDuration: 0.35
+  rollCooldown: 0.8
+  freeLookCamera: {fileID: 0}
+  aimCamera: {fileID: 0}
+  cameraPitch: {fileID: 5741871270216070017}
+  shoulderPos: {fileID: 5240225094562366872}
+  aimSensitivity: 0.5
+  pitchMin: -40
+  pitchMax: 60
+  defaultPriority: 10
+  activePriority: 20
+  _primaryAnimator: {fileID: 5138894990430837496}
+  _secondaryAnimator: {fileID: 7141978780787423949}
+--- !u!114 &1303362881654007255
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3149465941695762636}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 99c58152c8aad3044ad11eef649688c3, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::PlayerCombat
+  basicAttackCooldownBase: 1
+  basicAttackCooldownMin: 0.3
+  attackCooldownPerSpeed: 0.1
+  jumpAttackCooldown: 1.2
+  attackOrigin: {fileID: 2395526412917817003}
+  enemyLayer:
+    serializedVersion: 2
+    m_Bits: 64
+  _primaryAnimator: {fileID: 5138894990430837496}
+--- !u!114 &8525128706489102541
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3149465941695762636}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 88a1170f8dba6bd42b58b8b10eb5656b, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::BladeCombat
+  swingRadius: 2
+  swingAngle: 60
+  swingHeight: 0.5
+  cooldownBase: 1
+  cooldownMin: 0.3
+  cooldownPerSpeed: 0.1
+  jumpAttackRadius: 3.5
+  jumpAttackHeight: 1.2
+  jumpAttackCooldown: 1.2
+  jumpSpinDuration: 0.35
+  jumpSpinDegrees: 360
+  jumpSpinVisual: {fileID: 0}
+  attackOrigin: {fileID: 0}
+  enemyLayer:
+    serializedVersion: 2
+    m_Bits: 0
+  staggerForce: 0
+  showGizmos: 1
+  verbose: 0
+--- !u!114 &8577627138676567095
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3149465941695762636}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0759ea9647cbcce418f0ba6ce005bd16, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::HammerCombat
+  swingRadius: 3.5
+  swingAngle: 80
+  swingHeight: 0.7
+  swingCooldown: 1.4
+  swingWindup: 0.15
+  slamRadius: 4.5
+  slamHeight: 1.2
+  slamCooldown: 2
+  slamWindup: 0.1
+  slamDamageMultiplier: 1.5
+  attackOrigin: {fileID: 0}
+  enemyLayer:
+    serializedVersion: 2
+    m_Bits: 0
+  staggerForce: 8
+  showGizmos: 1
   verbose: 0
 --- !u!114 &1313619994705357618
 MonoBehaviour:
@@ -499,6 +504,30 @@ MonoBehaviour:
   tripleShotSpread: 6
   jumpShotPitchDown: 50
   verbose: 0
+--- !u!114 &3628817058282218742
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3149465941695762636}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9857714318dd95146af6e025f65f00f9, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::DamageNumberSpawner
+  spawnOffset: {x: 0, y: 1.6, z: 0}
+  scatterRadius: 0.35
+  lifetime: 1.2
+  floatSpeed: 1.5
+  horizontalDrift: 0.25
+  fontSize: 5
+  lowColor: {r: 1, g: 1, b: 1, a: 1}
+  highColor: {r: 1, g: 0.35, b: 0.1, a: 1}
+  lowDamage: 5
+  highDamage: 40
+  billboardToCamera: 1
+  verbose: 0
 --- !u!114 &6566954334880360577
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -519,40 +548,6 @@ MonoBehaviour:
   bladeAnimator: {fileID: 0}
   hammerAnimator: {fileID: 0}
   bowAnimator: {fileID: 0}
-  verbose: 0
---- !u!114 &2062765270422680091
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 3149465941695762636}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: f393b018b47fb4248a85ed992b1a7bc0, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::BowController
-  arrowPrefab: {fileID: 5601159848352641252, guid: 866ca58bf1f52954d84437bcb0d8f003, type: 3}
-  arrowSpawnPoint: {fileID: 2902693654222086942}
-  arrowSpeed: 100
-  arrowLifetime: 10
-  enemyLayer:
-    serializedVersion: 2
-    m_Bits: 64
-  arrowGravity: 3
-  aimDirectionSource: {fileID: 0}
-  useMainCameraIfUnset: 1
-  maxChargeTime: 1.4
-  minChargeMultiplier: 1
-  maxChargeMultiplier: 3
-  maxChargedSpeedMultiplier: 2
-  autoTargetHalfAngle: 18
-  autoTargetRange: 14
-  autoTargetStrength: 0.5
-  tripleShotCount: 3
-  tripleShotInterval: 0.08
-  tripleShotSpread: 6
-  jumpShotPitchDown: 50
   verbose: 0
 --- !u!114 &4408546908635524378
 MonoBehaviour:
