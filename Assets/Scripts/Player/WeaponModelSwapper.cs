@@ -34,15 +34,31 @@ public class WeaponModelSwapper : MonoBehaviour
     [Tooltip("GameObject that holds the visible bow model.")]
     public GameObject bowModel;
 
-    [Header("Animator")]
-    [Tooltip("If set, this Animator gets a 'Weapon' int parameter written " +
-             "every time the weapon changes. Leave null to auto-find one " +
-             "via GetComponentInChildren<Animator>().")]
+    [Header("Rat Body Animator")]
+    [Tooltip("The RAT BODY animator (controls running, jumping, attacking pose). " +
+             "If set, this Animator gets a 'Weapon' int parameter written every " +
+             "time the weapon changes. Leave null to auto-find one via " +
+             "GetComponentInChildren<Animator>().")]
     public Animator weaponAnimator;
 
-    [Tooltip("Name of the int parameter on the Animator that controls which " +
-             "weapon's animation set is active.")]
+    [Tooltip("Name of the int parameter on the rat body animator that controls " +
+             "which weapon's animation set is active.")]
     public string weaponAnimParam = "Weapon";
+
+    [Header("Per-Weapon Animators (optional)")]
+    [Tooltip("Animator on the BLADE model itself — drives the blade-specific " +
+             "swing animation (the sword tilt, glow, trail, etc.). PlayerCombat " +
+             "fires its triggers via ActiveWeaponAnimator. Leave null if your " +
+             "blade has no separate animator.")]
+    public Animator bladeAnimator;
+
+    [Tooltip("Animator on the HAMMER model itself. Leave null if your hammer " +
+             "doesn't have a separate animator yet — PlayerCombat will silently skip it.")]
+    public Animator hammerAnimator;
+
+    [Tooltip("Animator on the BOW model itself. Drives the draw / release / " +
+             "string animations. Leave null if not yet set up.")]
+    public Animator bowAnimator;
 
     [Header("Debug")]
     public bool verbose = false;
@@ -105,6 +121,33 @@ public class WeaponModelSwapper : MonoBehaviour
         }
 
         if (verbose) Debug.Log($"[WeaponModelSwapper] Active weapon → {w}");
+    }
+
+    /// <summary>
+    /// Returns the Animator that belongs to the currently-equipped weapon
+    /// (or null if that weapon has no separate animator wired up).
+    ///
+    /// PlayerCombat reads this and fires its "Attk" / "AirAttk" triggers on
+    /// it, so the weapon's mesh animates in sync with the rat body's swing.
+    ///
+    /// When the player swaps weapons, this property returns a different
+    /// Animator automatically — no extra wiring needed in PlayerCombat.
+    /// </summary>
+    public Animator ActiveWeaponAnimator
+    {
+        get
+        {
+            if (_stats == null) _stats = GetComponent<EntityStats>();
+            if (_stats == null) return null;
+
+            return _stats.EquippedWeapon switch
+            {
+                EntityStats.WeaponType.Blade  => bladeAnimator,
+                EntityStats.WeaponType.Hammer => hammerAnimator,
+                EntityStats.WeaponType.Bow    => bowAnimator,
+                _                             => null,
+            };
+        }
     }
 
     private static void SetActiveSafe(GameObject go, bool active)

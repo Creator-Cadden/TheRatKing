@@ -146,7 +146,6 @@ GameObject:
   - component: {fileID: 643303897697215202}
   - component: {fileID: 8205474042422023552}
   - component: {fileID: 3628817058282218742}
-  - component: {fileID: 999368586203356973}
   - component: {fileID: 1313619994705357618}
   - component: {fileID: 6566954334880360577}
   - component: {fileID: 2062765270422680091}
@@ -299,7 +298,6 @@ MonoBehaviour:
     m_Bits: 64
   showAttackGizmos: 1
   _primaryAnimator: {fileID: 5138894990430837496}
-  _secondaryAnimator: {fileID: 7141978780787423949}
 --- !u!114 &4102869489145848168
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -467,24 +465,6 @@ MonoBehaviour:
   highDamage: 40
   billboardToCamera: 1
   verbose: 0
---- !u!114 &999368586203356973
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 3149465941695762636}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: b991117efeb1fbe438ff3e6c8a3e53ed, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::WeaponModelSwapper
-  bladeModel: {fileID: 7476827831976075340}
-  hammerModel: {fileID: 2515249760240443373}
-  bowModel: {fileID: 6912181249771807848}
-  weaponAnimator: {fileID: 0}
-  weaponAnimParam: Weapon
-  verbose: 0
 --- !u!114 &1313619994705357618
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -536,6 +516,9 @@ MonoBehaviour:
   bowModel: {fileID: 0}
   weaponAnimator: {fileID: 0}
   weaponAnimParam: Weapon
+  bladeAnimator: {fileID: 0}
+  hammerAnimator: {fileID: 0}
+  bowAnimator: {fileID: 0}
   verbose: 0
 --- !u!114 &2062765270422680091
 MonoBehaviour:
@@ -1143,11 +1126,6 @@ PrefabInstance:
 --- !u!4 &6099792087806639826 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: -8679921383154817045, guid: d4665368188e6cf41af892f7db9da42b, type: 3}
-  m_PrefabInstance: {fileID: 5993281651622189369}
-  m_PrefabAsset: {fileID: 0}
---- !u!1 &6912181249771807848 stripped
-GameObject:
-  m_CorrespondingSourceObject: {fileID: 919132149155446097, guid: d4665368188e6cf41af892f7db9da42b, type: 3}
   m_PrefabInstance: {fileID: 5993281651622189369}
   m_PrefabAsset: {fileID: 0}
 --- !u!1001 &7710847134743731485

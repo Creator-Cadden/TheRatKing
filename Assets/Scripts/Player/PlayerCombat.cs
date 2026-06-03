@@ -54,12 +54,13 @@ public class PlayerCombat : MonoBehaviour
 
     // ── Private State ──
     [Header("Animators")]
+    [Tooltip("The rat body animator — drives running, jumping, attack pose.")]
     [SerializeField] private Animator _primaryAnimator;
-    [SerializeField] private Animator _secondaryAnimator;
 
     private CharacterController _controller;
     private EntityStats         _stats;
     private BowController       _bow;        // optional — only used when weapon == Bow
+    private WeaponModelSwapper  _swapper;    // looked up via Awake — provides the active weapon's animator
     private float               _lastAttackTime;
     private float               _lastJumpAttackTime;
     private bool                _hasJumpAttacked;
@@ -77,6 +78,7 @@ public class PlayerCombat : MonoBehaviour
         _controller = GetComponent<CharacterController>();
         _stats      = GetComponent<EntityStats>();
         _bow        = GetComponent<BowController>();
+        _swapper    = GetComponent<WeaponModelSwapper>();
 
         if (jumpSpinVisual == null && _primaryAnimator != null)
             jumpSpinVisual = _primaryAnimator.transform;
@@ -181,7 +183,7 @@ public class PlayerCombat : MonoBehaviour
                 _hasJumpAttacked    = true;
                 _lastJumpAttackTime = Time.time;
                 _primaryAnimator?.SetTrigger("AirAttk");
-                _secondaryAnimator?.SetTrigger("AirAttk");
+                _swapper?.ActiveWeaponAnimator?.SetTrigger("AirAttk");
                 _bow.JumpTripleShot();
                 return;
             }
@@ -189,7 +191,7 @@ public class PlayerCombat : MonoBehaviour
             if (Time.time < _lastAttackTime + _currentAttackCooldown) return;
             _lastAttackTime = Time.time;
             _primaryAnimator?.SetTrigger("Attk");
-            _secondaryAnimator?.SetTrigger("Attk");
+            _swapper?.ActiveWeaponAnimator?.SetTrigger("Attk");
 
             if (_isAiming) _bow.BeginAimedShot();   // hold-to-charge, BowController.Update releases
             else           _bow.FreeLookShot();
@@ -224,7 +226,7 @@ public class PlayerCombat : MonoBehaviour
     {
         _lastAttackTime = Time.time;
         _primaryAnimator?.SetTrigger("Attk");
-        _secondaryAnimator?.SetTrigger("Attk");
+        _swapper?.ActiveWeaponAnimator?.SetTrigger("Attk");
         HitScan(basicAttackRadius, basicAttackAngle);
     }
 
@@ -235,7 +237,7 @@ public class PlayerCombat : MonoBehaviour
         _hasJumpAttacked    = true;
         _lastJumpAttackTime = Time.time;
         _primaryAnimator?.SetTrigger("AirAttk");
-        _secondaryAnimator?.SetTrigger("AirAttk");
+        _swapper?.ActiveWeaponAnimator?.SetTrigger("AirAttk");
         StartJumpSpin();
 
         HitScan(jumpAttackRadius, jumpAttackAngle);
@@ -319,7 +321,7 @@ public class PlayerCombat : MonoBehaviour
     {
         _lastAttackTime = Time.time;
         _primaryAnimator?.SetTrigger("Attk");
-        _secondaryAnimator?.SetTrigger("Attk");
+        _swapper?.ActiveWeaponAnimator?.SetTrigger("Attk");
 
         // Reuse HitScan with basic attack range/angle for now —
         // swap for a raycast when you add actual projectiles
