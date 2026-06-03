@@ -4379,6 +4379,14 @@ PrefabInstance:
       value: 
       objectReference: {fileID: 1240517820}
     - target: {fileID: 8525128706489102541, guid: 914f7101e2e3ab940ac23fba30adf473, type: 3}
+      propertyPath: swingHeight
+      value: 0.83
+      objectReference: {fileID: 0}
+    - target: {fileID: 8525128706489102541, guid: 914f7101e2e3ab940ac23fba30adf473, type: 3}
+      propertyPath: jumpAttackHeight
+      value: 2.73
+      objectReference: {fileID: 0}
+    - target: {fileID: 8525128706489102541, guid: 914f7101e2e3ab940ac23fba30adf473, type: 3}
       propertyPath: enemyLayer.m_Bits
       value: 64
       objectReference: {fileID: 0}
