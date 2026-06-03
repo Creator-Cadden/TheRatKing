@@ -2511,6 +2511,11 @@ MeshCollider:
   m_Convex: 0
   m_CookingOptions: 30
   m_Mesh: {fileID: 8552134717624371188, guid: a1a23ece452e5234d8a22a7d69f97131, type: 3}
+--- !u!4 &947701314 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 2395526412917817003, guid: 914f7101e2e3ab940ac23fba30adf473, type: 3}
+  m_PrefabInstance: {fileID: 1797229875069604150}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1 &979147618 stripped
 GameObject:
   m_CorrespondingSourceObject: {fileID: 919132149155446097, guid: f59517f70b2463341add099a20bfa6a5, type: 3}
@@ -5270,6 +5275,18 @@ PrefabInstance:
       propertyPath: m_Name
       value: Blade
       objectReference: {fileID: 0}
+    - target: {fileID: 8525128706489102541, guid: 914f7101e2e3ab940ac23fba30adf473, type: 3}
+      propertyPath: attackOrigin
+      value: 
+      objectReference: {fileID: 947701314}
+    - target: {fileID: 8525128706489102541, guid: 914f7101e2e3ab940ac23fba30adf473, type: 3}
+      propertyPath: enemyLayer.m_Bits
+      value: 64
+      objectReference: {fileID: 0}
+    - target: {fileID: 8577627138676567095, guid: 914f7101e2e3ab940ac23fba30adf473, type: 3}
+      propertyPath: attackOrigin
+      value: 
+      objectReference: {fileID: 947701314}
     - target: {fileID: 8577627138676567095, guid: 914f7101e2e3ab940ac23fba30adf473, type: 3}
       propertyPath: enemyLayer.m_Bits
       value: 64
