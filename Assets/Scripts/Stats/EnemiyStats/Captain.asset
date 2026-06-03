@@ -22,10 +22,10 @@ MonoBehaviour:
   attackStrengthBonus: 1
   attackShape: 0
   attackHeight: 0.6
-  attackRadius: 8
-  attackAngle: 104
+  attackRadius: 8.4
+  attackAngle: 140
   circleRadius: 6.91
-  rectWidth: 4
+  rectWidth: 7.08
   rectLength: 8
   attackCooldown: 0.69
   attackWindupTime: 0.9
