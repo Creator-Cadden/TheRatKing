@@ -146,6 +146,8 @@ GameObject:
   - component: {fileID: 643303897697215202}
   - component: {fileID: 8205474042422023552}
   - component: {fileID: 3628817058282218742}
+  - component: {fileID: 999368586203356973}
+  - component: {fileID: 1313619994705357618}
   m_Layer: 3
   m_Name: Player
   m_TagString: Player
@@ -462,6 +464,58 @@ MonoBehaviour:
   highDamage: 40
   billboardToCamera: 1
   verbose: 0
+--- !u!114 &999368586203356973
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3149465941695762636}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b991117efeb1fbe438ff3e6c8a3e53ed, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::WeaponModelSwapper
+  bladeModel: {fileID: 7476827831976075340}
+  hammerModel: {fileID: 2515249760240443373}
+  bowModel: {fileID: 6912181249771807848}
+  weaponAnimator: {fileID: 0}
+  weaponAnimParam: Weapon
+  verbose: 0
+--- !u!114 &1313619994705357618
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3149465941695762636}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f393b018b47fb4248a85ed992b1a7bc0, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::BowController
+  arrowPrefab: {fileID: 5601159848352641252, guid: 866ca58bf1f52954d84437bcb0d8f003, type: 3}
+  arrowSpawnPoint: {fileID: 2902693654222086942}
+  arrowSpeed: 100
+  arrowLifetime: 10
+  enemyLayer:
+    serializedVersion: 2
+    m_Bits: 64
+  arrowGravity: 3
+  aimDirectionSource: {fileID: 0}
+  useMainCameraIfUnset: 1
+  maxChargeTime: 1.4
+  minChargeMultiplier: 1
+  maxChargeMultiplier: 3
+  maxChargedSpeedMultiplier: 2
+  autoTargetHalfAngle: 18
+  autoTargetRange: 14
+  autoTargetStrength: 0.5
+  tripleShotCount: 3
+  tripleShotInterval: 0.08
+  tripleShotSpread: 6
+  jumpShotPitchDown: 50
+  verbose: 0
 --- !u!1 &3333923889273384047
 GameObject:
   m_ObjectHideFlags: 0
@@ -676,6 +730,11 @@ PrefabInstance:
     m_AddedGameObjects: []
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 972a9d187dad3534387b6d3be45d3046, type: 3}
+--- !u!1 &2515249760240443373 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 919132149155446097, guid: 972a9d187dad3534387b6d3be45d3046, type: 3}
+  m_PrefabInstance: {fileID: 3325520769589027516}
+  m_PrefabAsset: {fileID: 0}
 --- !u!4 &3002817899119560023 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: -8679921383154817045, guid: 972a9d187dad3534387b6d3be45d3046, type: 3}
@@ -1009,6 +1068,11 @@ PrefabInstance:
 --- !u!4 &6099792087806639826 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: -8679921383154817045, guid: d4665368188e6cf41af892f7db9da42b, type: 3}
+  m_PrefabInstance: {fileID: 5993281651622189369}
+  m_PrefabAsset: {fileID: 0}
+--- !u!1 &6912181249771807848 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 919132149155446097, guid: d4665368188e6cf41af892f7db9da42b, type: 3}
   m_PrefabInstance: {fileID: 5993281651622189369}
   m_PrefabAsset: {fileID: 0}
 --- !u!1001 &7710847134743731485
