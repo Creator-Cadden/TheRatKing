@@ -76,10 +76,10 @@ public class BowController : MonoBehaviour
              "Damage scales linearly from this to maxChargeMultiplier.")]
     public float minChargeMultiplier = 1.0f;
 
-    [Tooltip("Damage multiplier at full charge. 3× is the typical 'bow super shot' value.")]
+    [Tooltip("Damage multiplier at full charge. 3x is the typical 'bow super shot' value.")]
     public float maxChargeMultiplier = 3.0f;
 
-    [Tooltip("Speed multiplier at full charge. 2× = arrow flies twice as fast at full hold, " +
+    [Tooltip("Speed multiplier at full charge. 2x = arrow flies twice as fast at full hold, " +
              "so it covers about twice the distance before gravity drops it. " +
              "Set to 1 to disable distance scaling and only scale damage.")]
     public float maxChargedSpeedMultiplier = 2.0f;
@@ -98,7 +98,7 @@ public class BowController : MonoBehaviour
     public float autoTargetRange = 14f;
 
     [Tooltip("Strength of the nudge: 0 = no nudge, 1 = arrow flies directly " +
-             "at the chosen target. 0.4–0.6 feels like aim assist without being aimbot.")]
+             "at the chosen target. 0.4-0.6 feels like aim assist without being aimbot.")]
     [Range(0f, 1f)]
     public float autoTargetStrength = 0.5f;
 
@@ -118,14 +118,29 @@ public class BowController : MonoBehaviour
              "the rat's animation pose. Use this if the animation alone doesn't " +
              "angle the arrows steeply enough toward the ground.\n" +
              "0  = follows animation only.\n" +
-             "30 = arrows pitch 30° further down — useful with a flatter animation.\n" +
+             "30 = arrows pitch 30 degrees further down — useful with a flatter animation.\n" +
              "60 = arrows fire nearly straight down.")]
     [Range(0f, 80f)]
     public float jumpShotPitchDown = 30f;
 
     // ─────────────────────────────────────────
+    [Header("Animator Parameters")]
+    [Tooltip("Name of the bool parameter on the bow's Animator that is set TRUE " +
+             "while the player holds a charge (aim mode, LMB held). " +
+             "Must exactly match the parameter name in the bow Animator Controller.\n" +
+             "This mirrors how PlayerCombat fires 'Attk' / 'BowAttk' triggers — " +
+             "BowController calls SetBool on the bow's own Animator via " +
+             "WeaponModelSwapper.ActiveWeaponAnimator.")]
+    public string holdAnimParam   = "Hold";
+
+    [Tooltip("Name of the bool parameter on the bow's Animator that is set TRUE " +
+             "while the player is charging AND moving horizontally. " +
+             "Must exactly match the parameter name in the bow Animator Controller.")]
+    public string movingAnimParam = "Moving";
+
+    // ─────────────────────────────────────────
     [Header("Movement Detection")]
-    [Tooltip("Minimum squared speed (units²/sec²) before the player is considered " +
+    [Tooltip("Minimum squared speed (units/sec squared) before the player is considered " +
              "to be moving. Raise slightly if IsMovingWhileHolding flickers at rest. " +
              "Default 0.01 works for most setups.")]
     public float movingSpeedThresholdSq = 0.01f;
@@ -137,21 +152,29 @@ public class BowController : MonoBehaviour
     // ─────────────────────────────────────────
     // Private state
     // ─────────────────────────────────────────
-    private EntityStats _stats;
-    private InputAction _attackAction;       // resolved at runtime from PlayerInput
+    private EntityStats        _stats;
+    private WeaponModelSwapper _swapper;
+    private InputAction        _attackAction;   // resolved at runtime from PlayerInput
 
     private bool  _isCharging;
     private float _chargeStartTime;
 
+    // Tracks the last values pushed to the bow animator so we only call
+    // SetBool when something actually changes — mirrors how PlayerCombat
+    // resets triggers before firing ("ResetTrigger" before "SetTrigger").
+    private bool _lastHoldSent;
+    private bool _lastMovingSent;
+
     // Cached movement components — resolved once in Start to avoid per-frame GetComponent.
-    private Rigidbody          _rb;
+    private Rigidbody           _rb;
     private CharacterController _cc;
 
     // ─────────────────────────────────────────
 
     void Awake()
     {
-        _stats = GetComponent<EntityStats>();
+        _stats   = GetComponent<EntityStats>();
+        _swapper = GetComponent<WeaponModelSwapper>();
     }
 
     void Start()
@@ -173,28 +196,36 @@ public class BowController : MonoBehaviour
 
     void Update()
     {
-        if (!_isCharging) return;
-
-        // Build charge while LMB is held
-        CurrentChargeFraction = Mathf.Clamp01(
-            (Time.time - _chargeStartTime) / Mathf.Max(0.0001f, maxChargeTime));
-
-        // Detect release
-        bool released = _attackAction != null
-            ? _attackAction.WasReleasedThisFrame()
-            : !Input.GetMouseButton(0); // Legacy fallback
-
-        if (released)
+        if (_isCharging)
         {
-            FireChargedAimedShot(CurrentChargeFraction);
-            _isCharging           = false;
-            CurrentChargeFraction = 0f;
+            // Build charge while LMB is held.
+            CurrentChargeFraction = Mathf.Clamp01(
+                (Time.time - _chargeStartTime) / Mathf.Max(0.0001f, maxChargeTime));
+
+            // Detect release.
+            bool released = _attackAction != null
+                ? _attackAction.WasReleasedThisFrame()
+                : !Input.GetMouseButton(0); // Legacy fallback
+
+            if (released)
+            {
+                FireChargedAimedShot(CurrentChargeFraction);
+                StopCharging();
+            }
         }
+
+        // Push Hold / Moving bools to the bow's own Animator every frame.
+        // Uses WeaponModelSwapper.ActiveWeaponAnimator — the exact same path
+        // PlayerCombat uses when it calls:
+        //   _swapper?.ActiveWeaponAnimator?.SetTrigger("BowAttk")
+        // So the bow's Animator Controller sees consistent driving from both
+        // attack triggers (PlayerCombat) and charge-state bools (here).
+        PushAnimatorBools();
     }
 
-    // ═════════════════════════════════════════════════════════════
+    // =========================================================
     // Public API — called by PlayerCombat.OnAttack when weapon = Bow
-    // ═════════════════════════════════════════════════════════════
+    // =========================================================
 
     /// <summary>
     /// Called by PlayerCombat when LMB is pressed while aiming (RMB held).
@@ -203,9 +234,10 @@ public class BowController : MonoBehaviour
     public void BeginAimedShot()
     {
         if (_isCharging) return;
-        _isCharging       = true;
-        _chargeStartTime  = Time.time;
+        _isCharging           = true;
+        _chargeStartTime      = Time.time;
         CurrentChargeFraction = 0f;
+        // Animator bools are driven each frame in Update via PushAnimatorBools().
     }
 
     /// <summary>
@@ -241,7 +273,7 @@ public class BowController : MonoBehaviour
     /// <summary>
     /// Called by PlayerCombat when LMB is pressed in the air (jump-attack).
     /// Fires <see cref="tripleShotCount"/> arrows in rapid stagger along the
-    /// rat's forward (which the animation tilts ~45° down).
+    /// rat's forward (which the animation tilts ~45 degrees down).
     /// </summary>
     public void JumpTripleShot()
     {
@@ -249,38 +281,80 @@ public class BowController : MonoBehaviour
     }
 
     // ─────────────────────────────────────────
-    // Animation state bools (read by Animator)
+    // Animation state bools
     // ─────────────────────────────────────────
 
     /// <summary>
     /// TRUE while the player is holding LMB in aim mode and a charge is building.
-    /// Drive your "Hold" Animator bool parameter with this.
+    /// Also drives the holdAnimParam bool on the bow's Animator every frame.
     /// </summary>
     public bool IsHolding => _isCharging;
 
     /// <summary>
     /// TRUE while the player is charging AND moving (any horizontal velocity above threshold).
-    /// Drive your "Moving" Animator bool parameter with this.
-    /// Returns false whenever the player is not charging, so the Moving state
-    /// only activates inside aim mode.
+    /// Also drives the movingAnimParam bool on the bow's Animator every frame.
+    /// Returns false whenever the player is not charging.
     /// </summary>
     public bool IsMovingWhileHolding => _isCharging && IsMoving();
 
     /// <summary>UI hook — true while LMB is held and a charge is building.</summary>
     public bool IsCharging => _isCharging;
 
-    // ═════════════════════════════════════════════════════════════
+    // =========================================================
     // Internals
-    // ═════════════════════════════════════════════════════════════
+    // =========================================================
+
+    /// <summary>
+    /// Pushes Hold and Moving bools to the bow's Animator each frame.
+    ///
+    /// Routing: WeaponModelSwapper.ActiveWeaponAnimator returns the bow's
+    /// Animator when the bow is equipped (bowAnimator field on the swapper),
+    /// and null otherwise — the same reference PlayerCombat uses to fire
+    /// "BowAttk" triggers. This means the bow Animator Controller receives
+    /// all its driving (attack triggers AND charge bools) from a single,
+    /// consistent source with no extra Inspector wiring needed.
+    ///
+    /// Only calls SetBool when the value changes to avoid redundant Animator
+    /// state machine evaluations.
+    /// </summary>
+    private void PushAnimatorBools()
+    {
+        Animator bowAnim = _swapper?.ActiveWeaponAnimator;
+        if (bowAnim == null) return;
+
+        bool holding = IsHolding;
+        bool moving  = IsMovingWhileHolding;
+
+        if (holding != _lastHoldSent)
+        {
+            bowAnim.SetBool(holdAnimParam, holding);
+            _lastHoldSent = holding;
+            if (verbose) Debug.Log($"[BowController] Bow Animator '{holdAnimParam}' -> {holding}");
+        }
+
+        if (moving != _lastMovingSent)
+        {
+            bowAnim.SetBool(movingAnimParam, moving);
+            _lastMovingSent = moving;
+            if (verbose) Debug.Log($"[BowController] Bow Animator '{movingAnimParam}' -> {moving}");
+        }
+    }
+
+    private void StopCharging()
+    {
+        _isCharging           = false;
+        CurrentChargeFraction = 0f;
+        // PushAnimatorBools() in the next Update will flip Hold -> false automatically.
+    }
 
     private void FireChargedAimedShot(float chargeFraction)
     {
-        // Damage scales 1× → maxChargeMultiplier with charge fraction.
+        // Damage scales 1x -> maxChargeMultiplier with charge fraction.
         float dmgMult = Mathf.Lerp(minChargeMultiplier, maxChargeMultiplier, chargeFraction);
         int   baseDmg = _stats?.CalculateWeaponDamage() ?? 5;
         int   dmg     = Mathf.RoundToInt(baseDmg * dmgMult);
 
-        // Speed scales 1× → maxChargedSpeedMultiplier with charge fraction,
+        // Speed scales 1x -> maxChargedSpeedMultiplier with charge fraction,
         // so a full-charge shot flies further AND hits harder.
         float speedMult = Mathf.Lerp(1f, maxChargedSpeedMultiplier, chargeFraction);
         float spd       = arrowSpeed * speedMult;
@@ -293,7 +367,7 @@ public class BowController : MonoBehaviour
 
         if (verbose)
             Debug.Log($"[BowController] Aimed shot — charge {chargeFraction:F2}, " +
-                      $"dmg ×{dmgMult:F2} ({dmg}), speed ×{speedMult:F2} ({spd:F0}), dir {dir}.");
+                      $"dmg x{dmgMult:F2} ({dmg}), speed x{speedMult:F2} ({spd:F0}), dir {dir}.");
     }
 
     /// <summary>
@@ -399,11 +473,11 @@ public class BowController : MonoBehaviour
         Collider[] hits = Physics.OverlapSphere(transform.position, autoTargetRange, enemyLayer);
         if (hits == null || hits.Length == 0) return null;
 
-        EntityStats best     = null;
-        float       bestDot  = -1f;
-        Vector3     fwd      = transform.forward;
+        EntityStats best         = null;
+        float       bestDot      = -1f;
+        Vector3     fwd          = transform.forward;
         float       halfAngleRad = autoTargetHalfAngle * Mathf.Deg2Rad;
-        float       cosLimit = Mathf.Cos(halfAngleRad);
+        float       cosLimit     = Mathf.Cos(halfAngleRad);
 
         foreach (var c in hits)
         {
@@ -437,10 +511,10 @@ public class BowController : MonoBehaviour
         if (autoTargetHalfAngle <= 0.001f) return;
 
         Gizmos.color = new Color(0.4f, 1f, 0.4f, 0.5f);
-        Vector3 origin = transform.position;
-        Vector3 fwd    = transform.forward;
-        Quaternion rotL = Quaternion.AngleAxis(-autoTargetHalfAngle, Vector3.up);
-        Quaternion rotR = Quaternion.AngleAxis( autoTargetHalfAngle, Vector3.up);
+        Vector3    origin = transform.position;
+        Vector3    fwd    = transform.forward;
+        Quaternion rotL   = Quaternion.AngleAxis(-autoTargetHalfAngle, Vector3.up);
+        Quaternion rotR   = Quaternion.AngleAxis( autoTargetHalfAngle, Vector3.up);
         Gizmos.DrawLine(origin, origin + (rotL * fwd) * autoTargetRange);
         Gizmos.DrawLine(origin, origin + (rotR * fwd) * autoTargetRange);
         Gizmos.DrawLine(origin + (rotL * fwd) * autoTargetRange,
