@@ -5,9 +5,9 @@ using UnityEngine.InputSystem;
 /// Combat router. Reads input from the Input System and dispatches attacks
 /// to whichever per-weapon controller is appropriate for the equipped weapon:
 ///
-///   Blade  → <see cref="BladeCombat"/>
-///   Hammer → <see cref="HammerCombat"/>
-///   Bow    → <see cref="BowController"/>
+///   Blade  -> <see cref="BladeCombat"/>
+///   Hammer -> <see cref="HammerCombat"/>
+///   Bow    -> <see cref="BowController"/>
 ///
 /// PlayerCombat itself no longer holds per-weapon stats. Each weapon owns its
 /// own reach, cooldown, gizmos, and hit scan code. Adding a 4th weapon later
@@ -25,6 +25,8 @@ using UnityEngine.InputSystem;
 ///     since it doesn't have its own controller for that yet.
 ///   • RecalculateAttackCooldown() — recalculates speed-affected cooldown for the
 ///     bow and forwards to BladeCombat. Called by EntityStats on stat changes.
+///   • BowMove body animation — SetBool("BowMove") on _primaryAnimator each frame
+///     while the bow is equipped, charging, and the player is moving.
 /// </summary>
 public class PlayerCombat : MonoBehaviour
 {
@@ -53,6 +55,14 @@ public class PlayerCombat : MonoBehaviour
     [Tooltip("The rat body animator — drives running, jumping, attack pose.")]
     [SerializeField] private Animator _primaryAnimator;
 
+    [Header("Bow Body Animation")]
+    [Tooltip("Name of the bool parameter on the RAT BODY animator that is set TRUE " +
+             "while the bow is equipped, a charge is building, AND the player is moving.\n" +
+             "Plays the BowMove animation on the body so the rat doesn't snap back to " +
+             "idle while strafing with a drawn bow.\n" +
+             "Must exactly match the parameter name in the rat body Animator Controller.")]
+    public string bowMoveAnimParam = "BowMove";
+
     // ─────────────────────────────────────────
     // Cached components
     // ─────────────────────────────────────────
@@ -72,9 +82,14 @@ public class PlayerCombat : MonoBehaviour
     private float _currentAttackCooldown;     // bow rate-of-fire
     private bool  _isAiming;                  // bow aim mode
 
-    // ═════════════════════════════════════════════════════════════
+    // Tracks the last value pushed to the body animator for BowMove so we
+    // only call SetBool when it actually changes — same dirty-flag pattern
+    // BowController uses for Hold / Moving on the bow's own animator.
+    private bool _lastBowMoveSent;
+
+    // =========================================================
     // Lifecycle
-    // ═════════════════════════════════════════════════════════════
+    // =========================================================
 
     void Awake()
     {
@@ -108,11 +123,17 @@ public class PlayerCombat : MonoBehaviour
         // Reset the "one jump attack per air time" flag when we land.
         if (_controller != null && _controller.isGrounded)
             _hasJumpAttacked = false;
+
+        // Drive BowMove bool on the rat body animator.
+        // Condition: bow equipped AND BowController reports charging + moving.
+        // This keeps the body in its bow-draw-while-moving pose instead of
+        // snapping back to idle when the player strafes with LMB held.
+        PushBowMoveAnim();
     }
 
-    // ═════════════════════════════════════════════════════════════
+    // =========================================================
     // Cooldown recalc
-    // ═════════════════════════════════════════════════════════════
+    // =========================================================
 
     /// <summary>
     /// Called by EntityStats on every stat change (Speed leveled, weapon swap, reset).
@@ -128,9 +149,9 @@ public class PlayerCombat : MonoBehaviour
         }
         else
         {
-            int   baseSpd     = _stats.playerStatBlock != null ? _stats.playerStatBlock.baseSpeed : 5;
-            int   speedBonus  = Mathf.Max(0, _stats.Speed - baseSpd);
-            float reduction   = speedBonus * attackCooldownPerSpeed;
+            int   baseSpd    = _stats.playerStatBlock != null ? _stats.playerStatBlock.baseSpeed : 5;
+            int   speedBonus = Mathf.Max(0, _stats.Speed - baseSpd);
+            float reduction  = speedBonus * attackCooldownPerSpeed;
             _currentAttackCooldown = Mathf.Max(basicAttackCooldownMin,
                                                basicAttackCooldownBase - reduction);
         }
@@ -141,14 +162,14 @@ public class PlayerCombat : MonoBehaviour
         _hammer?.RecalculateCooldown();
     }
 
-    // ═════════════════════════════════════════════════════════════
+    // =========================================================
     // Input — OnAttack routes per equipped weapon
-    // ═════════════════════════════════════════════════════════════
+    // =========================================================
 
     public void OnAttack(InputValue value)
     {
-        bool isPressed   = value.isPressed;
-        bool isGrounded  = _controller.isGrounded;
+        bool isPressed  = value.isPressed;
+        bool isGrounded = _controller.isGrounded;
 
         if (_stats == null) return;
         var weapon = _stats.EquippedWeapon;
@@ -172,7 +193,6 @@ public class PlayerCombat : MonoBehaviour
             _swapper?.ActiveWeaponAnimator?.ResetTrigger("BowAttk");
             FireAttackAnims("Attk", "BowAttk");
 
-
             if (_isAiming) _bow.BeginAimedShot();
             else           _bow.FreeLookShot();
             return;
@@ -195,9 +215,8 @@ public class PlayerCombat : MonoBehaviour
             }
 
             if (isGrounded && _hammer.TryBasicSwing())
-                 FireAttackAnims("Attk");
-                //FireAttackAnims("HamAttk");
-           
+                FireAttackAnims("Attk");
+
             return;
         }
 
@@ -224,7 +243,7 @@ public class PlayerCombat : MonoBehaviour
 
     /// <summary>
     /// PlayerInput sends OnAim to ALL MonoBehaviours on this GameObject. This
-    /// is our copy so we can route bow press → BeginAimedShot vs FreeLookShot.
+    /// is our copy so we can route bow press -> BeginAimedShot vs FreeLookShot.
     /// </summary>
     public void OnAim(InputValue value) => _isAiming = value.isPressed;
 
@@ -236,9 +255,9 @@ public class PlayerCombat : MonoBehaviour
     public void EquipHammer() => _stats?.EquipWeapon(EntityStats.WeaponType.Hammer);
     public void EquipBow()    => _stats?.EquipWeapon(EntityStats.WeaponType.Bow);
 
-    // ═════════════════════════════════════════════════════════════
-    // Animator helper
-    // ═════════════════════════════════════════════════════════════
+    // =========================================================
+    // Animator helpers
+    // =========================================================
 
     private void FireAttackAnims(string trigger, string secondTrigger = null)
     {
@@ -252,10 +271,32 @@ public class PlayerCombat : MonoBehaviour
         }
     }
 
-    // ═════════════════════════════════════════════════════════════
+    /// <summary>
+    /// Drives the "BowMove" bool on the rat body animator each frame.
+    /// TRUE when: bow is equipped AND LMB is held AND the player is moving.
+    /// </summary>
+    private void PushBowMoveAnim()
+    {
+        if (_primaryAnimator == null) return;
+
+        bool isMoving = _controller != null &&
+                        new Vector3(_controller.velocity.x, 0f, _controller.velocity.z).sqrMagnitude > 0.01f;
+
+        bool bowMove = _stats != null
+                    && _stats.EquippedWeapon == EntityStats.WeaponType.Bow
+                    && _isAiming
+                    && isMoving;
+
+        if (bowMove == _lastBowMoveSent) return;
+
+        _primaryAnimator.SetBool(bowMoveAnimParam, bowMove);
+        _lastBowMoveSent = bowMove;
+    }
+
+    // =========================================================
     // HUD accessors — forward to the active weapon's controller
     // (kept as PlayerCombat properties so AttackCooldownHUD doesn't change)
-    // ═════════════════════════════════════════════════════════════
+    // =========================================================
 
     public float AttackCooldownProgress
     {
