@@ -124,6 +124,13 @@ public class BowController : MonoBehaviour
     public float jumpShotPitchDown = 30f;
 
     // ─────────────────────────────────────────
+    [Header("Movement Detection")]
+    [Tooltip("Minimum squared speed (units²/sec²) before the player is considered " +
+             "to be moving. Raise slightly if IsMovingWhileHolding flickers at rest. " +
+             "Default 0.01 works for most setups.")]
+    public float movingSpeedThresholdSq = 0.01f;
+
+    // ─────────────────────────────────────────
     [Header("Debug")]
     public bool verbose = false;
 
@@ -135,6 +142,10 @@ public class BowController : MonoBehaviour
 
     private bool  _isCharging;
     private float _chargeStartTime;
+
+    // Cached movement components — resolved once in Start to avoid per-frame GetComponent.
+    private Rigidbody          _rb;
+    private CharacterController _cc;
 
     // ─────────────────────────────────────────
 
@@ -154,6 +165,10 @@ public class BowController : MonoBehaviour
         if (_attackAction == null)
             Debug.LogWarning("[BowController] No 'Attack' action found on PlayerInput — " +
                              "charged-shot release detection will be disabled.");
+
+        // Cache movement components once so IsMoving() has no allocation cost.
+        _rb = GetComponent<Rigidbody>();
+        _cc = GetComponent<CharacterController>();
     }
 
     void Update()
@@ -232,6 +247,24 @@ public class BowController : MonoBehaviour
     {
         StartCoroutine(TripleShotRoutine());
     }
+
+    // ─────────────────────────────────────────
+    // Animation state bools (read by Animator)
+    // ─────────────────────────────────────────
+
+    /// <summary>
+    /// TRUE while the player is holding LMB in aim mode and a charge is building.
+    /// Drive your "Hold" Animator bool parameter with this.
+    /// </summary>
+    public bool IsHolding => _isCharging;
+
+    /// <summary>
+    /// TRUE while the player is charging AND moving (any horizontal velocity above threshold).
+    /// Drive your "Moving" Animator bool parameter with this.
+    /// Returns false whenever the player is not charging, so the Moving state
+    /// only activates inside aim mode.
+    /// </summary>
+    public bool IsMovingWhileHolding => _isCharging && IsMoving();
 
     /// <summary>UI hook — true while LMB is held and a charge is building.</summary>
     public bool IsCharging => _isCharging;
@@ -329,6 +362,32 @@ public class BowController : MonoBehaviour
         float spd     = speedOverride > 0f ? speedOverride : arrowSpeed;
         int   stagger = 2; // bow stagger — could pull from PlayerCombat if exposed
         arrow.Launch(direction, spd, damage, stagger, enemyLayer, arrowLifetime, arrowGravity);
+    }
+
+    // ─────────────────────────────────────────
+    // Movement detection
+    // ─────────────────────────────────────────
+
+    /// <summary>
+    /// Returns true if the player has meaningful horizontal velocity.
+    /// Checks Rigidbody first, then CharacterController, then falls back to false.
+    /// Components are cached in Start — no per-frame allocation.
+    /// </summary>
+    private bool IsMoving()
+    {
+        if (_rb != null)
+        {
+            Vector3 flatVel = new Vector3(_rb.linearVelocity.x, 0f, _rb.linearVelocity.z);
+            return flatVel.sqrMagnitude > movingSpeedThresholdSq;
+        }
+
+        if (_cc != null)
+        {
+            Vector3 flatVel = new Vector3(_cc.velocity.x, 0f, _cc.velocity.z);
+            return flatVel.sqrMagnitude > movingSpeedThresholdSq;
+        }
+
+        return false;
     }
 
     // ─────────────────────────────────────────
