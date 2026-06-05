@@ -1,2 +1,18 @@
 fileFormatVersion: 2
 guid: 31c38a1a5461825479eed61098a282d5
+MonoImporter:
+  externalObjects: {}
+  serializedVersion: 2
+  defaultReferences:
+  - bladeCutscene: {fileID: 32900000, guid: 340e31eba73508d409a9b50fd29d34a7, type: 3}
+  - hammerCutscene: {fileID: 32900000, guid: e48039fd229506a4cb3775eeb4530a01, type: 3}
+  - bowCutscene: {fileID: 32900000, guid: ba00d8a2a9d9ee5468e2d11006a4cab1, type: 3}
+  - fallbackCutscene: {instanceID: 0}
+  - videoCanvasRoot: {instanceID: 0}
+  - bossHealthBar: {instanceID: 0}
+  - skipPromptRoot: {instanceID: 0}
+  executionOrder: 0
+  icon: {instanceID: 0}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 

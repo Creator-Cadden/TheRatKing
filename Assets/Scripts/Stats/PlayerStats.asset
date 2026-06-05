@@ -28,7 +28,7 @@ MonoBehaviour:
   bladeToughnessBonus: 1
   hammerStrengthMultiplier: 3
   hammerToughnessBonus: 6
-  hammerMoveSpeedFraction: 0.667
+  hammerMoveSpeedFraction: 1
   hammerAttackSpeedFraction: 0.5
   bowStrengthMultiplier: 1
   bowToughnessBonus: 0

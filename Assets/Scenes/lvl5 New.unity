@@ -1391,10 +1391,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 31c38a1a5461825479eed61098a282d5, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::BossCutsceneController
-  bladeCutscene: {fileID: 0}
-  hammerCutscene: {fileID: 0}
-  bowCutscene: {fileID: 0}
-  fallbackCutscene: {fileID: 0}
+  bladeCutscene: {fileID: 32900000, guid: 340e31eba73508d409a9b50fd29d34a7, type: 3}
+  hammerCutscene: {fileID: 32900000, guid: e48039fd229506a4cb3775eeb4530a01, type: 3}
+  bowCutscene: {fileID: 32900000, guid: ba00d8a2a9d9ee5468e2d11006a4cab1, type: 3}
+  fallbackCutscene: {fileID: 32900000, guid: 340e31eba73508d409a9b50fd29d34a7, type: 3}
   videoCanvasRoot: {fileID: 2090646627}
   bossHealthBar: {fileID: 2113430885}
   bossBarIntroDelay: 0.3
@@ -2859,7 +2859,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 8854923487989096421, guid: dbe6c9a97659c354e9a017ecb12a7ef3, type: 3}
       propertyPath: rollWidth
-      value: 15
+      value: 18.5
       objectReference: {fileID: 0}
     - target: {fileID: 8854923487989096421, guid: dbe6c9a97659c354e9a017ecb12a7ef3, type: 3}
       propertyPath: stopRange
@@ -2875,15 +2875,15 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 8854923487989096421, guid: dbe6c9a97659c354e9a017ecb12a7ef3, type: 3}
       propertyPath: slamRadius
-      value: 12
+      value: 20.7
       objectReference: {fileID: 0}
     - target: {fileID: 8854923487989096421, guid: dbe6c9a97659c354e9a017ecb12a7ef3, type: 3}
       propertyPath: airDuration
-      value: 3
+      value: 2
       objectReference: {fileID: 0}
     - target: {fileID: 8854923487989096421, guid: dbe6c9a97659c354e9a017ecb12a7ef3, type: 3}
       propertyPath: rollDistance
-      value: 50
+      value: 83.7
       objectReference: {fileID: 0}
     - target: {fileID: 8854923487989096421, guid: dbe6c9a97659c354e9a017ecb12a7ef3, type: 3}
       propertyPath: jumpWindupDuration
@@ -3032,6 +3032,50 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 165750a70e684c743b657df9eaa07351, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::EntityStats
+--- !u!1 &1594083840
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1594083842}
+  - component: {fileID: 1594083841}
+  m_Layer: 0
+  m_Name: Test
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &1594083841
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1594083840}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: bb5ac54b75dce4d40aa1f8f0578b935a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::SceneTest
+--- !u!4 &1594083842
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1594083840}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 4.0027, y: 11.15897, z: 116.33218}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1001 &1597943674
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -3687,7 +3731,7 @@ Canvas:
   m_AdditionalShaderChannelsFlag: 0
   m_UpdateRectTransformForStandalone: 0
   m_SortingLayerID: 0
-  m_SortingOrder: 0
+  m_SortingOrder: 10
   m_TargetDisplay: 0
 --- !u!114 &2113430885 stripped
 MonoBehaviour:
@@ -3883,31 +3927,31 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 6199130361271467518, guid: a12230b9074c5f24081cc304a5f3e59d, type: 3}
       propertyPath: m_LocalPosition.x
-      value: 0.71000004
+      value: -0.53
       objectReference: {fileID: 0}
     - target: {fileID: 6199130361271467518, guid: a12230b9074c5f24081cc304a5f3e59d, type: 3}
       propertyPath: m_LocalPosition.y
-      value: 3.9499998
+      value: 5.79
       objectReference: {fileID: 0}
     - target: {fileID: 6199130361271467518, guid: a12230b9074c5f24081cc304a5f3e59d, type: 3}
       propertyPath: m_LocalPosition.z
-      value: -2.09
+      value: -2.79
       objectReference: {fileID: 0}
     - target: {fileID: 6199130361271467518, guid: a12230b9074c5f24081cc304a5f3e59d, type: 3}
       propertyPath: m_LocalRotation.w
-      value: 1
+      value: 0.95947343
       objectReference: {fileID: 0}
     - target: {fileID: 6199130361271467518, guid: a12230b9074c5f24081cc304a5f3e59d, type: 3}
       propertyPath: m_LocalRotation.x
-      value: 0.000000027965095
+      value: 0.28179917
       objectReference: {fileID: 0}
     - target: {fileID: 6199130361271467518, guid: a12230b9074c5f24081cc304a5f3e59d, type: 3}
       propertyPath: m_LocalRotation.y
-      value: -0.000000016450056
+      value: 0.00000002585037
       objectReference: {fileID: 0}
     - target: {fileID: 6199130361271467518, guid: a12230b9074c5f24081cc304a5f3e59d, type: 3}
       propertyPath: m_LocalRotation.z
-      value: 4.6002735e-16
+      value: -0.000000007592303
       objectReference: {fileID: 0}
     - target: {fileID: 6387084497354497135, guid: a12230b9074c5f24081cc304a5f3e59d, type: 3}
       propertyPath: m_LocalPosition.x
@@ -3923,7 +3967,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 7226773179003947898, guid: a12230b9074c5f24081cc304a5f3e59d, type: 3}
       propertyPath: field of view
-      value: 75
+      value: 90
       objectReference: {fileID: 0}
     - target: {fileID: 7226773179003947898, guid: a12230b9074c5f24081cc304a5f3e59d, type: 3}
       propertyPath: m_TargetTexture
@@ -4475,3 +4519,4 @@ SceneRoots:
   - {fileID: 285975963}
   - {fileID: 764528278}
   - {fileID: 323591594}
+  - {fileID: 1594083842}
