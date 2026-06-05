@@ -36,6 +36,21 @@ public class EnemyAI : MonoBehaviour
     // seconds even if the player runs out of aggroRange. Set by OnDamaged callback.
     private float _damagedAggroUntil = -1f;
 
+    [Header("Special Aggro")]
+    [Tooltip("If on, this enemy is permanently aggroed against the player — " +
+             "ignores aggroRange and always pursues. Used for boss-arena spawn " +
+             "minions that should hunt the player from anywhere in the arena.\n\n" +
+             "Set by BossMinionSpawner on spawn. Leave OFF on normal enemies " +
+             "that should patrol passively until the player gets close.")]
+    public bool permanentlyAggroed = false;
+
+    [Tooltip("Multiplier applied to the NavMeshAgent's movement speed on Start. " +
+             "1.0 = stat block value, 1.5 = 50% faster, 2.0 = double speed.\n\n" +
+             "Used by BossMinionSpawner to make spawned grunts more aggressive " +
+             "without modifying the shared EnemyStatBlock asset. Leave at 1 for " +
+             "normal-speed enemies.")]
+    public float speedMultiplier = 1f;
+
     // Tracks whether we were locked last frame so we can detect the
     // exact frame the lock releases and start the post-attack pause.
     private bool _wasRotationLocked;
@@ -57,7 +72,9 @@ public class EnemyAI : MonoBehaviour
         if (_combat == null) _combat = gameObject.AddComponent<EnemyCombat>();
 
         _agent = GetComponent<NavMeshAgent>();
-        _agent.speed = _sb.moveSpeed;
+        // Apply speed multiplier (default 1.0 = no change). Boss-arena minions
+        // get this set above 1 by BossMinionSpawner so they hunt aggressively.
+        _agent.speed = _sb.moveSpeed * Mathf.Max(0.01f, speedMultiplier);
         _agent.stoppingDistance = _sb.stopRange;
 
         GameObject playerObj = GameObject.FindWithTag("Player");
@@ -125,11 +142,12 @@ public class EnemyAI : MonoBehaviour
         float dist = FlatDist(transform.position, _player.position);
 
         // Aggro if either: (a) player is within normal aggroRange,
-        // OR (b) enemy was hit recently and is still in its damage-memory window.
+        // (b) enemy was hit recently and is still in its damage-memory window,
+        // OR (c) the permanentlyAggroed flag is set (boss-arena minions).
         bool inAggroRange    = dist <= _sb.aggroRange;
         bool rememberDamager = Time.time < _damagedAggroUntil;
 
-        if (inAggroRange || rememberDamager)
+        if (permanentlyAggroed || inAggroRange || rememberDamager)
         {
             _isAggroed = true;
             _animator.SetFloat("Running", 1);
