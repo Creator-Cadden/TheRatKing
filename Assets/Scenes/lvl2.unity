@@ -2666,6 +2666,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::EnemyXPDrop
   xpValue: 5
+  displayName: 
   playerTag: Player
 --- !u!114 &86806258
 MonoBehaviour:
@@ -7998,6 +7999,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::EnemyXPDrop
   xpValue: 5
+  displayName: 
   playerTag: Player
 --- !u!114 &268850985
 MonoBehaviour:
@@ -10697,6 +10699,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::EnemyXPDrop
   xpValue: 5
+  displayName: 
   playerTag: Player
 --- !u!1 &319840866
 GameObject:
@@ -10974,7 +10977,7 @@ Camera:
     height: 1
   near clip plane: 0.3
   far clip plane: 1000
-  field of view: 75
+  field of view: 90
   orthographic: 0
   orthographic size: 5
   m_Depth: -1
@@ -11000,8 +11003,8 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 330585543}
   serializedVersion: 2
-  m_LocalRotation: {x: 0.0000000021872686, y: -0.0000000021872686, z: 4.784144e-18, w: 1}
-  m_LocalPosition: {x: 1.94713, y: 3.94, z: -2.09287}
+  m_LocalRotation: {x: 0.28179917, y: 0.00000002585037, z: -0.000000007592303, w: 0.95947343}
+  m_LocalPosition: {x: 0.70713, y: 5.7799997, z: -2.79287}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -12351,6 +12354,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::EnemyXPDrop
   xpValue: 5
+  displayName: 
   playerTag: Player
 --- !u!114 &368393717
 MonoBehaviour:
@@ -12733,6 +12737,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::EnemyXPDrop
   xpValue: 5
+  displayName: 
   playerTag: Player
 --- !u!114 &371180944
 MonoBehaviour:
@@ -15203,6 +15208,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::EnemyXPDrop
   xpValue: 5
+  displayName: 
   playerTag: Player
 --- !u!1 &457374334 stripped
 GameObject:
@@ -16130,6 +16136,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::EnemyXPDrop
   xpValue: 5
+  displayName: 
   playerTag: Player
 --- !u!114 &500709669
 MonoBehaviour:
@@ -16485,6 +16492,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::EnemyXPDrop
   xpValue: 5
+  displayName: 
   playerTag: Player
 --- !u!114 &505595288
 MonoBehaviour:
@@ -18446,6 +18454,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::EnemyXPDrop
   xpValue: 10
+  displayName: 
   playerTag: Player
 --- !u!1 &574391608
 GameObject:
@@ -24000,6 +24009,109 @@ PrefabInstance:
       insertIndex: -1
       addedObject: {fileID: 439426913}
   m_SourcePrefab: {fileID: 100100000, guid: d6058bb4fcdb22446b0da305f6abee8b, type: 3}
+--- !u!1001 &793136888
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 0}
+    m_Modifications:
+    - target: {fileID: -8679921383154817045, guid: 9a04a72bead4049469680529d7a5a5e9, type: 3}
+      propertyPath: m_LocalScale.x
+      value: -187.56413
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: 9a04a72bead4049469680529d7a5a5e9, type: 3}
+      propertyPath: m_LocalScale.y
+      value: -155.68001
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: 9a04a72bead4049469680529d7a5a5e9, type: 3}
+      propertyPath: m_LocalScale.z
+      value: -215.21472
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: 9a04a72bead4049469680529d7a5a5e9, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: -15.4
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: 9a04a72bead4049469680529d7a5a5e9, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: -13.9
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: 9a04a72bead4049469680529d7a5a5e9, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: -8.16
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: 9a04a72bead4049469680529d7a5a5e9, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 0.7071067
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: 9a04a72bead4049469680529d7a5a5e9, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: 0.7071068
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: 9a04a72bead4049469680529d7a5a5e9, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: 9a04a72bead4049469680529d7a5a5e9, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: -0
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: 9a04a72bead4049469680529d7a5a5e9, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: 9a04a72bead4049469680529d7a5a5e9, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: 9a04a72bead4049469680529d7a5a5e9, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: -7511558181221131132, guid: 9a04a72bead4049469680529d7a5a5e9, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value: 
+      objectReference: {fileID: 2100000, guid: 76793c9c4fedc1d4cae036e806207964, type: 2}
+    - target: {fileID: 919132149155446097, guid: 9a04a72bead4049469680529d7a5a5e9, type: 3}
+      propertyPath: m_Name
+      value: NO DATA DoorBlock 1
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents:
+    - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: 9a04a72bead4049469680529d7a5a5e9, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 793136890}
+  m_SourcePrefab: {fileID: 100100000, guid: 9a04a72bead4049469680529d7a5a5e9, type: 3}
+--- !u!1 &793136889 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 919132149155446097, guid: 9a04a72bead4049469680529d7a5a5e9, type: 3}
+  m_PrefabInstance: {fileID: 793136888}
+  m_PrefabAsset: {fileID: 0}
+--- !u!64 &793136890
+MeshCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 793136889}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 0
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 5
+  m_Convex: 0
+  m_CookingOptions: 30
+  m_Mesh: {fileID: -8367231247473855917, guid: 9a04a72bead4049469680529d7a5a5e9, type: 3}
 --- !u!1 &794665249
 GameObject:
   m_ObjectHideFlags: 0
@@ -25504,6 +25616,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::EnemyXPDrop
   xpValue: 5
+  displayName: 
   playerTag: Player
 --- !u!114 &841565492
 MonoBehaviour:
@@ -30898,7 +31011,6 @@ MonoBehaviour:
   defaultPriority: 10
   activePriority: 20
   _primaryAnimator: {fileID: 257897686}
-  _secondaryAnimator: {fileID: 439426913}
 --- !u!114 &1075244674
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -30966,29 +31078,16 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 99c58152c8aad3044ad11eef649688c3, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::PlayerCombat
-  basicAttackRadius: 2.74
-  basicAttackAngle: 144.4
-  basicAttackHeight: 0.74
   basicAttackCooldownBase: 1
   basicAttackCooldownMin: 0.3
   attackCooldownPerSpeed: 0.1
-  jumpAttackRadius: 4
-  jumpAttackAngle: 90
   jumpAttackCooldown: 1.2
-  jumpAttackHeight: 3
-  jumpSpinDuration: 0.35
-  jumpSpinDegrees: 360
-  jumpSpinVisual: {fileID: 257897685}
-  bladeStaggerForce: 3
-  hammerStaggerForce: 8
-  bowStaggerForce: 2
   attackOrigin: {fileID: 351376128}
   enemyLayer:
     serializedVersion: 2
     m_Bits: 64
-  showAttackGizmos: 1
   _primaryAnimator: {fileID: 257897686}
-  _secondaryAnimator: {fileID: 439426913}
+  bowMoveAnimParam: BowMove
 --- !u!114 &1075244677
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -31055,6 +31154,9 @@ MonoBehaviour:
     m_PersistentCalls:
       m_Calls: []
   onXPGained:
+    m_PersistentCalls:
+      m_Calls: []
+  onXPGainedFromSource:
     m_PersistentCalls:
       m_Calls: []
   onStatPointSpent:
@@ -33424,6 +33526,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::EnemyXPDrop
   xpValue: 10
+  displayName: 
   playerTag: Player
 --- !u!1 &1154930090
 GameObject:
@@ -34944,6 +35047,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::EnemyXPDrop
   xpValue: 10
+  displayName: 
   playerTag: Player
 --- !u!114 &1214602759
 MonoBehaviour:
@@ -35357,6 +35461,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::EnemyXPDrop
   xpValue: 5
+  displayName: 
   playerTag: Player
 --- !u!114 &1229481989
 MonoBehaviour:
@@ -40054,6 +40159,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::EnemyXPDrop
   xpValue: 5
+  displayName: 
   playerTag: Player
 --- !u!114 &1431389075
 MonoBehaviour:
@@ -46719,6 +46825,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::EnemyXPDrop
   xpValue: 5
+  displayName: 
   playerTag: Player
 --- !u!114 &1682105852
 MonoBehaviour:
@@ -51980,6 +52087,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::EnemyXPDrop
   xpValue: 5
+  displayName: 
   playerTag: Player
 --- !u!114 &1936928499
 MonoBehaviour:
@@ -55957,6 +56065,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::EnemyXPDrop
   xpValue: 5
+  displayName: 
   playerTag: Player
 --- !u!1 &2084085369
 GameObject:
@@ -57776,6 +57885,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::EnemyXPDrop
   xpValue: 10
+  displayName: 
   playerTag: Player
 --- !u!1 &2147153698 stripped
 GameObject:
@@ -57828,3 +57938,4 @@ SceneRoots:
   - {fileID: 24584305}
   - {fileID: 1600675727}
   - {fileID: 639252317}
+  - {fileID: 793136888}

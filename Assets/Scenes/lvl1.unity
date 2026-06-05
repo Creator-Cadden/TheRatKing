@@ -4560,15 +4560,15 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: 71780d1f51f49d04494ec7bbaf727b1f, type: 3}
       propertyPath: m_LocalPosition.x
-      value: -16.659
+      value: -17.5
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: 71780d1f51f49d04494ec7bbaf727b1f, type: 3}
       propertyPath: m_LocalPosition.y
-      value: -4.39
+      value: -5.22
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: 71780d1f51f49d04494ec7bbaf727b1f, type: 3}
       propertyPath: m_LocalPosition.z
-      value: 120.9
+      value: 125.94
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: 71780d1f51f49d04494ec7bbaf727b1f, type: 3}
       propertyPath: m_LocalRotation.w
@@ -6361,7 +6361,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d2c6e4d5afa04134d9958bd050a18d44, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::LevelTransition
-  nextSceneName: lvl2
+  nextSceneName: lvl2 New
   floorMode: -1
   playerTag: Player
   oneShot: 1
