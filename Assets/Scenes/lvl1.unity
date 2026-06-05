@@ -5890,6 +5890,28 @@ PrefabInstance:
       addedObject: {fileID: 1543784151}
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 914f7101e2e3ab940ac23fba30adf473, type: 3}
+--- !u!114 &1712952562 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 4102869489145848168, guid: 914f7101e2e3ab940ac23fba30adf473, type: 3}
+  m_PrefabInstance: {fileID: 1712952561}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 165750a70e684c743b657df9eaa07351, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::EntityStats
+--- !u!114 &1712952563 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 1303362881654007255, guid: 914f7101e2e3ab940ac23fba30adf473, type: 3}
+  m_PrefabInstance: {fileID: 1712952561}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 99c58152c8aad3044ad11eef649688c3, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::PlayerCombat
 --- !u!1 &1734675553
 GameObject:
   m_ObjectHideFlags: 0
@@ -7768,7 +7790,7 @@ PrefabInstance:
     - target: {fileID: 2985418384839354684, guid: d80e301a0ea1ef14193c38c1b0bbb7ea, type: 3}
       propertyPath: playerStats
       value: 
-      objectReference: {fileID: 0}
+      objectReference: {fileID: 1712952562}
     - target: {fileID: 3471651503314546479, guid: d80e301a0ea1ef14193c38c1b0bbb7ea, type: 3}
       propertyPath: canvasGroup
       value: 
@@ -7780,7 +7802,7 @@ PrefabInstance:
     - target: {fileID: 4995733923438570401, guid: d80e301a0ea1ef14193c38c1b0bbb7ea, type: 3}
       propertyPath: playerCombat
       value: 
-      objectReference: {fileID: 0}
+      objectReference: {fileID: 1712952563}
     - target: {fileID: 5416373164332205964, guid: d80e301a0ea1ef14193c38c1b0bbb7ea, type: 3}
       propertyPath: m_Camera
       value: 
