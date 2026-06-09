@@ -392,7 +392,9 @@ MonoBehaviour:
   loadGameButton: {fileID: 0}
   loadGameLabel: {fileID: 0}
   settingsButton: {fileID: 0}
-  exitButton: {fileID: 334001373}
+  creditsButton: {fileID: 0}
+  exitButton: {fileID: 0}
+  creditsScene: Credits
   slotButtons:
   - {fileID: 0}
   - {fileID: 0}
@@ -409,7 +411,7 @@ MonoBehaviour:
   - {fileID: 0}
   - {fileID: 0}
   - {fileID: 0}
-  slotBackButton: {fileID: 0}
+  slotBackButton: {fileID: 334001373}
   testWorldButton: {fileID: 0}
   testWorldLabel: {fileID: 0}
   confirmDeletePanel: {fileID: 0}

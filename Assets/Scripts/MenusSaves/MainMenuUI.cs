@@ -71,7 +71,13 @@ public class MainMenuUI : MonoBehaviour
     public Button   loadGameButton;
     public TMP_Text loadGameLabel;
     public Button   settingsButton;
+    public Button   creditsButton;
     public Button   exitButton;
+
+    [Header("Credits")]
+    [Tooltip("Scene name loaded when the Credits button is clicked. " +
+             "Must be added to File → Build Profiles → Scene List.")]
+    public string creditsScene = "Credits";
 
     [Header("Slot Panel")]
     public Button[]   slotButtons    = new Button[3];
@@ -124,6 +130,7 @@ public class MainMenuUI : MonoBehaviour
         playContinueButton?.onClick.AddListener(OnPlayContinue);
         loadGameButton    ?.onClick.AddListener(OnLoadGame);
         settingsButton    ?.onClick.AddListener(OnSettings);
+        creditsButton     ?.onClick.AddListener(OnCredits);
         exitButton        ?.onClick.AddListener(OnExit);
 
         // Slot panel
@@ -406,6 +413,16 @@ public class MainMenuUI : MonoBehaviour
     private void OnSettings()
     {
         Debug.Log("[MainMenuUI] Settings — wire to your settings panel.");
+    }
+
+    private void OnCredits()
+    {
+        if (string.IsNullOrEmpty(creditsScene))
+        {
+            Debug.LogWarning("[MainMenuUI] Credits Scene field is empty.");
+            return;
+        }
+        UnityEngine.SceneManagement.SceneManager.LoadScene(creditsScene);
     }
 
     private void OnExit()

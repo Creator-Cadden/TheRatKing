@@ -1294,7 +1294,9 @@ MonoBehaviour:
   loadGameButton: {fileID: 1409443456}
   loadGameLabel: {fileID: 77366428}
   settingsButton: {fileID: 996338545}
+  creditsButton: {fileID: 1298918856}
   exitButton: {fileID: 334001373}
+  creditsScene: Credits
   slotButtons:
   - {fileID: 1519611547}
   - {fileID: 1450200444}
@@ -4009,7 +4011,7 @@ GameObject:
   - component: {fileID: 1298918857}
   - component: {fileID: 1298918856}
   m_Layer: 5
-  m_Name: TestingArena
+  m_Name: Credits
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
