@@ -1073,20 +1073,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::EncounterController
   trackedEnemies:
   - {fileID: 1572730885}
-  - {fileID: 0}
-  - {fileID: 0}
-  - {fileID: 0}
-  - {fileID: 0}
-  - {fileID: 0}
-  - {fileID: 0}
-  - {fileID: 0}
-  - {fileID: 0}
-  - {fileID: 0}
-  - {fileID: 0}
-  - {fileID: 0}
-  - {fileID: 0}
-  - {fileID: 0}
-  - {fileID: 0}
   autoPopulate: 0
   autoPopulateRadius: 25
   autoPopulateLayer:
@@ -3612,7 +3598,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d2c6e4d5afa04134d9958bd050a18d44, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::LevelTransition
-  nextSceneName: lvl2
+  nextSceneName: Credits
   floorMode: -1
   playerTag: Player
   oneShot: 1
