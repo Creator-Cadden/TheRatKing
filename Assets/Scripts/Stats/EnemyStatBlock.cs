@@ -115,7 +115,7 @@ public class EnemyStatBlock : BaseStatBlock
     public float stopRange = 1.5f;
 
     [Tooltip("NavMesh movement speed toward the player.")]
-    public float moveSpeed = 3.5f;
+    public float moveSpeed = 10f;
 
     [Header("Damage Memory")]
     [Tooltip("Seconds the enemy stays aggro'd after being damaged, even if the player walks " +

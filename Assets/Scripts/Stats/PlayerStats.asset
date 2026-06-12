@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: PlayerStats
   m_EditorClassIdentifier: Assembly-CSharp::PlayerStatBlock
   baseHealth: 100
-  baseStrength: 10
+  baseStrength: 2
   baseStamina: 50
   baseSpeed: 5
   baseToughness: 3
@@ -24,15 +24,15 @@ MonoBehaviour:
   floorOneCap: 5
   floorTwoCap: 10
   floorThreeCap: 15
-  bladeStrengthMultiplier: 2
+  bladeStrengthMultiplier: 3
   bladeToughnessBonus: 1
-  hammerStrengthMultiplier: 3
+  hammerStrengthMultiplier: 15
   hammerToughnessBonus: 6
   hammerMoveSpeedFraction: 1
   hammerAttackSpeedFraction: 0.5
   bowStrengthMultiplier: 1
   bowToughnessBonus: 0
-  bowChargedMultiplier: 3
+  bowChargedMultiplier: 20
   bowAimMoveSpeedFraction: 0.667
   sprintStaminaPerSecond: 5
   rollStaminaCost: 15

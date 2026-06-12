@@ -1569,6 +1569,14 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 1302767314}
     m_Modifications:
+    - target: {fileID: 418516161856129089, guid: d6f730da83f38ec499b02149f11806ba, type: 3}
+      propertyPath: m_Speed
+      value: 15
+      objectReference: {fileID: 0}
+    - target: {fileID: 418516161856129089, guid: d6f730da83f38ec499b02149f11806ba, type: 3}
+      propertyPath: m_Acceleration
+      value: 100
+      objectReference: {fileID: 0}
     - target: {fileID: 987015142428043380, guid: d6f730da83f38ec499b02149f11806ba, type: 3}
       propertyPath: m_LocalPosition.x
       value: 0.66833496
@@ -1614,7 +1622,8 @@ PrefabInstance:
       value: GruntCircle
       objectReference: {fileID: 0}
     m_RemovedComponents: []
-    m_RemovedGameObjects: []
+    m_RemovedGameObjects:
+    - {fileID: 3482983344273144797, guid: d6f730da83f38ec499b02149f11806ba, type: 3}
     m_AddedGameObjects: []
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: d6f730da83f38ec499b02149f11806ba, type: 3}
@@ -6205,6 +6214,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 0}
     m_Modifications:
+    - target: {fileID: 1313619994705357618, guid: 914f7101e2e3ab940ac23fba30adf473, type: 3}
+      propertyPath: maxChargeMultiplier
+      value: 7
+      objectReference: {fileID: 0}
     - target: {fileID: 2186466306947690145, guid: 914f7101e2e3ab940ac23fba30adf473, type: 3}
       propertyPath: titleLabel
       value: 
@@ -6298,12 +6311,28 @@ PrefabInstance:
       value: 
       objectReference: {fileID: 419371210}
     - target: {fileID: 7007591616936203130, guid: 914f7101e2e3ab940ac23fba30adf473, type: 3}
+      propertyPath: walkSpeed
+      value: 7
+      objectReference: {fileID: 0}
+    - target: {fileID: 7007591616936203130, guid: 914f7101e2e3ab940ac23fba30adf473, type: 3}
       propertyPath: freeLookCamera
       value: 
       objectReference: {fileID: 1240517820}
     - target: {fileID: 8525128706489102541, guid: 914f7101e2e3ab940ac23fba30adf473, type: 3}
+      propertyPath: swingAngle
+      value: 157.6
+      objectReference: {fileID: 0}
+    - target: {fileID: 8525128706489102541, guid: 914f7101e2e3ab940ac23fba30adf473, type: 3}
       propertyPath: swingHeight
       value: 0.83
+      objectReference: {fileID: 0}
+    - target: {fileID: 8525128706489102541, guid: 914f7101e2e3ab940ac23fba30adf473, type: 3}
+      propertyPath: swingRadius
+      value: 2.32
+      objectReference: {fileID: 0}
+    - target: {fileID: 8525128706489102541, guid: 914f7101e2e3ab940ac23fba30adf473, type: 3}
+      propertyPath: cooldownBase
+      value: 0.22
       objectReference: {fileID: 0}
     - target: {fileID: 8525128706489102541, guid: 914f7101e2e3ab940ac23fba30adf473, type: 3}
       propertyPath: jumpAttackHeight
@@ -6334,8 +6363,12 @@ PrefabInstance:
       value: 4.55
       objectReference: {fileID: 0}
     - target: {fileID: 8577627138676567095, guid: 914f7101e2e3ab940ac23fba30adf473, type: 3}
+      propertyPath: slamCooldown
+      value: 4.08
+      objectReference: {fileID: 0}
+    - target: {fileID: 8577627138676567095, guid: 914f7101e2e3ab940ac23fba30adf473, type: 3}
       propertyPath: swingCooldown
-      value: 2.29
+      value: 3.22
       objectReference: {fileID: 0}
     - target: {fileID: 8577627138676567095, guid: 914f7101e2e3ab940ac23fba30adf473, type: 3}
       propertyPath: enemyLayer.m_Bits

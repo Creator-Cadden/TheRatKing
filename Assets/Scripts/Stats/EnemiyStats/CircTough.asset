@@ -15,7 +15,7 @@ MonoBehaviour:
   baseHealth: 100
   baseStrength: 4
   baseStamina: 0
-  baseSpeed: 3
+  baseSpeed: 15
   baseToughness: 8
   attackDamageMin: 5
   attackDamageMax: 7
