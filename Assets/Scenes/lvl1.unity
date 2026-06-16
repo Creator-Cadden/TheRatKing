@@ -6214,6 +6214,14 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 0}
     m_Modifications:
+    - target: {fileID: 1303362881654007255, guid: 914f7101e2e3ab940ac23fba30adf473, type: 3}
+      propertyPath: bowMoveAnimParam
+      value: BowHold
+      objectReference: {fileID: 0}
+    - target: {fileID: 1313619994705357618, guid: 914f7101e2e3ab940ac23fba30adf473, type: 3}
+      propertyPath: verbose
+      value: 1
+      objectReference: {fileID: 0}
     - target: {fileID: 1313619994705357618, guid: 914f7101e2e3ab940ac23fba30adf473, type: 3}
       propertyPath: maxChargeMultiplier
       value: 7
