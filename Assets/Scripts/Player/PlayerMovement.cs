@@ -7,22 +7,18 @@ using Unity.Cinemachine;
 public class PlayerMovement : MonoBehaviour
 {
     [Header("Movement")]
-    public float walkSpeed = 6f;
-    public float sprintSpeed = 10f;
-    public float acceleration = 20f;
-    public float deceleration = 25f;
-    public float gravity = -9.81f;
-    public float jumpForce = 1.5f;
+    public float walkSpeed     = 6f;
+    public float sprintSpeed   = 10f;
+    public float acceleration  = 20f;
+    public float deceleration  = 25f;
+    public float gravity       = -9.81f;
+    public float jumpForce     = 1.5f;
     public float rotationSpeed = 10f;
 
     [Header("Roll")]
-    public float rollSpeed = 12f;
+    public float rollSpeed    = 12f;
     public float rollDuration = 0.35f;
     public float rollCooldown = 0.8f;
-
-    [Header("Coyote Time")]
-    [Tooltip("How long after walking off a ledge the player can still jump (seconds).")]
-    public float coyoteTime = 0.15f;
 
     [Header("Cinemachine Cameras")]
     public CinemachineCamera freeLookCamera;
@@ -41,7 +37,7 @@ public class PlayerMovement : MonoBehaviour
 
     [Header("Camera Priorities")]
     public int defaultPriority = 10;
-    public int activePriority = 20;
+    public int activePriority  = 20;
 
     [Header("Animators")]
     [Tooltip("The rat BODY animator — drives running, jumping, attack pose, etc. " +
@@ -54,10 +50,10 @@ public class PlayerMovement : MonoBehaviour
     private WeaponModelSwapper _swapper;
 
     // ── Private State ──
-    private CharacterController _controller;
+    private CharacterController            _controller;
     private CinemachineInputAxisController _freeLookInput;
-    private CinemachineOrbitalFollow _orbitalFollow;
-    private EntityStats _stats;
+    private CinemachineOrbitalFollow       _orbitalFollow;   // <-- NEW: direct ref to sync yaw on aim-exit
+    private EntityStats                    _stats;
 
     private float _baseWalkSpeed;
     private float _baseSprintSpeed;
@@ -65,30 +61,24 @@ public class PlayerMovement : MonoBehaviour
     private Vector2 _moveInput;
     private Vector3 _velocity;
     private Vector3 _currentMoveVelocity;
-    private bool _jumpPressed;
-    private bool _isGrounded;
-    private bool _sprintHeld;
-    private bool _isAiming;
-    private float _aimYaw;
-    private float _aimPitch;
+    private bool    _jumpPressed;
+    private bool    _isGrounded;
+    private bool    _sprintHeld;
+    private bool    _isAiming;
+    private float   _aimYaw;
+    private float   _aimPitch;
     private Vector2 _lookDelta;
 
     // Roll
-    private bool _isRolling;
-    private float _lastRollTime = -999f;
+    private bool    _isRolling;
+    private float   _lastRollTime = -999f;
     private Vector3 _rollDirection;
 
-    // Coyote time
-    private float _coyoteTimer;
-    private bool _wasGroundedLastFrame;
-
-    private BowController _bow;
-
-    // Knockback
-    private Vector3 _knockbackDir;
-    private float _knockbackForce;
-    private float _knockbackTimer;
-    private float _knockbackInitialTimer;
+    // Knockback (from boss attacks, contact damage, etc.)
+    private Vector3 _knockbackDir;         // unit-length push direction
+    private float   _knockbackForce;       // peak speed at t = 0 of the push
+    private float   _knockbackTimer;       // remaining seconds of push
+    private float   _knockbackInitialTimer;// total duration of this push
 
     private Coroutine _suppressCoroutine;
 
@@ -101,35 +91,39 @@ public class PlayerMovement : MonoBehaviour
     // ─────────────────────────────────────────
     void Awake()
     {
-        _baseWalkSpeed = walkSpeed;
+        // Cache base speeds in Awake so they are set before ANY Start() runs.
+        // EntityStats.Start() calls InitStats() which calls ApplySpeedBonus()
+        // on this component — if we wait until our own Start() to cache these,
+        // EntityStats.Start() may run first and ApplySpeedBonus multiplies from 0.
+        _baseWalkSpeed   = walkSpeed;
         _baseSprintSpeed = sprintSpeed;
 
         if (_baseWalkSpeed <= 0f)
         {
             Debug.LogWarning("[PlayerMovement] walkSpeed is 0 in Awake — using safe defaults. " +
                              "Make sure walkSpeed is set in the Inspector.");
-            _baseWalkSpeed = 6f;
+            _baseWalkSpeed   = 6f;
             _baseSprintSpeed = 10f;
-            walkSpeed = _baseWalkSpeed;
-            sprintSpeed = _baseSprintSpeed;
+            walkSpeed        = _baseWalkSpeed;
+            sprintSpeed      = _baseSprintSpeed;
         }
     }
 
     void Start()
     {
-        _controller = GetComponent<CharacterController>();
+        _controller    = GetComponent<CharacterController>();
         _freeLookInput = freeLookCamera.GetComponent<CinemachineInputAxisController>();
-        _stats = GetComponent<EntityStats>();
-        _swapper = GetComponent<WeaponModelSwapper>();
-        _bow = GetComponent<BowController>();
+        _stats         = GetComponent<EntityStats>();
+        _swapper       = GetComponent<WeaponModelSwapper>();
 
+        // Cache the OrbitalFollow so we can write HorizontalAxis.Value on aim-exit
         _orbitalFollow = freeLookCamera.GetComponent<CinemachineOrbitalFollow>();
         if (_orbitalFollow == null)
             Debug.LogWarning("[PlayerMovement] CinemachineOrbitalFollow not found on freeLookCamera. " +
                              "Aim-exit yaw sync will not work.");
 
         freeLookCamera.Priority = activePriority;
-        aimCamera.Priority = defaultPriority;
+        aimCamera.Priority      = defaultPriority;
 
         _aimYaw = transform.eulerAngles.y;
     }
@@ -137,19 +131,6 @@ public class PlayerMovement : MonoBehaviour
     void Update()
     {
         _isGrounded = _controller.isGrounded;
-
-        // ── Coyote timer ──────────────────────────────────────────────────
-        // If the player just walked off a ledge (was grounded, now isn't, and
-        // didn't jump voluntarily), start the coyote window countdown.
-        if (_wasGroundedLastFrame && !_isGrounded && _velocity.y <= 0f)
-            _coyoteTimer = coyoteTime;
-        else if (_isGrounded)
-            _coyoteTimer = 0f;         // reset whenever properly on the ground
-        else
-            _coyoteTimer -= Time.deltaTime;
-
-        _wasGroundedLastFrame = _isGrounded;
-        // ─────────────────────────────────────────────────────────────────
 
         if (!_isRolling)
         {
@@ -163,52 +144,56 @@ public class PlayerMovement : MonoBehaviour
         if (_isAiming)
             DriveAimLook();
 
-        bool isMoving = _currentMoveVelocity.sqrMagnitude > 0.01f;
-        SetFloat("Running", isMoving ? 1f : 0f);
-        SetBool("IsMoving", isMoving);
-
-        // Drive on body animator so it matches BowController's Moving bool
-        SetBool("BowMove", _bow != null && _bow.IsMovingWhileHolding);
+        SetFloat("Running", _currentMoveVelocity == Vector3.zero ? 0f : 1f);
     }
 
     // ─────────────────────────────────────────
     // Speed stat integration
     // ─────────────────────────────────────────
 
-    /// <summary>Current horizontal move velocity — used by BowController for IsMoving detection.</summary>
-    public Vector3 MoveVelocity => _currentMoveVelocity;
-
+    /// <summary>
+    /// Called by EntityStats on init, stat spend, and weapon swap.
+    /// hammerFraction = 1.0 normally, 0.667 while hammer is equipped.
+    /// </summary>
     public void ApplySpeedBonus(int bonusPoints, float bonusPerPoint, float weaponFraction = 1f)
     {
-        float walkBonus = bonusPoints * bonusPerPoint;
+        float walkBonus   = bonusPoints * bonusPerPoint;
         float sprintBonus = bonusPoints * bonusPerPoint * 1.33f;
 
-        walkSpeed = (_baseWalkSpeed + walkBonus) * weaponFraction;
+        walkSpeed   = (_baseWalkSpeed   + walkBonus) * weaponFraction;
         sprintSpeed = (_baseSprintSpeed + sprintBonus) * weaponFraction;
 
         Debug.Log($"[PlayerMovement] Speed updated — walk:{walkSpeed:F1}  sprint:{sprintSpeed:F1}  weaponFraction:{weaponFraction:F2}");
     }
 
     // ─────────────────────────────────────────
-    // Knockback
+    // Knockback (called by boss attacks, hazards, etc.)
     // ─────────────────────────────────────────
 
+    /// <summary>
+    /// Push the player along <paramref name="direction"/> at <paramref name="force"/>
+    /// units/sec, decaying linearly to zero over <paramref name="duration"/> seconds.
+    /// Stacks with normal input — the player can still steer a little during the push.
+    /// Vertical (y) component is ignored.
+    /// </summary>
     public void TakeKnockback(Vector3 direction, float force, float duration)
     {
         direction.y = 0f;
         if (direction.sqrMagnitude < 0.0001f || force <= 0f || duration <= 0f) return;
 
-        _knockbackDir = direction.normalized;
-        _knockbackForce = force;
-        _knockbackTimer = duration;
+        _knockbackDir          = direction.normalized;
+        _knockbackForce        = force;
+        _knockbackTimer        = duration;
         _knockbackInitialTimer = duration;
     }
 
+    /// <summary>Applies and decays the current knockback impulse each frame.</summary>
     private void HandleKnockback()
     {
         if (_knockbackTimer <= 0f) return;
 
-        float t = _knockbackTimer / Mathf.Max(0.0001f, _knockbackInitialTimer);
+        // t = 1 at start, 0 at end → speed ramps from full force down to zero.
+        float t     = _knockbackTimer / Mathf.Max(0.0001f, _knockbackInitialTimer);
         float speed = _knockbackForce * t;
 
         _controller.Move(_knockbackDir * speed * Time.deltaTime);
@@ -230,12 +215,12 @@ public class PlayerMovement : MonoBehaviour
         if (_isAiming)
         {
             camForward = Vector3.ProjectOnPlane(transform.forward, Vector3.up).normalized;
-            camRight = Vector3.ProjectOnPlane(transform.right, Vector3.up).normalized;
+            camRight   = Vector3.ProjectOnPlane(transform.right,   Vector3.up).normalized;
         }
         else
         {
             camForward = Vector3.ProjectOnPlane(freeLookCamera.transform.forward, Vector3.up).normalized;
-            camRight = Vector3.ProjectOnPlane(freeLookCamera.transform.right, Vector3.up).normalized;
+            camRight   = Vector3.ProjectOnPlane(freeLookCamera.transform.right,   Vector3.up).normalized;
         }
 
         Vector3 targetDirection = camForward * _moveInput.y + camRight * _moveInput.x;
@@ -244,6 +229,7 @@ public class PlayerMovement : MonoBehaviour
         if (canSprint && _stats != null)
             canSprint = _stats.UseStaminaPerSecond(_stats.playerStatBlock.sprintStaminaPerSecond);
 
+        // Bow aim penalty — reduce move speed by bowAimMoveSpeedFraction while aiming
         float weaponAimFraction = 1f;
         if (_isAiming && _stats != null &&
             _stats.EquippedWeapon == EntityStats.WeaponType.Bow &&
@@ -252,12 +238,12 @@ public class PlayerMovement : MonoBehaviour
             weaponAimFraction = _stats.playerStatBlock.bowAimMoveSpeedFraction;
         }
 
-        float targetSpeed = (canSprint ? sprintSpeed : walkSpeed) * weaponAimFraction;
+        float targetSpeed      = (canSprint ? sprintSpeed : walkSpeed) * weaponAimFraction;
         Vector3 targetVelocity = targetDirection * targetSpeed;
 
-        float accelRate = targetDirection.sqrMagnitude > 0.01f ? acceleration : deceleration;
-        float dot = Vector3.Dot(_currentMoveVelocity.normalized, targetVelocity.normalized);
-        float lerpRate = dot < 0.5f ? 15f : accelRate;
+        float accelRate        = targetDirection.sqrMagnitude > 0.01f ? acceleration : deceleration;
+        float dot              = Vector3.Dot(_currentMoveVelocity.normalized, targetVelocity.normalized);
+        float lerpRate         = dot < 0.5f ? 15f : accelRate;
 
         _currentMoveVelocity = Vector3.Lerp(_currentMoveVelocity, targetVelocity, lerpRate * Time.deltaTime);
         _controller.Move(_currentMoveVelocity * Time.deltaTime);
@@ -268,14 +254,14 @@ public class PlayerMovement : MonoBehaviour
         if (_isAiming) return;
 
         Vector3 camForward = Vector3.ProjectOnPlane(freeLookCamera.transform.forward, Vector3.up).normalized;
-        Vector3 camRight = Vector3.ProjectOnPlane(freeLookCamera.transform.right, Vector3.up).normalized;
-        Vector3 move = (camForward * _moveInput.y + camRight * _moveInput.x);
+        Vector3 camRight   = Vector3.ProjectOnPlane(freeLookCamera.transform.right,   Vector3.up).normalized;
+        Vector3 move       = (camForward * _moveInput.y + camRight * _moveInput.x);
         move.y = 0f;
 
         if (move.sqrMagnitude > 0.01f)
         {
             Quaternion targetRot = Quaternion.LookRotation(move);
-            transform.rotation = Quaternion.Slerp(transform.rotation, targetRot, rotationSpeed * Time.deltaTime);
+            transform.rotation   = Quaternion.Slerp(transform.rotation, targetRot, rotationSpeed * Time.deltaTime);
         }
     }
 
@@ -285,21 +271,18 @@ public class PlayerMovement : MonoBehaviour
             _velocity.y = -2f;
 
         bool landedThisFrame = !ground && _velocity.y == -2f;
-        bool falling = !ground && _velocity.y < -0.1f;
+        bool falling         = !ground && _velocity.y < -0.1f;
 
         SetBool("Grounded", true);
         if (falling) SetBool("Grounded", false);
         ground = false;
 
-        SetBool("Jump", false);
+        SetBool("Jump",    false);
         SetBool("Falling", true);
         SetBool("Contact", false);
         if (landedThisFrame) SetBool("Contact", true);
 
-        // Allow jumping when grounded OR within the coyote window
-        bool canJump = _isGrounded || _coyoteTimer > 0f;
-
-        if (_jumpPressed && canJump)
+        if (_jumpPressed && _isGrounded)
         {
             int jumpCost = _stats?.playerStatBlock?.jumpStaminaCost ?? 5;
             if (_stats != null && !_stats.UseStamina(jumpCost))
@@ -308,9 +291,8 @@ public class PlayerMovement : MonoBehaviour
             }
             else
             {
-                _velocity.y = Mathf.Sqrt(jumpForce * -2f * gravity);
+                _velocity.y  = Mathf.Sqrt(jumpForce * -2f * gravity);
                 _jumpPressed = false;
-                _coyoteTimer = 0f;   // consume the window so it can't be reused
                 SetBool("Jump", true);
             }
         }
@@ -326,7 +308,7 @@ public class PlayerMovement : MonoBehaviour
     private void TryRoll()
     {
         if (_isRolling) return;
-        if (_isAiming) return;
+        if (_isAiming)  return;
         if (Time.time < _lastRollTime + rollCooldown) return;
 
         int rollCost = _stats?.playerStatBlock?.rollStaminaCost ?? 12;
@@ -337,11 +319,11 @@ public class PlayerMovement : MonoBehaviour
         }
 
         Vector3 camForward = Vector3.ProjectOnPlane(freeLookCamera.transform.forward, Vector3.up).normalized;
-        Vector3 camRight = Vector3.ProjectOnPlane(freeLookCamera.transform.right, Vector3.up).normalized;
-        Vector3 inputDir = camForward * _moveInput.y + camRight * _moveInput.x;
+        Vector3 camRight   = Vector3.ProjectOnPlane(freeLookCamera.transform.right,   Vector3.up).normalized;
+        Vector3 inputDir   = camForward * _moveInput.y + camRight * _moveInput.x;
 
         _rollDirection = inputDir.sqrMagnitude > 0.01f ? inputDir.normalized : transform.forward;
-        _lastRollTime = Time.time;
+        _lastRollTime  = Time.time;
         StartCoroutine(RollCoroutine());
     }
 
@@ -355,7 +337,7 @@ public class PlayerMovement : MonoBehaviour
         float elapsed = 0f;
         while (elapsed < rollDuration)
         {
-            float t = elapsed / rollDuration;
+            float t     = elapsed / rollDuration;
             float speed = Mathf.Lerp(rollSpeed, 0f, t);
             _controller.Move(_rollDirection * speed * Time.deltaTime);
             elapsed += Time.deltaTime;
@@ -371,17 +353,26 @@ public class PlayerMovement : MonoBehaviour
 
     private void DriveAimLook()
     {
-        _aimYaw += _lookDelta.x * aimSensitivity * 60f * Time.deltaTime;
+        _aimYaw   += _lookDelta.x * aimSensitivity * 60f * Time.deltaTime;
         _aimPitch -= _lookDelta.y * aimSensitivity * 60f * Time.deltaTime;
-        _aimPitch = Mathf.Clamp(_aimPitch, pitchMin, pitchMax);
+        _aimPitch  = Mathf.Clamp(_aimPitch, pitchMin, pitchMax);
 
-        transform.rotation = Quaternion.Euler(0f, _aimYaw, 0f);
+        transform.rotation        = Quaternion.Euler(0f, _aimYaw, 0f);
         cameraPitch.localRotation = Quaternion.Euler(_aimPitch, 0f, 0f);
     }
 
+    /// <summary>
+    /// Writes the current aim yaw back into the OrbitalFollow's horizontal axis
+    /// so the free look camera resumes from exactly where aim left off.
+    /// Without this, the orbit snaps back to wherever it was when you entered aim.
+    /// </summary>
     private void SyncFreeLookYawToAim()
     {
         if (_orbitalFollow == null) return;
+
+        // HorizontalAxis.Value is the orbit angle in degrees.
+        // Setting it here repositions the camera instantly on the same frame
+        // that freeLookCamera regains priority, preventing any visible snap.
         _orbitalFollow.HorizontalAxis.Value = _aimYaw;
     }
 
@@ -406,6 +397,7 @@ public class PlayerMovement : MonoBehaviour
     private void SetBool(string param, bool value)
     {
         _primaryAnimator?.SetBool(param, value);
+        // Fire on whichever weapon is currently equipped — auto-resolves via swapper.
         _swapper?.ActiveWeaponAnimator?.SetBool(param, value);
     }
 
@@ -419,9 +411,9 @@ public class PlayerMovement : MonoBehaviour
     // Input Callbacks
     // ─────────────────────────────────────────
 
-    public void OnMove(InputValue value) => _moveInput = value.Get<Vector2>();
-    public void OnJump(InputValue value) { if (value.isPressed) _jumpPressed = true; }
-    public void OnLook(InputValue value) => _lookDelta = value.Get<Vector2>();
+    public void OnMove(InputValue value)   => _moveInput  = value.Get<Vector2>();
+    public void OnJump(InputValue value)   { if (value.isPressed) _jumpPressed = true; }
+    public void OnLook(InputValue value)   => _lookDelta  = value.Get<Vector2>();
     public void OnSprint(InputValue value) => _sprintHeld = value.isPressed;
 
     public void OnRoll(InputValue value)
@@ -435,20 +427,24 @@ public class PlayerMovement : MonoBehaviour
 
         if (_isAiming)
         {
-            _aimYaw = freeLookCamera.transform.eulerAngles.y;
+            // Entering aim — read the free look camera's current yaw so aim
+            // starts from exactly where the orbit camera is pointing
+            _aimYaw   = freeLookCamera.transform.eulerAngles.y;
             _aimPitch = cameraPitch.localEulerAngles.x;
             if (_aimPitch > 180f) _aimPitch -= 360f;
 
-            aimCamera.Priority = activePriority;
+            aimCamera.Priority      = activePriority;
             freeLookCamera.Priority = defaultPriority;
             SuppressFreeLookInput(true);
         }
         else
         {
+            // Exiting aim — sync the orbit back to aim's final yaw BEFORE
+            // restoring priority so there is zero visible snap on the transition
             SyncFreeLookYawToAim();
 
             freeLookCamera.Priority = activePriority;
-            aimCamera.Priority = defaultPriority;
+            aimCamera.Priority      = defaultPriority;
             SuppressFreeLookInput(false);
         }
     }
