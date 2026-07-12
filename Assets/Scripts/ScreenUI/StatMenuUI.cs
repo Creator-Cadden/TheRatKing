@@ -3,11 +3,13 @@ using UnityEngine.UI;
 using TMPro;
 using UnityEngine.InputSystem;
 
+/// <summary>
+/// Tab-key stat menu for spending level-up points (Health / Strength / Stamina / Speed).
+/// Reads and writes EntityStats + XPSystem; per-floor point caps come from PlayerStatBlock.
+/// </summary>
 public class StatMenuUI : MonoBehaviour
 {
-    // =========================================================================
-    // INSPECTOR REFERENCES
-    // =========================================================================
+    // ── INSPECTOR REFERENCES ──
 
     [Header("Data Sources (auto-found if null)")]
     public EntityStats playerStats;
@@ -57,18 +59,14 @@ public class StatMenuUI : MonoBehaviour
     [Header("Input")]
     public InputActionReference toggleAction;
 
-    // =========================================================================
-    // PRIVATE STATE
-    // =========================================================================
+    // ── PRIVATE STATE ──
 
     private bool _menuOpen    = false;
     private bool _initialized = false;
 
     private const string CURSOR_OWNER = "statmenu";
 
-    // =========================================================================
-    // LIFECYCLE
-    // =========================================================================
+    // ── LIFECYCLE ──
 
     void Awake()
     {
@@ -150,9 +148,7 @@ public class StatMenuUI : MonoBehaviour
         CursorManager.Release(CURSOR_OWNER);
     }
 
-    // =========================================================================
-    // INPUT
-    // =========================================================================
+    // ── INPUT ──
 
     private void OnTogglePerformed(InputAction.CallbackContext ctx)
     {
@@ -164,9 +160,7 @@ public class StatMenuUI : MonoBehaviour
         if (value.isPressed) ToggleMenu();
     }
 
-    // =========================================================================
-    // MENU VISIBILITY
-    // =========================================================================
+    // ── MENU VISIBILITY ──
 
     private void ToggleMenu()
     {
@@ -194,16 +188,12 @@ public class StatMenuUI : MonoBehaviour
         if (_menuOpen && _initialized) RefreshAll();
     }
 
-    // =========================================================================
-    // EVENT RELAY
-    // =========================================================================
+    // ── EVENT RELAY ──
 
     private void OnXPGained(int _)       => RefreshIfOpen();
     private void OnStatPointSpent(int _) => RefreshIfOpen();
 
-    // =========================================================================
-    // DATA REFRESH
-    // =========================================================================
+    // ── DATA REFRESH ──
 
     private void RefreshAll()
     {
@@ -246,6 +236,7 @@ public class StatMenuUI : MonoBehaviour
 
     /// <summary>
     /// Shows the player exactly what damage they will deal with their current
+    /// </summary>
     private void RefreshPlusButtons()
     {
         bool hasPoints = xpSystem != null && xpSystem.UnspentPoints > 0;
@@ -263,9 +254,7 @@ public class StatMenuUI : MonoBehaviour
         pointsAvailableLabel.text = pts > 0 ? $"STAT POINTS: {pts}" : string.Empty;
     }
 
-    // =========================================================================
-    // BUTTON CALLBACKS
-    // =========================================================================
+    // ── BUTTON CALLBACKS ──
 
     private void OnSpendHealth()   => SpendPoint("health");
     private void OnSpendStrength() => SpendPoint("strength");
@@ -278,9 +267,7 @@ public class StatMenuUI : MonoBehaviour
         if (xpSystem.SpendPoint(stat)) RefreshAll();
     }
 
-    // =========================================================================
-    // STAT PREVIEWS
-    // =========================================================================
+    // ── STAT PREVIEWS ──
 
     private void RefreshPreviews()
     {
@@ -353,9 +340,7 @@ public class StatMenuUI : MonoBehaviour
         attackSpeedLabel.text = pc.CurrentAttackCooldown.ToString("F2") + "s";
     }
 
-    // =========================================================================
-    // HELPERS
-    // =========================================================================
+    // ── HELPERS ──
 
     private static void SetLabel(TMP_Text label, string text)
     {

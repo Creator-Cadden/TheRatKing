@@ -5,17 +5,6 @@ using TMPro;
 
 /// <summary>
 /// Pause menu shown on Escape.
-///
-/// Hierarchy:
-///   [Any GameObject]              ← attach this script
-///   └── PauseMenuRoot             ← drag into pauseMenuRoot (active in Editor, hidden at Start)
-///       ├── TitleLabel            (TMP_Text) "PAUSED"
-///       ├── LevelInfoLabel        (TMP_Text) last save info
-///       ├── ResetButton           (Button)   "RESTART LEVEL"
-///       ├── SettingsButton        (Button)   "SETTINGS"  (stub)
-///       └── MainMenuButton        (Button)   "MAIN MENU"
-///
-/// Press Escape again to resume — no resume button needed.
 /// </summary>
 public class PauseMenu : MonoBehaviour
 {
@@ -36,7 +25,6 @@ public class PauseMenu : MonoBehaviour
 
     private const string CURSOR_OWNER = "pause";
 
-    // ─────────────────────────────────────────
 
     void Start()
     {
@@ -53,9 +41,7 @@ public class PauseMenu : MonoBehaviour
         CursorManager.Release(CURSOR_OWNER);
     }
 
-    // ─────────────────────────────────────────
-    // Input — bound to Escape / Pause action via PlayerInput Send Messages
-    // ─────────────────────────────────────────
+    // ── Input — bound to Escape / Pause action via PlayerInput Send Messages ──
 
     public void OnPause(InputValue value)
     {
@@ -64,9 +50,7 @@ public class PauseMenu : MonoBehaviour
         else          Pause();
     }
 
-    // ─────────────────────────────────────────
-    // Public API
-    // ─────────────────────────────────────────
+    // ── Public API ──
 
     public void Pause()
     {
@@ -91,9 +75,7 @@ public class PauseMenu : MonoBehaviour
         CursorManager.Release(CURSOR_OWNER);
     }
 
-    // ─────────────────────────────────────────
-    // Button callbacks
-    // ─────────────────────────────────────────
+    // ── Button callbacks ──
 
     private void OnReset()
     {
@@ -113,9 +95,7 @@ public class PauseMenu : MonoBehaviour
         GameManager.Instance?.ReturnToMainMenu();
     }
 
-    // ─────────────────────────────────────────
-    // Level info
-    // ─────────────────────────────────────────
+    // ── Level info ──
 
     private static string BuildLevelInfoString()
     {
@@ -135,9 +115,7 @@ public class PauseMenu : MonoBehaviour
              + saveDate;
     }
 
-    // ─────────────────────────────────────────
-    // Helpers
-    // ─────────────────────────────────────────
+    // ── Helpers ──
 
     private void SetVisible(bool v)
     {

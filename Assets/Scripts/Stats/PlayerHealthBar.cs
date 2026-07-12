@@ -4,15 +4,6 @@ using TMPro;
 
 /// <summary>
 /// Screen-space player health bar — matches EnemyHealthBar style.
-///
-/// Hierarchy (on your HUD Canvas):
-///   Canvas (Screen Space — Overlay)
-///   └── PlayerHealthBarRoot        ← attach this script here
-///       ├── Background             (Image)
-///       ├── Fill                   (Image, Type: Filled, Horizontal)
-///       └── HPLabel                (TMP_Text, optional)
-///
-/// OR let forceBoxStyle build the whole layout automatically in Start().
 /// </summary>
 public class PlayerHealthBar : MonoBehaviour
 {
@@ -47,7 +38,6 @@ public class PlayerHealthBar : MonoBehaviour
     private Image  _backgroundImage;
     private static Sprite _squareSprite;
 
-    // ─────────────────────────────────────────
     void Start()
     {
         // Auto-locate player stats
@@ -89,7 +79,6 @@ public class PlayerHealthBar : MonoBehaviour
         playerStats.onDeath.RemoveListener(OnDeath);
     }
 
-    // ─────────────────────────────────────────
     void Update()
     {
         if (playerStats == null) return;
@@ -98,9 +87,7 @@ public class PlayerHealthBar : MonoBehaviour
         RefreshBar(snap: false);
     }
 
-    // ─────────────────────────────────────────
-    // Event callbacks
-    // ─────────────────────────────────────────
+    // ── Event callbacks ──
 
     private void OnDamageTaken(int _) => _targetFill = GetFillRatio();
     private void OnHealed(int _)      => _targetFill = GetFillRatio();
@@ -115,9 +102,7 @@ public class PlayerHealthBar : MonoBehaviour
 
 
 
-    // ─────────────────────────────────────────
-    // Helpers — identical logic to EnemyHealthBar
-    // ─────────────────────────────────────────
+    // ── Helpers — identical logic to EnemyHealthBar ──
 
     private float GetFillRatio()
     {

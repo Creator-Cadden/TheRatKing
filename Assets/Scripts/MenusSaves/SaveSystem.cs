@@ -4,8 +4,6 @@ using System.IO;
 /// <summary>
 /// Static save/load system. Writes one JSON file per slot to
 /// Application.persistentDataPath (works on all platforms).
-///
-/// File names: save_0.json, save_1.json, save_2.json
 /// </summary>
 public static class SaveSystem
 {

@@ -1,5 +1,11 @@
 using UnityEngine;
 
+/// <summary>
+/// Enemy attack logic: windup telegraph (cone / circle / rectangle indicator),
+/// then a shape hit-check against the player. Shape + numbers come from the
+/// EnemyStatBlock; Captains override the shape each attack via CaptainCombat.
+/// EnemyAI reads CurrentAttackReach to know how close to chase.
+/// </summary>
 public class EnemyCombat : MonoBehaviour
 {
     [Header("Combat Setup")]
@@ -40,7 +46,9 @@ public class EnemyCombat : MonoBehaviour
     // Set to null to fall back to the stat block's configured shape.
     public AttackShape? RuntimeShapeOverride;
 
-    /// <summary>The shape this enemy will actually use for its next/current attack.</summary>
+    /// <summary>
+    /// The shape this enemy will actually use for its next/current attack.
+    /// </summary>
     public AttackShape ActiveShape =>
         RuntimeShapeOverride.HasValue ? RuntimeShapeOverride.Value :
         (_sb != null ? _sb.attackShape : AttackShape.Cone);
@@ -90,7 +98,6 @@ public class EnemyCombat : MonoBehaviour
     public Vector3    HitOriginPosition => HitOrigin.position;
     private Transform HitOrigin         => attackOrigin != null ? attackOrigin : transform;
 
-    // ═══════════════════════════════════════════════════════════════════
     void Awake()
     {
         _selfStats = GetComponent<EntityStats>();
@@ -122,7 +129,6 @@ public class EnemyCombat : MonoBehaviour
         Gizmos.DrawWireSphere(transform.position, sb.stopRange);
     }
 
-    // ═══════════════════════════════════════════════════════════════════
     public void ConfigureRuntime(Transform player, EntityStats playerStats,
         Transform fallbackOrigin, LayerMask fallbackLayer, bool verbose)
     {
@@ -138,7 +144,6 @@ public class EnemyCombat : MonoBehaviour
         if (_sb == null && _selfStats != null) _sb = _selfStats.enemyStatBlock;
     }
 
-    // ═══════════════════════════════════════════════════════════════════
     public void Tick()
     {
         if (_sb == null) return;
@@ -168,7 +173,6 @@ public class EnemyCombat : MonoBehaviour
         }
     }
 
-    // ═══════════════════════════════════════════════════════════════════
     public void TryStartAttack(float distToPlayer)
     {
         if (_sb == null || _player == null)                   return;
@@ -228,7 +232,6 @@ public class EnemyCombat : MonoBehaviour
         }
     }
 
-    // ═══════════════════════════════════════════════════════════════════
     public void OnAttackHitFrame()
     {
         if (_sb == null || _playerStats == null || _selfStats == null) return;
@@ -271,9 +274,7 @@ public class EnemyCombat : MonoBehaviour
         if (!_isAttacking) ShowIndicator(false);
     }
 
-    // ═══════════════════════════════════════════════════════════════════
-    // Hit detection
-    // ═══════════════════════════════════════════════════════════════════
+    // ── Hit detection ──
 
     private bool CheckConeHit()
     {
@@ -308,9 +309,7 @@ public class EnemyCombat : MonoBehaviour
         return Physics.OverlapBox(center, halfExt, transform.rotation, playerLayer).Length > 0;
     }
 
-    // ═══════════════════════════════════════════════════════════════════
-    // Indicator
-    // ═══════════════════════════════════════════════════════════════════
+    // ── Indicator ──
 
     private void BuildIndicator()
     {
@@ -408,9 +407,7 @@ public class EnemyCombat : MonoBehaviour
         _indicatorRenderer.SetPropertyBlock(_mpb);
     }
 
-    // ═══════════════════════════════════════════════════════════════════
-    // Mesh builders
-    // ═══════════════════════════════════════════════════════════════════
+    // ── Mesh builders ──
 
     private static Mesh BuildConeMesh(float radius, float angleDeg, int segments)
     {

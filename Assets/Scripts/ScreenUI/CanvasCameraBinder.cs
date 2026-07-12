@@ -4,34 +4,6 @@ using UnityEngine.SceneManagement;
 /// <summary>
 /// Aggressive self-healing for a Canvas's <c>worldCamera</c> reference and
 /// (optionally) for the Canvas being silently disabled.
-///
-/// Solves the "MainUI disappears at random after Continue / Death Retry"
-/// bug where:
-///   • a Screen Space - Camera canvas holds a reference to a Camera
-///     from a destroyed scene → render fails, GameObject still active
-///   • OR some other script accidentally disabled the Canvas component
-///     and never re-enabled it (Canvas.enabled = false; GameObject still active)
-///   • OR a CanvasGroup somewhere up the hierarchy got stuck at alpha 0
-///     (toggle <see cref="forceCanvasGroupAlpha"/> to handle this)
-///
-/// Setup:
-///   1. Attach to the same GameObject as the Canvas you want to keep alive
-///      (usually the MainUI canvas, but safe on any canvas).
-///   2. The Canvas should be Screen Space - Camera or World Space — Overlay
-///      canvases don't need a camera and this script will leave their
-///      worldCamera alone, but it WILL still keep the Canvas enabled.
-///   3. No required Inspector fields. Defaults look up "MainCamera" tag.
-///   4. Set <see cref="verbose"/> on while debugging — you'll see each
-///     time the binder heals a missing reference.
-///
-/// What it does:
-///   • Awake / OnEnable / sceneLoaded: tries to bind to the right camera.
-///   • Every LateUpdate: checks worldCamera. If null, destroyed, disabled,
-///     or in an inactive scene, picks the best current camera and rebinds.
-///   • Every LateUpdate: re-enables the Canvas component if something
-///     turned it off.
-///   • Optional: forces CanvasGroup.alpha = 1 each frame on this object
-///     (only if one exists on the same GameObject).
 /// </summary>
 [RequireComponent(typeof(Canvas))]
 [DefaultExecutionOrder(-50)]   // run before normal UI scripts

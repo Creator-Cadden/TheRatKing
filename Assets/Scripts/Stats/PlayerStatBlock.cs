@@ -1,12 +1,15 @@
 using UnityEngine;
 
 // Right-click in Project -> Create -> Rat King -> Player Stat Block
+/// <summary>
+/// ScriptableObject with every player tuning knob: level-up gains, floor caps,
+/// per-weapon strength multipliers / toughness bonuses / speed fractions,
+/// stamina costs and regen. One shared asset, referenced by the Player prefab via EntityStats.
+/// </summary>
 [CreateAssetMenu(fileName = "PlayerStatBlock", menuName = "Rat King/Player Stat Block")]
 public class PlayerStatBlock : BaseStatBlock
 {
-    // ─────────────────────────────────────────
-    // LEVELING
-    // ─────────────────────────────────────────
+    // ── LEVELING ──
 
     [Header("Per Level Point")]
     [Tooltip("+HP gained each time the player puts a point into Health")]
@@ -26,14 +29,7 @@ public class PlayerStatBlock : BaseStatBlock
     public int floorTwoCap   = 10;
     public int floorThreeCap = 15;
 
-    // ─────────────────────────────────────────
-    // WEAPON DAMAGE
-    //
-    // Blade  — damage = Strength * bladeStrengthMultiplier. Fast, mobile.
-    // Hammer — damage = Strength * hammerStrengthMultiplier. Slow, heavy.
-    // Bow    — damage = Strength * bowStrengthMultiplier (default 1).
-    //          Charged shot while aiming = damage * bowChargedMultiplier.
-    // ─────────────────────────────────────────
+    // ── WEAPON DAMAGE Blade  — damage = Strength * bladeStrengthMultiplier. Fast, mobile. Hammer — damage = Strength * hammerStrengthMultiplier. Slow, heavy. Bow    — damage = Strength * bowStrengthMultiplier (default 1). Charged shot while aiming = damage * bowChargedMultiplier. ──
 
     [Header("Blade")]
     [Tooltip("Blade damage = Strength x this. No flat base damage.")]
@@ -68,9 +64,7 @@ public class PlayerStatBlock : BaseStatBlock
     [Tooltip("Fraction of normal move speed while aiming the bow. 0.667 = one third reduction.")]
     public float bowAimMoveSpeedFraction = 0.667f;
 
-    // ─────────────────────────────────────────
-    // ACTION STAMINA COSTS
-    // ─────────────────────────────────────────
+    // ── ACTION STAMINA COSTS ──
 
     [Header("Action Stamina Costs")]
     [Tooltip("Stamina drained per second while sprinting")]
@@ -82,9 +76,7 @@ public class PlayerStatBlock : BaseStatBlock
     [Tooltip("Flat stamina cost per jump")]
     public int jumpStaminaCost = 5;
 
-    // ─────────────────────────────────────────
-    // STAMINA REGEN
-    // ─────────────────────────────────────────
+    // ── STAMINA REGEN ──
 
     [Header("Stamina Regen")]
     [Tooltip("Stamina recovered per second after the regen delay")]

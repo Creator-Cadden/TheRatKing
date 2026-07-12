@@ -6,29 +6,6 @@ using TMPro;
 
 /// <summary>
 /// Screen-space boss health bar.
-///
-/// Sits on the MainUI canvas. Auto-finds a FatRatBoss in the active scene
-/// (or any boss tagged with the matching boss tag, or whatever you drag
-/// into Target Boss). Fades in when the boss first takes damage by default,
-/// stays visible while the boss is alive, then fades out a moment after
-/// the boss dies.
-///
-/// Setup:
-///   1. On the MainUI canvas, create a hierarchy like:
-///        BossHealthBarRoot         (RectTransform + CanvasGroup, anchored
-///                                   top-center or wherever you want it)
-///          ├── Background          (Image — dark backdrop, optional)
-///          ├── Fill                (Image, Type = Filled, Fill Method = Horizontal)
-///          ├── Border              (Image — optional decoration)
-///          ├── NameLabel           (TMP_Text — "Fat King")
-///          └── HpLabel             (TMP_Text — "230 / 500", optional)
-///   2. Add this component on BossHealthBarRoot. Drag Fill / NameLabel /
-///      HpLabel into the Inspector. The CanvasGroup is auto-found on the
-///      root (or one will be added).
-///   3. Set Boss Display Name to whatever name you want to show.
-///   4. Leave Target Boss null to auto-find — works for any scene that
-///      contains exactly one FatRatBoss.
-///   5. The HealthBarPivot inside the boss prefab can be removed/disabled.
 /// </summary>
 public class BossHealthBarUI : MonoBehaviour
 {
@@ -42,7 +19,6 @@ public class BossHealthBarUI : MonoBehaviour
         OnStart,
     }
 
-    // ─────────────────────────────────────────
     [Header("UI References")]
     [Tooltip("CanvasGroup on this GameObject — controls overall fade. " +
              "Auto-added if missing.")]
@@ -57,7 +33,6 @@ public class BossHealthBarUI : MonoBehaviour
     [Tooltip("Optional 'currentHP / maxHP' text. Leave null to hide.")]
     public TMP_Text hpLabel;
 
-    // ─────────────────────────────────────────
     [Header("Display")]
     [Tooltip("Name shown on the bar. e.g. 'Fat King', 'Captain', 'The Ratlord'.")]
     public string bossDisplayName = "Fat Rat Boss";
@@ -87,7 +62,6 @@ public class BossHealthBarUI : MonoBehaviour
              "Higher = snappier. 0 = instant.")]
     public float lerpSpeed = 6f;
 
-    // ─────────────────────────────────────────
     [Header("Show / Hide")]
     public ShowMode showMode = ShowMode.Manual;
 
@@ -104,7 +78,6 @@ public class BossHealthBarUI : MonoBehaviour
              "Time it takes the bar's fill to grow from empty to current HP.")]
     public float introGrowDuration = 1.5f;
 
-    // ─────────────────────────────────────────
     [Header("Boss Discovery")]
     [Tooltip("Drag the boss's EntityStats here directly, OR leave null to auto-find " +
              "the first FatRatBoss in the active scene at Start (and after each scene load).")]
@@ -113,9 +86,7 @@ public class BossHealthBarUI : MonoBehaviour
     [Tooltip("Verbose logging while debugging.")]
     public bool verbose = false;
 
-    // ─────────────────────────────────────────
-    // Runtime state
-    // ─────────────────────────────────────────
+    // ── Runtime state ──
     private float     _targetFill    = 1f;
     private float     _displayedFill = 1f;
     private bool      _isShown;
@@ -123,7 +94,6 @@ public class BossHealthBarUI : MonoBehaviour
     private Coroutine _fadeRoutine;
     private Coroutine _introRoutine;
 
-    // ─────────────────────────────────────────
 
     void Awake()
     {
@@ -220,11 +190,11 @@ public class BossHealthBarUI : MonoBehaviour
             Debug.Log($"[BossHealthBarUI] Auto-bound to '{boss.name}'.");
     }
 
-    // ─────────────────────────────────────────
-    // Public API
-    // ─────────────────────────────────────────
+    // ── Public API ──
 
-    /// <summary>Manually fade the bar in (useful with ShowMode.Manual).</summary>
+    /// <summary>
+    /// Manually fade the bar in (useful with ShowMode.Manual).
+    /// </summary>
     public void Show()
     {
         if (_isShown) return;
@@ -241,9 +211,6 @@ public class BossHealthBarUI : MonoBehaviour
     /// Cutscene-friendly intro. Fades the bar in AND animates its fill
     /// from 0 up to the boss's current HP fraction over <paramref name="growDuration"/>
     /// seconds. After the intro the bar STAYS visible and tracks HP normally.
-    ///
-    /// Call this from your cutscene controller / Timeline signal / boss
-    /// arena trigger at the moment the player gains control.
     /// </summary>
     public void PlayIntro(float growDuration)
     {
@@ -271,7 +238,9 @@ public class BossHealthBarUI : MonoBehaviour
         _introRoutine = StartCoroutine(IntroGrowRoutine(growDuration));
     }
 
-    /// <summary>Calls <see cref="PlayIntro(float)"/> with the Inspector's introGrowDuration.</summary>
+    /// <summary>
+    /// Calls <see cref="PlayIntro(float)"/> with the Inspector's introGrowDuration.
+    /// </summary>
     public void PlayIntro() => PlayIntro(introGrowDuration);
 
     private IEnumerator IntroGrowRoutine(float duration)
@@ -302,7 +271,9 @@ public class BossHealthBarUI : MonoBehaviour
         _introPlaying  = false;
     }
 
-    /// <summary>Manually fade the bar out.</summary>
+    /// <summary>
+    /// Manually fade the bar out.
+    /// </summary>
     public void Hide()
     {
         if (!_isShown && canvasGroup.alpha <= 0.001f) return;
@@ -312,9 +283,7 @@ public class BossHealthBarUI : MonoBehaviour
         _fadeRoutine = StartCoroutine(FadeTo(0f, fadeOutDuration));
     }
 
-    // ─────────────────────────────────────────
-    // Per-frame fill lerp + text update
-    // ─────────────────────────────────────────
+    // ── Per-frame fill lerp + text update ──
 
     void Update()
     {
@@ -349,9 +318,7 @@ public class BossHealthBarUI : MonoBehaviour
                                      targetBoss.MaxHealth);
     }
 
-    // ─────────────────────────────────────────
-    // Event handlers from boss stats
-    // ─────────────────────────────────────────
+    // ── Event handlers from boss stats ──
 
     private void OnBossDamaged(int _)
     {
@@ -373,9 +340,7 @@ public class BossHealthBarUI : MonoBehaviour
         Hide();
     }
 
-    // ─────────────────────────────────────────
-    // Helpers
-    // ─────────────────────────────────────────
+    // ── Helpers ──
 
     private float GetFillRatio()
     {

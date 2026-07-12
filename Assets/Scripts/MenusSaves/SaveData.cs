@@ -1,5 +1,10 @@
 using System;
 
+/// <summary>
+/// Plain data snapshot of one save slot — serialized to JSON by SaveSystem.
+/// To persist something new: add a field here, then map it in
+/// SaveSystem.CaptureCurrentState (write) and SaveSystem.ApplyToStats (read).
+/// </summary>
 [Serializable]
 public class SaveData
 {

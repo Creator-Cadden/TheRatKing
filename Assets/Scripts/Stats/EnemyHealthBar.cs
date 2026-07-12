@@ -5,16 +5,7 @@ using TMPro;
 /// <summary>
 /// Attach to a child GameObject on the enemy (e.g. "HealthBarPivot").
 /// Requires:
-///   - A child Canvas set to World Space (assign via Inspector or auto-created below)
-///   - EntityStats on the parent enemy
-///
-/// Setup in hierarchy:
-///   Enemy
-///   └── HealthBarPivot          ← this script lives here
-///       └── Canvas (World Space)
-///           ├── Background      (Image, dark)
-///           ├── Fill            (Image, green → red gradient via colour lerp)
-///           └── HPLabel         (TextMeshProUGUI, optional)
+/// - A child Canvas set to World Space (assign via Inspector or auto-created below)
 /// </summary>
 public class EnemyHealthBar : MonoBehaviour
 {
@@ -174,9 +165,7 @@ public class EnemyHealthBar : MonoBehaviour
         }
     }
 
-    // ─────────────────────────────────────────
-    // Event callbacks
-    // ─────────────────────────────────────────
+    // ── Event callbacks ──
 
     private void OnDamageTaken(int _)
     {
@@ -197,9 +186,7 @@ public class EnemyHealthBar : MonoBehaviour
         SetVisible(false, instant: false);
     }
 
-    // ─────────────────────────────────────────
-    // Helpers
-    // ─────────────────────────────────────────
+    // ── Helpers ──
 
     private float GetFillRatio()
     {

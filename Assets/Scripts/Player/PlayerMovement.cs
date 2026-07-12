@@ -3,6 +3,12 @@ using UnityEngine;
 using UnityEngine.InputSystem;
 using Unity.Cinemachine;
 
+/// <summary>
+/// Player locomotion: camera-relative walk/sprint, jump, dodge roll, gravity,
+/// and stamina spend (costs from PlayerStatBlock via EntityStats).
+/// Fires movement animator params on the rat body animator AND the active weapon's
+/// animator (resolved through WeaponModelSwapper.ActiveWeaponAnimator).
+/// </summary>
 [RequireComponent(typeof(CharacterController))]
 public class PlayerMovement : MonoBehaviour
 {
@@ -88,7 +94,6 @@ public class PlayerMovement : MonoBehaviour
     private bool contact;
     private bool ground;
 
-    // ─────────────────────────────────────────
     void Awake()
     {
         // Cache base speeds in Awake so they are set before ANY Start() runs.
@@ -147,9 +152,7 @@ public class PlayerMovement : MonoBehaviour
         SetFloat("Running", _currentMoveVelocity == Vector3.zero ? 0f : 1f);
     }
 
-    // ─────────────────────────────────────────
-    // Speed stat integration
-    // ─────────────────────────────────────────
+    // ── Speed stat integration ──
 
     /// <summary>
     /// Called by EntityStats on init, stat spend, and weapon swap.
@@ -166,15 +169,12 @@ public class PlayerMovement : MonoBehaviour
         Debug.Log($"[PlayerMovement] Speed updated — walk:{walkSpeed:F1}  sprint:{sprintSpeed:F1}  weaponFraction:{weaponFraction:F2}");
     }
 
-    // ─────────────────────────────────────────
-    // Knockback (called by boss attacks, hazards, etc.)
-    // ─────────────────────────────────────────
+    // ── Knockback (called by boss attacks, hazards, etc.) ──
 
     /// <summary>
     /// Push the player along <paramref name="direction"/> at <paramref name="force"/>
     /// units/sec, decaying linearly to zero over <paramref name="duration"/> seconds.
     /// Stacks with normal input — the player can still steer a little during the push.
-    /// Vertical (y) component is ignored.
     /// </summary>
     public void TakeKnockback(Vector3 direction, float force, float duration)
     {
@@ -187,7 +187,9 @@ public class PlayerMovement : MonoBehaviour
         _knockbackInitialTimer = duration;
     }
 
-    /// <summary>Applies and decays the current knockback impulse each frame.</summary>
+    /// <summary>
+    /// Applies and decays the current knockback impulse each frame.
+    /// </summary>
     private void HandleKnockback()
     {
         if (_knockbackTimer <= 0f) return;
@@ -203,9 +205,7 @@ public class PlayerMovement : MonoBehaviour
             _knockbackTimer = 0f;
     }
 
-    // ─────────────────────────────────────────
-    // Movement
-    // ─────────────────────────────────────────
+    // ── Movement ──
 
     private void HandleMovement()
     {
@@ -301,9 +301,7 @@ public class PlayerMovement : MonoBehaviour
         _controller.Move(_velocity * Time.deltaTime);
     }
 
-    // ─────────────────────────────────────────
-    // Roll
-    // ─────────────────────────────────────────
+    // ── Roll ──
 
     private void TryRoll()
     {
@@ -347,9 +345,7 @@ public class PlayerMovement : MonoBehaviour
         _isRolling = false;
     }
 
-    // ─────────────────────────────────────────
-    // Aim Look
-    // ─────────────────────────────────────────
+    // ── Aim Look ──
 
     private void DriveAimLook()
     {
@@ -390,9 +386,7 @@ public class PlayerMovement : MonoBehaviour
             _freeLookInput.enabled = enabled;
     }
 
-    // ─────────────────────────────────────────
-    // Animator helpers
-    // ─────────────────────────────────────────
+    // ── Animator helpers ──
 
     private void SetBool(string param, bool value)
     {
@@ -407,9 +401,7 @@ public class PlayerMovement : MonoBehaviour
         _swapper?.ActiveWeaponAnimator?.SetFloat(param, value);
     }
 
-    // ─────────────────────────────────────────
-    // Input Callbacks
-    // ─────────────────────────────────────────
+    // ── Input Callbacks ──
 
     public void OnMove(InputValue value)   => _moveInput  = value.Get<Vector2>();
     public void OnJump(InputValue value)   { if (value.isPressed) _jumpPressed = true; }

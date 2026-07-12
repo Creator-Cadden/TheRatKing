@@ -2,19 +2,6 @@ using UnityEngine;
 
 /// <summary>
 /// Flying arrow projectile. Spawned by <see cref="BowController"/>.
-///
-/// Required prefab setup:
-///   • Empty GameObject named "Arrow" with this script.
-///   • Visual mesh child (the arrow model) — script doesn't care what it is.
-///   • Collider (SphereCollider or CapsuleCollider with "Is Trigger" ON).
-///   • OPTIONAL Rigidbody (kinematic) — needed for OnTriggerEnter to fire
-///     against Static colliders, recommended in modern Unity.
-///
-/// At spawn, BowController calls Launch(direction, speed, damage, stagger,
-/// enemyLayer, lifetime). The arrow flies until it hits an enemy or the
-/// lifetime expires, then destroys itself.
-///
-/// The visual rotates to face the velocity direction automatically.
 /// </summary>
 [RequireComponent(typeof(Collider))]
 public class Arrow : MonoBehaviour
@@ -80,7 +67,6 @@ public class Arrow : MonoBehaviour
     private float   _aliveTime;
     private bool    _spent;       // prevents double-hit on same frame
 
-    // ─────────────────────────────────────────
 
     /// <summary>
     /// Configure the arrow at spawn-time. Call this immediately after
@@ -183,7 +169,6 @@ public class Arrow : MonoBehaviour
     /// Parent the arrow to the enemy so it travels with them, stop motion,
     /// disable collider so no further trigger events fire, schedule self-
     /// destroy after stickDuration. If the enemy dies first, this arrow is
-    /// destroyed as their child automatically by Unity.
     /// </summary>
     private void StickTo(Collider enemyCollider)
     {

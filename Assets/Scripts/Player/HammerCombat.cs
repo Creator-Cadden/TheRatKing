@@ -3,24 +3,10 @@ using UnityEngine;
 /// <summary>
 /// Hammer-specific attack logic. Sits on the Player alongside <see cref="PlayerCombat"/>
 /// and <see cref="BowController"/>. Active only when the equipped weapon is Hammer.
-///
-/// Why a separate controller (mirrors the BowController pattern):
-///   • Hammer has extended reach the blade doesn't get.
-///   • Hammer cooldown is FIXED, ignoring the Speed stat — the player needs
-///     Speed for platforming, so spending Speed shouldn't accidentally make
-///     hammer attacks faster.
-///   • Slower windup + recovery makes the hammer feel heavy.
-///   • Jump attack is a circular slam-down AoE instead of the blade's spin.
-///
-/// PlayerCombat delegates to this when the equipped weapon is Hammer. Blade
-/// keeps the existing PlayerCombat HitScan path untouched. Bow goes through
-/// BowController. So PlayerCombat becomes a router that hands off to the
-/// right per-weapon controller.
 /// </summary>
 [RequireComponent(typeof(EntityStats))]
 public class HammerCombat : MonoBehaviour
 {
-    // ═════════════════════════════════════════════════════════════
     [Header("Basic Swing")]
     [Tooltip("Forward reach of the swing — typically larger than the blade's so the " +
              "hammer feels appropriately weighty and outranges shorter weapons.")]
@@ -53,7 +39,6 @@ public class HammerCombat : MonoBehaviour
              "= more committed swing = punishable if the enemy dodges.")]
     public float swingWindup = 0.15f;
 
-    // ─────────────────────────────────────────
     [Header("Jump Slam (mid-air LMB)")]
     [Tooltip("Radius of the circular AoE slam. Hits enemies all around the player " +
              "when the hammer lands.")]
@@ -73,7 +58,6 @@ public class HammerCombat : MonoBehaviour
              "1.5 = slam hits 50% harder than the basic swing.")]
     public float slamDamageMultiplier = 1.5f;
 
-    // ─────────────────────────────────────────
     [Header("References")]
     [Tooltip("World position the swing/slam originates from. Defaults to the " +
              "PlayerCombat attack origin if left null.")]
@@ -82,14 +66,12 @@ public class HammerCombat : MonoBehaviour
     [Tooltip("Layer mask used by hit detection.")]
     public LayerMask enemyLayer;
 
-    // ─────────────────────────────────────────
     [Header("Stagger Force (overrides PlayerCombat default)")]
     [Tooltip("Stagger force passed to EnemyAI.TakeKnockback for both swing and " +
              "slam. Hammer = 8 by default — interrupts grunts (T 1-2) and " +
              "anyone with Toughness below this value.")]
     public int staggerForce = 8;
 
-    // ─────────────────────────────────────────
     [Header("Visual Ripple")]
     [Tooltip("Color of the arc ripple shown on the basic swing — orange feels weighty.")]
     public Color swingRippleColor = new Color(1f, 0.55f, 0.15f, 0.6f);
@@ -100,23 +82,18 @@ public class HammerCombat : MonoBehaviour
     [Tooltip("How long the ripple effect stays visible.")]
     public float rippleLifetime   = 0.35f;
 
-    // ─────────────────────────────────────────
     [Header("Debug")]
     public bool showGizmos = true;
     public bool verbose = false;
 
-    // ═════════════════════════════════════════════════════════════
-    // Private state
-    // ═════════════════════════════════════════════════════════════
+    // ── Private state ──
 
     private EntityStats _stats;
     private float       _lastSwingTime  = -999f;
     private float       _lastSlamTime   = -999f;
     private float       _currentSwingCooldown;   // recalculated by RecalculateCooldown()
 
-    // ─────────────────────────────────────────
-    // Public read-only — for HUD cooldown bars / debug
-    // ─────────────────────────────────────────
+    // ── Public read-only — for HUD cooldown bars / debug ──
 
     public float SwingCooldownProgress =>
         Mathf.Clamp01((Time.time - _lastSwingTime) / Mathf.Max(0.0001f, _currentSwingCooldown));
@@ -129,7 +106,6 @@ public class HammerCombat : MonoBehaviour
 
     public float CurrentSwingCooldown => _currentSwingCooldown;
 
-    // ═════════════════════════════════════════════════════════════
 
     void Awake()
     {
@@ -150,16 +126,12 @@ public class HammerCombat : MonoBehaviour
         RecalculateCooldown();
     }
 
-    // ═════════════════════════════════════════════════════════════
-    // Cooldown recalc — called by PlayerCombat.RecalculateAttackCooldown
-    // which is hooked to EntityStats.onStatsChanged
-    // ═════════════════════════════════════════════════════════════
+    // ── Cooldown recalc — called by PlayerCombat.RecalculateAttackCooldown which is hooked to EntityStats.onStatsChanged ──
 
     /// <summary>
     /// Recalculates the swing cooldown based on the player's current Speed.
     /// Hammer scales less aggressively with Speed than the blade (smaller
     /// per-Speed reduction, higher minimum floor) so it stays distinctly
-    /// heavier even at high Speed investment.
     /// </summary>
     public void RecalculateCooldown()
     {
@@ -176,9 +148,7 @@ public class HammerCombat : MonoBehaviour
                       $"(Speed {_stats.Speed}, base {baseSpd})");
     }
 
-    // ═════════════════════════════════════════════════════════════
-    // Public API — called by PlayerCombat.OnAttack when weapon = Hammer
-    // ═════════════════════════════════════════════════════════════
+    // ── Public API — called by PlayerCombat.OnAttack when weapon = Hammer ──
 
     /// <summary>
     /// Player pressed LMB while grounded with the hammer equipped.
@@ -216,9 +186,7 @@ public class HammerCombat : MonoBehaviour
         return true;
     }
 
-    // ═════════════════════════════════════════════════════════════
-    // Hit resolution
-    // ═════════════════════════════════════════════════════════════
+    // ── Hit resolution ──
 
     private void ResolveSwing()
     {
@@ -273,9 +241,7 @@ public class HammerCombat : MonoBehaviour
         if (verbose) Debug.Log($"[HammerCombat] Slam landed on {hitsLanded} target(s), {damage} dmg each.");
     }
 
-    // ═════════════════════════════════════════════════════════════
-    // Gizmos
-    // ═════════════════════════════════════════════════════════════
+    // ── Gizmos ──
 
     void OnDrawGizmos()
     {

@@ -3,14 +3,6 @@ using UnityEngine;
 /// <summary>
 /// Attach to a GameObject with a Collider set to Is Trigger.
 /// Any entity tagged "Player" that enters the trigger is respawned at the respawn point.
-///
-/// Setup:
-///   1. Create an empty GameObject, name it "DeathPlane"
-///   2. Add a Box Collider, tick "Is Trigger", scale it wide and flat
-///   3. Position it below your map
-///   4. Attach this script
-///   5. Assign a Respawn Point (empty GameObject) in the Inspector,
-///      or tag one "Respawn" and it will be found automatically.
 /// </summary>
 public class DeathPlane : MonoBehaviour
 {
@@ -56,7 +48,7 @@ public class DeathPlane : MonoBehaviour
     {
         if (respawnPoint == null)
         {
-            Debug.LogError("DeathPlane: Cannot respawn — no respawn point set.");
+            Debug.LogError("DeathPlane: Cannot respawn â€” no respawn point set.");
             return;
         }
 

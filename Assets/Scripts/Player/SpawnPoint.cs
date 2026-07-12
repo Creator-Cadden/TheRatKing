@@ -3,11 +3,6 @@ using UnityEngine;
 /// <summary>
 /// Drop this on any empty GameObject in your scene to mark the player's spawn/respawn point.
 /// The GameManager looks for a GameObject tagged "SpawnPoint" at startup.
-///
-/// Setup:
-///   1. Create an empty GameObject where you want the player to start.
-///   2. Attach this component.
-///   3. Tag the GameObject "SpawnPoint" (add the tag via the Tags & Layers window first).
 /// </summary>
 public class SpawnPoint : MonoBehaviour
 {

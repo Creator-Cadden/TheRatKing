@@ -2,6 +2,10 @@ using System.Collections;
 using UnityEngine;
 using static AudioManager;
 
+/// <summary>
+/// Listens for this enemy's death, waits, fades its materials out, then destroys
+/// the GameObject (or leaves it for pooling if destroyOnDone is off).
+/// </summary>
 public class EnemyDeathFade : MonoBehaviour
 {
     [Header("Fade Settings")]

@@ -7,22 +7,6 @@ using TMPro;
 /// Death screen — references YOUR own Canvas hierarchy.
 /// No auto-building. Set up the UI however you want in the Editor,
 /// then drag the references in here.
-///
-/// Recommended hierarchy:
-///
-///   Canvas (sort order 10, Screen Space Overlay)
-///   └── DeathScreenRoot          ← drag into deathMenuRoot
-///       ├── Backdrop             Image — full screen dark overlay
-///       └── Panel                Image — centered card
-///           ├── TitleLabel       TMP_Text  "YOU DIED"
-///           ├── SubtitleLabel    TMP_Text  flavour text
-///           ├── LevelInfoLabel   TMP_Text  last save info
-///           ├── RestartButton    Button    "RESTART LEVEL"
-///           ├── SettingsButton   Button    "SETTINGS"
-///           └── MenuButton       Button    "MAIN MENU"
-///
-/// IMPORTANT: deathMenuRoot must be ACTIVE in the Editor so child
-/// components initialize, then the script hides it at Start().
 /// </summary>
 [RequireComponent(typeof(CanvasGroup))]
 public class DeathScreen : MonoBehaviour
@@ -53,7 +37,6 @@ public class DeathScreen : MonoBehaviour
     private Coroutine   _fadeRoutine;
     private const string CURSOR_OWNER = "death";
 
-    // ─────────────────────────────────────────
 
     void Awake()
     {
@@ -78,9 +61,7 @@ public class DeathScreen : MonoBehaviour
         CursorManager.Release(CURSOR_OWNER);
     }
 
-    // ─────────────────────────────────────────
-    // Public API — called by GameManager
-    // ─────────────────────────────────────────
+    // ── Public API — called by GameManager ──
 
     public void Show()
     {
@@ -116,9 +97,7 @@ public class DeathScreen : MonoBehaviour
         }
     }
 
-    // ─────────────────────────────────────────
-    // Level info string
-    // ─────────────────────────────────────────
+    // ── Level info string ──
 
     private string BuildLevelInfoString()
     {
@@ -141,9 +120,7 @@ public class DeathScreen : MonoBehaviour
              + "  ·  " + saveDate;
     }
 
-    // ─────────────────────────────────────────
-    // Button callbacks
-    // ─────────────────────────────────────────
+    // ── Button callbacks ──
 
     private void OnRestartClicked()
     {
@@ -165,9 +142,7 @@ public class DeathScreen : MonoBehaviour
         GameManager.Instance?.ReturnToMainMenu();
     }
 
-    // ─────────────────────────────────────────
-    // Helpers
-    // ─────────────────────────────────────────
+    // ── Helpers ──
 
     private void SetRootVisible(bool visible)
     {

@@ -4,56 +4,6 @@ using TMPro;
 
 /// <summary>
 /// Main Menu flow:
-///
-///   MainPanel  →  SlotPanel  →  NamePanel  →  [WeaponSelect scene]  →  [Level1]
-///
-/// MainPanel:
-///   CONTINUE  — loads most recent save directly (shown if any save exists)
-///   PLAY      — shown when no saves exist, goes straight to SlotPanel
-///   LOAD GAME — opens SlotPanel (grayed out if no saves)
-///   SETTINGS  — stub
-///   EXIT
-///
-/// SlotPanel:
-///   Three slot buttons showing name/floor/level or "Empty"
-///   Clicking an existing slot → loads it immediately
-///   Clicking an empty slot   → goes to NamePanel
-///   Delete button (existing slots only)
-///   Back button
-///
-/// NamePanel:
-///   Text input for the save name
-///   Confirm → saves the name into GameManager, loads WeaponSelect scene
-///   Back → returns to SlotPanel
-///
-/// Hierarchy:
-///   Canvas
-///   └── MainMenuRoot          ← attach this script
-///       ├── MainPanel
-///       │   ├── TitleLabel        (TMP_Text)
-///       │   ├── PlayContinueButton(Button)
-///       │   │   └── Label         (TMP_Text)
-///       │   ├── LoadGameButton    (Button)
-///       │   │   └── Label         (TMP_Text)
-///       │   ├── SettingsButton    (Button)
-///       │   └── ExitButton        (Button)
-///       ├── SlotPanel
-///       │   ├── SlotButton_0      (Button)
-///       │   │   ├── SlotNameLabel (TMP_Text)
-///       │   │   └── SlotSubLabel  (TMP_Text)
-///       │   │   └── DeleteX_0     (Button) small X on the slot — only shown if save exists
-///       │   ├── SlotButton_1      (same structure)
-///       │   ├── SlotButton_2      (same structure)
-///       │   ├── ConfirmDeletePanel (inactive by default)
-///       │   │   ├── ConfirmDeleteLabel  (TMP_Text) "Delete this save?"
-///       │   │   ├── YesButton           (Button) "Yes, Delete"
-///       │   │   └── NoButton            (Button) "Cancel"
-///       │   └── BackButton        (Button)
-///       └── NamePanel
-///           ├── PromptLabel       (TMP_Text) "Name your adventure:"
-///           ├── NameInputField    (TMP_InputField)
-///           ├── ConfirmButton     (Button)
-///           └── BackButton2       (Button) "Back"
 /// </summary>
 public class MainMenuUI : MonoBehaviour
 {
@@ -117,7 +67,6 @@ public class MainMenuUI : MonoBehaviour
     private int  _mostRecentSlot  = -1;
     private bool _anySaveExists   = false;
 
-    // ═════════════════════════════════════════════════════════════
 
     void Start()
     {
@@ -161,9 +110,7 @@ public class MainMenuUI : MonoBehaviour
 
     void OnDestroy() => CursorManager.Release("mainmenu");
 
-    // ═════════════════════════════════════════════════════════════
-    // Save scanning
-    // ═════════════════════════════════════════════════════════════
+    // ── Save scanning ──
 
     private void ScanSaves()
     {
@@ -184,9 +131,7 @@ public class MainMenuUI : MonoBehaviour
         }
     }
 
-    // ═════════════════════════════════════════════════════════════
-    // Panel switching
-    // ═════════════════════════════════════════════════════════════
+    // ── Panel switching ──
 
     private void ShowMainPanel()
     {
@@ -222,9 +167,7 @@ public class MainMenuUI : MonoBehaviour
         namePanel?.SetActive(name);
     }
 
-    // ═════════════════════════════════════════════════════════════
-    // Main panel
-    // ═════════════════════════════════════════════════════════════
+    // ── Main panel ──
 
     private void RefreshMainPanel()
     {
@@ -239,9 +182,7 @@ public class MainMenuUI : MonoBehaviour
         // going white or invisible against the button background.
     }
 
-    // ═════════════════════════════════════════════════════════════
-    // Slot panel
-    // ═════════════════════════════════════════════════════════════
+    // ── Slot panel ──
 
     private void RefreshSlots()
     {
@@ -368,9 +309,7 @@ public class MainMenuUI : MonoBehaviour
         HideConfirmDelete();
     }
 
-    // ═════════════════════════════════════════════════════════════
-    // Name panel
-    // ═════════════════════════════════════════════════════════════
+    // ── Name panel ──
 
     private void OnNameConfirmed()
     {
@@ -389,9 +328,7 @@ public class MainMenuUI : MonoBehaviour
         GameManager.Instance?.PrepareNewGame(_selectedSlot, enteredName, weaponSelectScene);
     }
 
-    // ═════════════════════════════════════════════════════════════
-    // Main panel callbacks
-    // ═════════════════════════════════════════════════════════════
+    // ── Main panel callbacks ──
 
     private void OnPlayContinue()
     {
@@ -434,9 +371,7 @@ public class MainMenuUI : MonoBehaviour
 #endif
     }
 
-    // ═════════════════════════════════════════════════════════════
-    // Helpers
-    // ═════════════════════════════════════════════════════════════
+    // ── Helpers ──
 
     private static void SetLabel(TMP_Text t, string s)
     {

@@ -5,19 +5,10 @@ using UnityEngine;
 /// Blade-specific attack logic. Sits on the Player alongside <see cref="PlayerCombat"/>,
 /// <see cref="HammerCombat"/>, and <see cref="BowController"/>. Active when the
 /// equipped weapon is Blade.
-///
-/// Manages its own:
-///   • Reach + arc + height for the cone swing
-///   • Cooldown — speed-affected, recalculated via <see cref="RecalculateCooldown"/>
-///   • Jump attack — 360° hitscan + visual spin coroutine
-///
-/// PlayerCombat routes here when blade is equipped. Mirror of HammerCombat
-/// for symmetry — each weapon owns its own combat logic.
 /// </summary>
 [RequireComponent(typeof(EntityStats))]
 public class BladeCombat : MonoBehaviour
 {
-    // ═════════════════════════════════════════════════════════════
     [Header("Basic Swing")]
     [Tooltip("Forward reach of the swing.")]
     public float swingRadius = 2f;
@@ -39,7 +30,6 @@ public class BladeCombat : MonoBehaviour
     [Tooltip("Seconds shaved off the cooldown per Speed point above base.")]
     public float cooldownPerSpeed = 0.1f;
 
-    // ─────────────────────────────────────────
     [Header("Jump Attack (mid-air LMB)")]
     [Tooltip("Radius of the 360° hit volume around the player.")]
     public float jumpAttackRadius   = 3.5f;
@@ -60,7 +50,6 @@ public class BladeCombat : MonoBehaviour
              "Defaults to the rat body's transform.")]
     public Transform jumpSpinVisual;
 
-    // ─────────────────────────────────────────
     [Header("References")]
     [Tooltip("World position the swing originates from. Defaults to PlayerCombat's " +
              "attack origin if left null.")]
@@ -73,7 +62,6 @@ public class BladeCombat : MonoBehaviour
              "(blade is a damage weapon, you must dodge enemy windups).")]
     public int staggerForce = 0;
 
-    // ─────────────────────────────────────────
     [Header("Visual Ripple")]
     [Tooltip("Color of the arc ripple shown on the basic swing.")]
     public Color swingRippleColor = new Color(1f, 1f, 1f, 0.55f);
@@ -84,14 +72,11 @@ public class BladeCombat : MonoBehaviour
     [Tooltip("How long the ripple effect stays visible.")]
     public float rippleLifetime   = 0.3f;
 
-    // ─────────────────────────────────────────
     [Header("Debug")]
     public bool showGizmos = true;
     public bool verbose    = false;
 
-    // ═════════════════════════════════════════════════════════════
-    // Private state
-    // ═════════════════════════════════════════════════════════════
+    // ── Private state ──
 
     private EntityStats _stats;
     private float       _currentCooldown;
@@ -99,9 +84,7 @@ public class BladeCombat : MonoBehaviour
     private float       _lastJumpTime     = -999f;
     private Coroutine   _jumpSpinRoutine;
 
-    // ─────────────────────────────────────────
-    // Public read-only — for HUD cooldown bars / debug
-    // ─────────────────────────────────────────
+    // ── Public read-only — for HUD cooldown bars / debug ──
 
     public float SwingCooldownProgress =>
         Mathf.Clamp01((Time.time - _lastSwingTime) / Mathf.Max(0.0001f, _currentCooldown));
@@ -115,7 +98,6 @@ public class BladeCombat : MonoBehaviour
     public bool IsSwingReady => Time.time >= _lastSwingTime + _currentCooldown;
     public bool IsJumpReady  => Time.time >= _lastJumpTime  + jumpAttackCooldown;
 
-    // ═════════════════════════════════════════════════════════════
 
     void Awake()
     {
@@ -141,9 +123,7 @@ public class BladeCombat : MonoBehaviour
         RecalculateCooldown();
     }
 
-    // ═════════════════════════════════════════════════════════════
-    // Cooldown recalc — call when Speed changes or weapon swap
-    // ═════════════════════════════════════════════════════════════
+    // ── Cooldown recalc — call when Speed changes or weapon swap ──
 
     /// <summary>
     /// Recalculates the swing cooldown based on the player's current Speed.
@@ -165,11 +145,11 @@ public class BladeCombat : MonoBehaviour
                       $"(Speed {_stats.Speed}, base {baseSpd})");
     }
 
-    // ═════════════════════════════════════════════════════════════
-    // Public API — called by PlayerCombat.OnAttack when weapon = Blade
-    // ═════════════════════════════════════════════════════════════
+    // ── Public API — called by PlayerCombat.OnAttack when weapon = Blade ──
 
-    /// <summary>Returns true if the basic swing fired (cooldown was ready).</summary>
+    /// <summary>
+    /// Returns true if the basic swing fired (cooldown was ready).
+    /// </summary>
     public bool TryBasicAttack()
     {
         if (!IsSwingReady) return false;
@@ -186,7 +166,9 @@ public class BladeCombat : MonoBehaviour
         return true;
     }
 
-    /// <summary>Returns true if the jump attack fired (cooldown was ready).</summary>
+    /// <summary>
+    /// Returns true if the jump attack fired (cooldown was ready).
+    /// </summary>
     public bool TryJumpAttack()
     {
         if (!IsJumpReady) return false;
@@ -204,9 +186,7 @@ public class BladeCombat : MonoBehaviour
         return true;
     }
 
-    // ═════════════════════════════════════════════════════════════
-    // Hit resolution
-    // ═════════════════════════════════════════════════════════════
+    // ── Hit resolution ──
 
     private void HitScan(float radius, float angle)
     {
@@ -232,9 +212,7 @@ public class BladeCombat : MonoBehaviour
         }
     }
 
-    // ═════════════════════════════════════════════════════════════
-    // Jump spin visual
-    // ═════════════════════════════════════════════════════════════
+    // ── Jump spin visual ──
 
     private void StartJumpSpin()
     {
@@ -278,9 +256,7 @@ public class BladeCombat : MonoBehaviour
         _jumpSpinRoutine = null;
     }
 
-    // ═════════════════════════════════════════════════════════════
-    // Gizmos
-    // ═════════════════════════════════════════════════════════════
+    // ── Gizmos ──
 
     void OnDrawGizmos()
     {
@@ -332,12 +308,6 @@ public class BladeCombat : MonoBehaviour
     /// Draws a wheel-shaped gizmo whose axle is along <paramref name="axisDir"/>.
     /// The wheel itself lies in the plane spanned by <paramref name="forward"/>
     /// and <paramref name="up"/>. For the blade jump spin, this is the
-    /// player's forward-up plane — circle goes through front, top, back,
-    /// and bottom of the player.
-    ///
-    /// <paramref name="thickness"/> is how far the two side circles sit apart
-    /// along the axle direction (gives the wheel some volume so it doesn't
-    /// look like a flat decal).
     /// </summary>
     private static void DrawVerticalWheelGizmo(Vector3 origin, Vector3 axisDir,
                                                Vector3 forward, Vector3 up,

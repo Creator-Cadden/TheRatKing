@@ -5,19 +5,6 @@ using System.Collections.Generic;
 
 /// <summary>
 /// Floating "+X XP from {enemy}" feed.
-///
-/// Whenever the player gains XP, a new TMP_Text line appears at the bottom
-/// of the feed and scrolls upward, fading out as it goes. Multiple kills in
-/// quick succession stack into a list.
-///
-/// Setup:
-///   1. On your MainUI canvas, create an empty GameObject named "XPFeed".
-///   2. Add a RectTransform; anchor it where you want the feed (e.g.
-///      bottom-right) and size it as a vertical column.
-///   3. Add Component → XP Gain Indicator.
-///   4. (Optional but recommended) Drop your own TMP_Text prefab into
-///      "Text Prefab" so it picks up your project font/style. If left null,
-///      the script creates a plain white TMP_Text at runtime.
 /// </summary>
 public class XPGainIndicator : MonoBehaviour
 {

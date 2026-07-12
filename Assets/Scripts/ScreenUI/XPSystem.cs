@@ -4,17 +4,10 @@ using UnityEngine.Events;
 /// <summary>
 /// Manages XP, leveling, and unspent stat points for the player.
 /// Attach to the Player GameObject alongside EntityStats.
-///
-/// Wire-up:
-///   - EnemyXPDrop calls XPSystem.AddXP(amount) on the player when an enemy dies.
-///   - StatMenuUI reads CurrentXP, XPToNextLevel, CurrentLevel, UnspentPoints.
-///   - StatMenuUI calls SpendPoint(stat) which delegates to EntityStats.SpendPoint().
 /// </summary>
 public class XPSystem : MonoBehaviour
 {
-    // ─────────────────────────────────────────
-    // CONFIGURATION
-    // ─────────────────────────────────────────
+    // ── CONFIGURATION ──
 
     [Header("XP Curve")]
     [Tooltip("XP required to reach level 1 from level 0.")]
@@ -24,27 +17,24 @@ public class XPSystem : MonoBehaviour
              "e.g. 0 = flat 10 per level.  5 = 10, 15, 20, 25 …")]
     public int xpScalingPerLevel = 5;
 
-    // ─────────────────────────────────────────
-    // EVENTS
-    // ─────────────────────────────────────────
+    // ── EVENTS ──
 
     public UnityEvent          onLevelUp;
     public UnityEvent<int>     onXPGained;            // passes amount gained
     public UnityEvent<int, string> onXPGainedFromSource; // (amount, sourceName)
     public UnityEvent<int>     onStatPointSpent;      // passes remaining points
 
-    // ─────────────────────────────────────────
-    // RUNTIME STATE  (read-only from outside)
-    // ─────────────────────────────────────────
+    // ── RUNTIME STATE  (read-only from outside) ──
 
     public int CurrentXP       { get; private set; }
     public int CurrentLevel    { get; private set; }
     public int UnspentPoints   { get; private set; }
 
-    /// <summary>XP needed to advance from CurrentLevel to CurrentLevel+1.</summary>
+    /// <summary>
+    /// XP needed to advance from CurrentLevel to CurrentLevel+1.
+    /// </summary>
     public int XPToNextLevel   => XPRequiredForLevel(CurrentLevel + 1);
 
-    // ─────────────────────────────────────────
 
     private EntityStats _stats;
 
@@ -55,11 +45,11 @@ public class XPSystem : MonoBehaviour
             Debug.LogError("[XPSystem] No EntityStats found on the same GameObject!");
     }
 
-    // ─────────────────────────────────────────
-    // PUBLIC API
-    // ─────────────────────────────────────────
+    // ── PUBLIC API ──
 
-    /// <summary>Call this whenever the player kills an enemy (or picks up XP).</summary>
+    /// <summary>
+    /// Call this whenever the player kills an enemy (or picks up XP).
+    /// </summary>
     public void AddXP(int amount) => AddXP(amount, "");
 
     /// <summary>
@@ -106,9 +96,7 @@ public class XPSystem : MonoBehaviour
         return true;
     }
 
-    // ─────────────────────────────────────────
-    // PRIVATE HELPERS
-    // ─────────────────────────────────────────
+    // ── PRIVATE HELPERS ──
 
     private void LevelUp()
     {
@@ -124,16 +112,16 @@ public class XPSystem : MonoBehaviour
         Debug.Log($"[XPSystem] LEVEL UP → Lv{CurrentLevel}  |  Unspent points: {UnspentPoints}");
     }
 
-    /// <summary>XP required to go from level (n-1) to level n.</summary>
+    /// <summary>
+    /// XP required to go from level (n-1) to level n.
+    /// </summary>
     private int XPRequiredForLevel(int targetLevel)
     {
         // Linear growth: level 1 = base, level 2 = base + scaling, etc.
         return baseXPPerLevel + (targetLevel - 1) * xpScalingPerLevel;
     }
 
-    // ─────────────────────────────────────────
-    // Save / Load
-    // ─────────────────────────────────────────
+    // ── Save / Load ──
 
     public void ApplySaveData(SaveData data)
     {

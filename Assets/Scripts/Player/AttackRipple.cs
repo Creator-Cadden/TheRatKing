@@ -2,22 +2,6 @@ using UnityEngine;
 
 /// <summary>
 /// Lightweight visual impact ripples for player attacks. Three flavors:
-///
-///   • <see cref="SpawnRing"/>  — full 360° ring that expands outward,
-///     fading. Use for circular AoE attacks (hammer slam, blade jump spin).
-///
-///   • <see cref="SpawnArc"/>   — wedge of a ring along a forward direction,
-///     for cone attacks (blade swing, hammer swing).
-///
-///   • <see cref="SpawnFlash"/> — quick bright disc/sphere flash at a single
-///     point, used for arrow hits on enemies.
-///
-/// All three are generated procedurally at runtime — no prefab to author or
-/// drag into the Inspector. Spawn from any combat script via the static
-/// helpers below.
-///
-/// The effect lives only as long as its lifetime (default ~0.3s for ripples,
-/// ~0.15s for flash) and destroys itself.
 /// </summary>
 public class AttackRipple : MonoBehaviour
 {
@@ -28,9 +12,7 @@ public class AttackRipple : MonoBehaviour
     private Color    _startColor;
     private Material _mat;
 
-    // ═════════════════════════════════════════════════════════════
-    // Public static API — spawn from combat scripts
-    // ═════════════════════════════════════════════════════════════
+    // ── Public static API — spawn from combat scripts ──
 
     /// <summary>
     /// Spawns a full 360° ring at <paramref name="position"/> that expands
@@ -93,9 +75,7 @@ public class AttackRipple : MonoBehaviour
         ripple.SetMesh(BuildDiscMesh(radius, segments));
     }
 
-    // ═════════════════════════════════════════════════════════════
-    // Setup + animation
-    // ═════════════════════════════════════════════════════════════
+    // ── Setup + animation ──
 
     private void Setup(Color color, float lifetime, float expandAmount, float startRadius)
     {
@@ -148,9 +128,7 @@ public class AttackRipple : MonoBehaviour
         if (_mat != null) Destroy(_mat);
     }
 
-    // ═════════════════════════════════════════════════════════════
-    // Mesh builders
-    // ═════════════════════════════════════════════════════════════
+    // ── Mesh builders ──
 
     private static Mesh BuildRingMesh(float radius, float thickness, int segments)
     {

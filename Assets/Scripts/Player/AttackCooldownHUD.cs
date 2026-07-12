@@ -4,22 +4,6 @@ using UnityEngine.UI;
 /// <summary>
 /// Minecraft-style attack cooldown indicator.
 /// Supports both basic attack and jump attack bars on the same component.
-///
-/// Setup:
-///   Basic attack bar:
-///     Icon        (Image — sword/weapon sprite)
-///     FillBar     (Image — Type: Filled, Vertical, Origin: Bottom)
-///     Background  (Image — dark backing)
-///
-///   Jump attack bar (optional — leave null to disable):
-///     JumpIcon        (Image)
-///     JumpFillBar     (Image — Type: Filled, Vertical, Origin: Bottom)
-///     JumpBackground  (Image)
-///
-/// Both bars:
-///   - Fade IN when the attack is used
-///   - Fill sweeps upward as cooldown recharges
-///   - Fade OUT once fully charged after fadeOutDelay
 /// </summary>
 public class AttackCooldownHUD : MonoBehaviour
 {
@@ -61,7 +45,6 @@ public class AttackCooldownHUD : MonoBehaviour
 
     private static Sprite _squareSprite;
 
-    // ─────────────────────────────────────────
 
     void Start()
     {
@@ -102,7 +85,6 @@ public class AttackCooldownHUD : MonoBehaviour
             ref _jumpAlpha, ref _jumpReady, ref _wasJumpReady);
     }
 
-    // ─────────────────────────────────────────
 
     private void UpdateBar(
         float progress, Color barColor,

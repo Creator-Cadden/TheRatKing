@@ -7,39 +7,10 @@ using TMPro;
 /// Weapon selection screen for the PlayerCustom scene.
 /// Hover over a weapon card to see its full description.
 /// Click to select, then confirm to start.
-///
-/// Hierarchy (PlayerCustom scene):
-///   Canvas
-///   └── WeaponSelectRoot        ← attach this script
-///       ├── TitleLabel          (TMP_Text) "Choose Your Weapon"
-///       ├── SubtitleLabel       (TMP_Text) "Your choice shapes how you fight"
-///       │
-///       ├── WeaponCardsPanel    (horizontal layout group)
-///       │   ├── BladeCard       (Button)
-///       │   │   ├── WeaponIcon  (Image — optional sprite)
-///       │   │   ├── NameLabel   (TMP_Text) "Blade"
-///       │   │   └── TagLabel    (TMP_Text) "Fast · Mobile"
-///       │   ├── HammerCard      (same structure)
-///       │   └── BowCard         (same structure)
-///       │
-///       ├── DescriptionPanel    (Image — gray panel on right or below)
-///       │   ├── WeaponTitleLabel    (TMP_Text) — big weapon name
-///       │   ├── WeaponDescLabel     (TMP_Text) — full description text
-///       │   └── StatsPanel
-///       │       ├── StatRow_Damage  (TMP_Text)
-///       │       ├── StatRow_Attack  (TMP_Text)
-///       │       ├── StatRow_Move    (TMP_Text)
-///       │       └── StatRow_Tough   (TMP_Text)
-///       │
-///       ├── ConfirmButton       (Button) — disabled until a weapon is selected
-///       │   └── Label           (TMP_Text) "Select a Weapon"
-///       └── BackButton          (Button) — returns to main menu
 /// </summary>
 public class WeaponSelectUI : MonoBehaviour
 {
-    // =========================================================================
-    // INSPECTOR REFERENCES
-    // =========================================================================
+    // ── INSPECTOR REFERENCES ──
 
     [Header("Weapon Card Buttons")]
     public Button bladeCard;
@@ -74,9 +45,7 @@ public class WeaponSelectUI : MonoBehaviour
     public string defaultDescription =
         "Hover over a weapon to learn more.\nEach changes how you move, fight, and survive.";
 
-    // =========================================================================
-    // WEAPON DATA  — edit these strings to tune display without touching stats
-    // =========================================================================
+    // ── WEAPON DATA  — edit these strings to tune display without touching stats ──
 
     private static readonly WeaponInfo[] Weapons = new WeaponInfo[]
     {
@@ -122,9 +91,7 @@ public class WeaponSelectUI : MonoBehaviour
         },
     };
 
-    // =========================================================================
-    // PRIVATE STATE
-    // =========================================================================
+    // ── PRIVATE STATE ──
 
     private int  _hoveredIndex  = -1;
     private int  _selectedIndex = -1;
@@ -136,9 +103,7 @@ public class WeaponSelectUI : MonoBehaviour
         EntityStats.WeaponType.Bow,
     };
 
-    // =========================================================================
-    // LIFECYCLE
-    // =========================================================================
+    // ── LIFECYCLE ──
 
     void Start()
     {
@@ -166,9 +131,7 @@ public class WeaponSelectUI : MonoBehaviour
         CursorManager.Release("weaponselect");
     }
 
-    // =========================================================================
-    // CARD SETUP
-    // =========================================================================
+    // ── CARD SETUP ──
 
     private void SetupCard(Button card, int index)
     {
@@ -197,9 +160,7 @@ public class WeaponSelectUI : MonoBehaviour
         trigger.triggers.Add(entry);
     }
 
-    // =========================================================================
-    // HOVER
-    // =========================================================================
+    // ── HOVER ──
 
     private void OnCardHoverEnter(int index)
     {
@@ -229,9 +190,7 @@ public class WeaponSelectUI : MonoBehaviour
             ShowDefaultDescription();
     }
 
-    // =========================================================================
-    // SELECTION
-    // =========================================================================
+    // ── SELECTION ──
 
     private void SelectWeapon(int index)
     {
@@ -254,9 +213,7 @@ public class WeaponSelectUI : MonoBehaviour
             confirmLabel.text = "START WITH " + Weapons[index].name.ToUpper();
     }
 
-    // =========================================================================
-    // DESCRIPTION DISPLAY
-    // =========================================================================
+    // ── DESCRIPTION DISPLAY ──
 
     private void ShowWeaponInfo(int index)
     {
@@ -292,9 +249,7 @@ public class WeaponSelectUI : MonoBehaviour
         }
     }
 
-    // =========================================================================
-    // CONFIRM / BACK
-    // =========================================================================
+    // ── CONFIRM / BACK ──
 
     private void OnConfirm()
     {
@@ -327,9 +282,7 @@ public class WeaponSelectUI : MonoBehaviour
         GameManager.Instance?.ReturnToMainMenu();
     }
 
-    // =========================================================================
-    // HELPERS
-    // =========================================================================
+    // ── HELPERS ──
 
     private Button GetCard(int index) => index switch
     {
@@ -354,9 +307,7 @@ public class WeaponSelectUI : MonoBehaviour
         if (label != null) label.text = text;
     }
 
-    // =========================================================================
-    // WEAPON DATA STRUCT
-    // =========================================================================
+    // ── WEAPON DATA STRUCT ──
 
     private struct WeaponInfo
     {

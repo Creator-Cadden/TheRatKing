@@ -4,23 +4,6 @@ using UnityEngine;
 /// Drops on a trigger volume (Cube / Plane / Capsule with a Collider whose
 /// "Is Trigger" is on) placed at the END of a level. When the player walks
 /// into it, GameManager captures their current stats and loads the next
-/// scene. The save file gets stamped with the new scene name + the new
-/// floor, so Continue / Retry now bring the player back to the START of
-/// the new level with the stats they had on entry.
-///
-/// Setup:
-///   1. In your scene, GameObject → 3D Object → Cube (or Plane).
-///   2. Position / scale it as the "doorway" at the level's exit.
-///   3. On the Collider component, tick "Is Trigger".
-///   4. Add Component → LevelTransition.
-///   5. Set "Next Scene Name" to the destination scene (e.g. "lvl2").
-///      The scene MUST be in Build Settings.
-///   6. Choose Floor Mode (Advance is the usual choice for forward levels).
-///   7. (Optional) Add a material / VFX so the player can see it.
-///
-/// Saves only happen at the start of each scene via GameManager. This
-/// trigger doesn't manually save — it just hands off to GameManager which
-/// captures stats, loads scene, then SaveCheckpoint runs on the new scene.
 /// </summary>
 [RequireComponent(typeof(Collider))]
 public class LevelTransition : MonoBehaviour
@@ -64,7 +47,6 @@ public class LevelTransition : MonoBehaviour
 
     private bool _used = false;
 
-    // ─────────────────────────────────────────
 
     void Reset()
     {
@@ -105,7 +87,6 @@ public class LevelTransition : MonoBehaviour
         gm.TransitionToLevel(nextSceneName, (int)floorMode);
     }
 
-    // ─────────────────────────────────────────
 
     void OnDrawGizmos()
     {

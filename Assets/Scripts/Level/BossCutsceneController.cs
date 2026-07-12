@@ -5,25 +5,6 @@ using UnityEngine.InputSystem;
 /// <summary>
 /// Plays a weapon-specific cutscene when the boss arena scene loads, then
 /// triggers BossHealthBarUI.PlayIntro() so the bar grows in as gameplay starts.
-///
-/// Three video slots — one per weapon (Blade / Hammer / Bow). The script
-/// reads the player's equipped weapon at Start and plays the matching clip.
-///
-/// Setup (full details in BossCutscene_Setup.md):
-///   1. Import your three .mp4 files into Assets/ — Unity creates VideoClip
-///      assets automatically.
-///   2. On a GameObject in the boss scene (e.g. an empty named "CutsceneRig"):
-///        • Add Video Player component
-///        • Add this script
-///        • Wire the three clips into the Inspector slots
-///        • Set Render Mode = Render Texture on the VideoPlayer
-///        • Assign a RenderTexture asset to the VideoPlayer's Target Texture
-///   3. On the MainUI canvas (or a dedicated cutscene canvas):
-///        • Create a fullscreen RawImage child named "CutsceneScreen"
-///        • Set its Texture to the same RenderTexture
-///        • Drag CutsceneScreen into the "Video Canvas Root" Inspector field
-///   4. Drag your BossHealthBarUI into the matching Inspector field.
-///   5. Make sure BossHealthBarUI.showMode = Manual (so it waits for our cue).
 /// </summary>
 [RequireComponent(typeof(VideoPlayer))]
 public class BossCutsceneController : MonoBehaviour
@@ -43,14 +24,12 @@ public class BossCutsceneController : MonoBehaviour
              "the boss bar intro when no clip is found.")]
     public VideoClip fallbackCutscene;
 
-    // ─────────────────────────────────────────
     [Header("Video Display")]
     [Tooltip("The GameObject holding the fullscreen RawImage that displays " +
              "the video (typically a child of the MainUI canvas). Activated " +
              "while the cutscene plays, deactivated when it ends.")]
     public GameObject videoCanvasRoot;
 
-    // ─────────────────────────────────────────
     [Header("Boss Bar")]
     [Tooltip("BossHealthBarUI in the scene. PlayIntro() is called when the " +
              "cutscene finishes (or is skipped) so the bar grows in.")]
@@ -60,13 +39,11 @@ public class BossCutsceneController : MonoBehaviour
              "the boss bar intro firing. 0.3 = small breath. 0 = instant.")]
     public float bossBarIntroDelay = 0.3f;
 
-    // ─────────────────────────────────────────
     [Header("Player Lock")]
     [Tooltip("If on, disables PlayerMovement and PlayerCombat while the cutscene " +
              "plays so the player can't move or attack mid-scene.")]
     public bool freezePlayerDuringCutscene = true;
 
-    // ─────────────────────────────────────────
     [Header("Skip")]
     [Tooltip("If on, the player can press the configured key to skip the cutscene.")]
     public bool allowSkip = true;
@@ -78,7 +55,6 @@ public class BossCutsceneController : MonoBehaviour
              "object during the cutscene. Optional.")]
     public GameObject skipPromptRoot;
 
-    // ─────────────────────────────────────────
     [Header("Debug")]
     [Tooltip("If on, logs which weapon was detected + which clip is playing.")]
     public bool verbose = true;
@@ -87,15 +63,12 @@ public class BossCutsceneController : MonoBehaviour
              "if you want to trigger it manually via PlayCutscene() from another script.")]
     public bool playOnStart = true;
 
-    // ─────────────────────────────────────────
-    // Runtime
-    // ─────────────────────────────────────────
+    // ── Runtime ──
     private VideoPlayer _videoPlayer;
     private bool        _isPlaying;
     private PlayerMovement _playerMovement;
     private PlayerCombat   _playerCombat;
 
-    // ═════════════════════════════════════════════════════════════
 
     void Awake()
     {
@@ -123,11 +96,11 @@ public class BossCutsceneController : MonoBehaviour
         }
     }
 
-    // ═════════════════════════════════════════════════════════════
-    // Public API
-    // ═════════════════════════════════════════════════════════════
+    // ── Public API ──
 
-    /// <summary>Manually trigger the weapon-appropriate cutscene.</summary>
+    /// <summary>
+    /// Manually trigger the weapon-appropriate cutscene.
+    /// </summary>
     public void PlayCutscene()
     {
         if (_isPlaying) return;
@@ -153,7 +126,9 @@ public class BossCutsceneController : MonoBehaviour
         _videoPlayer.Play();
     }
 
-    /// <summary>End the cutscene early (also called automatically when the clip ends).</summary>
+    /// <summary>
+    /// End the cutscene early (also called automatically when the clip ends).
+    /// </summary>
     public void EndCutscene()
     {
         if (!_isPlaying) return;
@@ -170,9 +145,7 @@ public class BossCutsceneController : MonoBehaviour
         TriggerBossBarIntro();
     }
 
-    // ═════════════════════════════════════════════════════════════
-    // Internals
-    // ═════════════════════════════════════════════════════════════
+    // ── Internals ──
 
     private VideoClip SelectClipForEquippedWeapon()
     {

@@ -3,14 +3,6 @@ using UnityEngine;
 /// <summary>
 /// Attach to every enemy prefab alongside EntityStats.
 /// When the enemy dies (onDeath fires), it grants XP to the player.
-///
-/// Setup:
-///   1. Add this component to your enemy prefab.
-///   2. Set xpValue in the Inspector (or leave the default).
-///   3. No other wiring needed — it hooks EntityStats.onDeath automatically.
-///
-/// To customise per-enemy-type XP, just change xpValue on each prefab/instance.
-/// You can also override it at runtime: enemy.GetComponent<EnemyXPDrop>().xpValue = 50;
 /// </summary>
 public class EnemyXPDrop : MonoBehaviour
 {

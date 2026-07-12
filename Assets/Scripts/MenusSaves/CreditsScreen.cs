@@ -6,13 +6,6 @@ using UnityEngine.SceneManagement;
 /// Handles the Credits scene's back button. Sits on any GameObject in the
 /// Credits scene (e.g. the canvas root) and routes a button click back to
 /// the MainMenu scene.
-///
-/// Setup:
-///   1. In the Credits scene, add this component to any GameObject.
-///   2. Drag your Back button into the "Back Button" Inspector slot.
-///   3. Set "Main Menu Scene" if it's named anything other than "MainMenu".
-///
-/// Optional: also handles Escape key as a "back" shortcut for keyboard users.
 /// </summary>
 public class CreditsScreen : MonoBehaviour
 {

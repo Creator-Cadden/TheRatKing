@@ -6,21 +6,6 @@ using TMPro;
 /// Level-up feedback driven by FOUR TMP_Text references only.
 /// No panel root GameObjects, no CanvasGroups. Each text fades in/out
 /// independently by writing its color.alpha.
-///
-///   • Burst pair      — "LEVEL UP!" + "Press TAB to spend stat points"
-///                       Plays once on level up, fades in, holds, fades out.
-///
-///   • Reminder pair   — "Unspent points: N" + "Press TAB to spend"
-///                       Persistent while UnspentPoints > 0, hides at 0.
-///
-/// Setup:
-///   1. On the MainUI canvas, place four TMP_Text components wherever you
-///      want them. They don't need to share a parent — they can be anywhere.
-///   2. Add Component → Level Up Indicator on ANY GameObject (e.g. an empty
-///      "LevelUpController" sibling, or the canvas root).
-///   3. Drag the four TMP_Texts into the Inspector slots.
-///   4. Their initial scene-authored alpha doesn't matter — the script
-///      sets them transparent in Awake.
 /// </summary>
 public class LevelUpIndicator : MonoBehaviour
 {
@@ -65,7 +50,6 @@ public class LevelUpIndicator : MonoBehaviour
     private Coroutine _burstRoutine;
     private Coroutine _reminderRoutine;
 
-    // ─────────────────────────────────────────
 
     void Awake()
     {
@@ -92,7 +76,6 @@ public class LevelUpIndicator : MonoBehaviour
         }
     }
 
-    // ─────────────────────────────────────────
 
     private void BindPlayer()
     {
@@ -112,9 +95,7 @@ public class LevelUpIndicator : MonoBehaviour
         if (_xp.UnspentPoints > 0) ShowReminder();
     }
 
-    // ═════════════════════════════════════════════════════════════
-    // Burst — "LEVEL UP!"
-    // ═════════════════════════════════════════════════════════════
+    // ── Burst — "LEVEL UP!" ──
 
     private void OnLevelUp()
     {
@@ -141,9 +122,7 @@ public class LevelUpIndicator : MonoBehaviour
             ShowReminder();
     }
 
-    // ═════════════════════════════════════════════════════════════
-    // Reminder — "Unspent points: N"
-    // ═════════════════════════════════════════════════════════════
+    // ── Reminder — "Unspent points: N" ──
 
     private void OnPointSpent(int remaining)
     {
@@ -181,9 +160,7 @@ public class LevelUpIndicator : MonoBehaviour
                      PairAlpha(reminderMainText, reminderSubText), 0f, fadeOutDuration));
     }
 
-    // ═════════════════════════════════════════════════════════════
-    // Alpha helpers (operate on two TMP_Texts in lockstep)
-    // ═════════════════════════════════════════════════════════════
+    // ── Alpha helpers (operate on two TMP_Texts in lockstep) ──
 
     private static IEnumerator FadePair(TMP_Text a, TMP_Text b, float from, float to, float seconds)
     {
@@ -210,7 +187,9 @@ public class LevelUpIndicator : MonoBehaviour
         if (b != null) { var c = b.color; c.a = alpha; b.color = c; }
     }
 
-    /// <summary>Returns the higher of the two texts' current alpha (or 0 if both null).</summary>
+    /// <summary>
+    /// Returns the higher of the two texts' current alpha (or 0 if both null).
+    /// </summary>
     private static float PairAlpha(TMP_Text a, TMP_Text b)
     {
         float aa = a != null ? a.color.a : 0f;

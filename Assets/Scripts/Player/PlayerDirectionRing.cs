@@ -4,16 +4,6 @@ using UnityEngine;
 /// Attach to an empty child GameObject on the Player.
 /// Position that child object at whatever height you want the ring —
 /// no code controls the position, the empty object IS the anchor.
-///
-/// Draws:
-///   - A ring that fades out on the back half (opposite the facing direction)
-///   - A small triangle pointer just outside the ring on the facing side
-///
-/// Setup:
-///   1. Create empty child on Player, name it "DirectionRing"
-///   2. Set its local Y to whatever puts it at ground level (e.g. -0.9)
-///   3. Attach this script — MeshFilter + MeshRenderer added automatically
-///   4. The ring and triangle rotate with the parent player Y automatically
 /// </summary>
 [RequireComponent(typeof(MeshFilter))]
 [RequireComponent(typeof(MeshRenderer))]
@@ -65,7 +55,6 @@ public class PlayerDirectionRing : MonoBehaviour
     private Material _ringMat;
     private Material _triMat;
 
-    // ─────────────────────────────────────────
 
     void Awake()
     {
@@ -114,9 +103,7 @@ public class PlayerDirectionRing : MonoBehaviour
         _triMat.color  = triangleColor;
     }
 
-    // ─────────────────────────────────────────
-    // Ring mesh — vertex colors fade front→back
-    // ─────────────────────────────────────────
+    // ── Ring mesh — vertex colors fade front→back ──
 
     private void BuildRing()
     {
@@ -191,9 +178,7 @@ public class PlayerDirectionRing : MonoBehaviour
         _ringMat.enableInstancing = false;
     }
 
-    // ─────────────────────────────────────────
-    // Triangle pointer — small, sits just past the ring on the forward side
-    // ─────────────────────────────────────────
+    // ── Triangle pointer — small, sits just past the ring on the forward side ──
 
     private void BuildTriangle()
     {
@@ -217,7 +202,6 @@ public class PlayerDirectionRing : MonoBehaviour
         _triFilter.sharedMesh = mesh;
     }
 
-    // ─────────────────────────────────────────
 
     private static Material CreateMat(Color color)
     {

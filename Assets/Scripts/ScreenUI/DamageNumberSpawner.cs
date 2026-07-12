@@ -4,19 +4,6 @@ using TMPro;
 /// <summary>
 /// Per-entity component: when this entity takes damage, spawn a floating
 /// number above it that drifts upward, fades out, and self-destroys.
-///
-/// Setup:
-///   1. Drop on the Player prefab and every enemy prefab.
-///   2. Requires EntityStats on the same GameObject (auto-found).
-///   3. No prefab to author — the number is created entirely at runtime
-///      from a TextMeshPro 3D component, so it picks up your pixelization
-///      automatically (it's rendered through the same Main Camera as the
-///      world).
-///
-/// Tuning:
-///   • Adjust spawnOffset.y to lift the number above the entity's head.
-///   • lowColor / highColor + lowDamage / highDamage define a colour ramp
-///     so big crits visibly stand out from chip damage.
 /// </summary>
 [RequireComponent(typeof(EntityStats))]
 public class DamageNumberSpawner : MonoBehaviour

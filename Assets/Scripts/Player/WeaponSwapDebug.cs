@@ -3,24 +3,6 @@ using UnityEngine.InputSystem;
 
 /// <summary>
 /// Debug-only weapon swap. Press 1 / 2 / 3 to instantly equip Blade / Hammer / Bow.
-///
-/// Uses the Input System (Unity 6's default) via Keyboard.current — no need to
-/// edit InputSystem_Actions.inputactions for this to work.
-///
-/// Setup:
-///   1. Add this component to the Player prefab root.
-///   2. (Optional) rebind the three keys in the Inspector.
-///   3. (Optional) tick "Test Mode Only" so the cheat only works in the
-///      Test Arena, not in real save runs.
-///
-/// What happens when you press a key:
-///   The script calls EntityStats.EquipWeapon(...). That cascades through:
-///     • Toughness bonus update (Blade +1, Hammer +4, Bow +0)
-///     • Move speed recalc (hammer slow / bow aim slow)
-///     • Attack cooldown recalc
-///     • onStatsChanged → WeaponModelSwapper swaps the visible model
-///                         + writes Animator "Weapon" int parameter
-///   So model, stats, animator — everything follows automatically.
 /// </summary>
 [RequireComponent(typeof(EntityStats))]
 public class WeaponSwapDebug : MonoBehaviour

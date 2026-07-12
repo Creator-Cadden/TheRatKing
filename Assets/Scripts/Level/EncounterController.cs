@@ -5,23 +5,6 @@ using System.Collections.Generic;
 
 /// <summary>
 /// "Kill all the enemies in this room and the gate opens" controller.
-///
-/// Drop on an empty GameObject anywhere in the scene. Either drag enemies
-/// into the Tracked Enemies list, or enable Auto Populate and the script
-/// will scan for enemies within a radius at Start.
-///
-/// When every tracked enemy is dead, the Gate Transform animates
-/// downward (default) or deactivates, freeing the path to whatever the
-/// gate was blocking (typically a LevelTransition trigger).
-///
-/// Usage:
-///   1. Add this component to an empty GameObject named e.g. "RoomEncounter".
-///   2. Drag every enemy in the room into Tracked Enemies (the easy way)
-///      OR set Auto Populate = on and parent the empty above the room.
-///   3. Drag the gate model/parent into Gate Transform.
-///   4. Choose Lower (default) or Deactivate as the Open Action.
-///   5. (Optional) wire <see cref="onAllDefeated"/> to a UnityEvent for extra
-///      reactions (sound effect, particle burst, log, etc.).
 /// </summary>
 public class EncounterController : MonoBehaviour
 {
@@ -35,7 +18,6 @@ public class EncounterController : MonoBehaviour
         EventOnly,
     }
 
-    // ─────────────────────────────────────────
     [Header("Tracked Enemies")]
     [Tooltip("Drag every enemy that belongs to this encounter here. " +
              "When all are dead, the gate opens. Empty slots are ignored.")]
@@ -52,7 +34,6 @@ public class EncounterController : MonoBehaviour
     [Tooltip("Layer mask for the auto-populate sphere check.")]
     public LayerMask autoPopulateLayer = ~0;
 
-    // ─────────────────────────────────────────
     [Header("Gate")]
     [Tooltip("The gate model/parent that physically blocks the way. " +
              "Animated or deactivated when the encounter is cleared.")]
@@ -76,7 +57,6 @@ public class EncounterController : MonoBehaviour
              "after the slide finishes (saves draw calls + physics queries).")]
     public bool deactivateAfterLower = true;
 
-    // ─────────────────────────────────────────
     [Header("Events")]
     [Tooltip("Fires once per enemy killed in this encounter. " +
              "Argument = remaining alive count.")]
@@ -86,13 +66,10 @@ public class EncounterController : MonoBehaviour
              "screen shake, save trigger, anything here.")]
     public UnityEvent onAllDefeated;
 
-    // ─────────────────────────────────────────
     [Header("Debug")]
     public bool verbose = false;
 
-    // ─────────────────────────────────────────
-    // Runtime state
-    // ─────────────────────────────────────────
+    // ── Runtime state ──
     private int _aliveCount;
     private bool _resolved;             // true once onAllDefeated has fired
     private Coroutine _lowerRoutine;
@@ -101,7 +78,6 @@ public class EncounterController : MonoBehaviour
     public int TotalCount => trackedEnemies != null ? trackedEnemies.Count : 0;
     public bool IsCleared => _resolved;
 
-    // ─────────────────────────────────────────
 
     void Start()
     {
@@ -159,7 +135,6 @@ public class EncounterController : MonoBehaviour
         }
     }
 
-    // ─────────────────────────────────────────
 
     private void OnEnemyDied()
     {
@@ -228,9 +203,7 @@ public class EncounterController : MonoBehaviour
             gateTransform.gameObject.SetActive(false);
     }
 
-    // ─────────────────────────────────────────
-    // Gizmos
-    // ─────────────────────────────────────────
+    // ── Gizmos ──
 
     void OnDrawGizmosSelected()
     {

@@ -2,22 +2,6 @@ using UnityEngine;
 
 /// <summary>
 /// Captain enemy variant.
-///
-/// Sits alongside <see cref="EnemyCombat"/> on the Captain prefab and cycles
-/// the attack shape through Cone → Circle → Rectangle → Cone... on each new
-/// attack. The Captain uses one regular <see cref="EnemyStatBlock"/> asset
-/// configured with valid values for ALL three shape groups
-/// (attackRadius/attackAngle, circleRadius, rectWidth/rectLength).
-///
-/// Setup:
-///   1. Build the Captain prefab like a regular enemy:
-///        EntityStats (Enemy) + EnemyStatBlock asset + EnemyAI + EnemyCombat
-///   2. Attach this script.
-///   3. Make sure the EnemyStatBlock has reasonable values for all three
-///      shape groups (radius+angle, circleRadius, rectWidth+rectLength) so
-///      every cycled attack has sane geometry.
-///   4. Leave EnemyStatBlock.attackShape set to whatever you want the very
-///      first attack to be — this script overrides it from then on.
 /// </summary>
 [RequireComponent(typeof(EnemyCombat))]
 public class CaptainCombat : MonoBehaviour

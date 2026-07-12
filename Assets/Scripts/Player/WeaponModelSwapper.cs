@@ -4,22 +4,6 @@ using UnityEngine;
 /// Swaps the active weapon model on the Player when EquipWeapon is called,
 /// and pushes a "Weapon" int parameter into the Animator so animations can
 /// branch per weapon (0 = Blade, 1 = Hammer, 2 = Bow, -1 = None).
-///
-/// Setup:
-///   1. Under the Player prefab, give each weapon its own model GameObject
-///      (e.g. a child empty named "Blade" holding the blade mesh, same for
-///      "Hammer" and "Bow").
-///   2. Add this component to the Player root.
-///   3. Drag each weapon model into the Inspector slots.
-///   4. If your Animator has a "Weapon" int parameter, the animator
-///      auto-switches between attack states.
-///   5. Hook the rat's Animator into the Inspector (or leave null to use
-///      GetComponentInChildren).
-///
-/// The component subscribes to <see cref="EntityStats.onStatsChanged"/>
-/// which already fires from EquipWeapon, so no extra wiring needed —
-/// every time a save loads, weapon-select confirms, or a future swap
-/// fires, this picks it up.
 /// </summary>
 [RequireComponent(typeof(EntityStats))]
 public class WeaponModelSwapper : MonoBehaviour
@@ -96,7 +80,9 @@ public class WeaponModelSwapper : MonoBehaviour
         Refresh();
     }
 
-    /// <summary>Force a refresh manually (e.g. after a runtime weapon swap from a pickup).</summary>
+    /// <summary>
+    /// Force a refresh manually (e.g. after a runtime weapon swap from a pickup).
+    /// </summary>
     public void Refresh()
     {
         if (_stats == null) _stats = GetComponent<EntityStats>();
@@ -126,12 +112,6 @@ public class WeaponModelSwapper : MonoBehaviour
     /// <summary>
     /// Returns the Animator that belongs to the currently-equipped weapon
     /// (or null if that weapon has no separate animator wired up).
-    ///
-    /// PlayerCombat reads this and fires its "Attk" / "AirAttk" triggers on
-    /// it, so the weapon's mesh animates in sync with the rat body's swing.
-    ///
-    /// When the player swaps weapons, this property returns a different
-    /// Animator automatically — no extra wiring needed in PlayerCombat.
     /// </summary>
     public Animator ActiveWeaponAnimator
     {

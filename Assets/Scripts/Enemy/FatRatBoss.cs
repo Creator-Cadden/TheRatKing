@@ -3,37 +3,6 @@ using UnityEngine.AI;
 
 /// <summary>
 /// Giant Fat Rat boss. Completely separate from regular EnemyAI/EnemyCombat.
-///
-/// Behaviour overview:
-///   • Slow chase toward the player.
-///   • Pauses for a few seconds before each attack.
-///   • Cycles through a fixed pattern of attacks (default Roll, Roll, Slam).
-///
-/// Roll attack:
-///   1. Stops in place.
-///   2. Faces the player and begins a windup (animation triggers "RollWindup").
-///   3. A long forward rectangle indicator appears, showing the roll path.
-///   4. After the windup, the boss commits and rolls in a straight line
-///      along that locked direction at high speed for rollDistance metres.
-///   5. Anyone hit by the body during the roll takes rollDamage.
-///
-/// Slam attack:
-///   1. Stops in place.
-///   2. Jumps into the air (animation trigger "JumpWindup").
-///   3. At the moment it leaves the ground, a circle indicator is locked
-///      onto the player's CURRENT XZ position. The boss visually rises off
-///      the ground.
-///   4. After slamTelegraphDuration, the boss crashes down onto that locked
-///      position. Anyone inside the circle takes slamDamage.
-///   5. The reticle stays put — the player has to LEAVE the marked circle.
-///
-/// Required scene setup:
-///   • Tag the Player GameObject "Player".
-///   • Add a NavMeshAgent (this script disables it during attacks).
-///   • Add an EntityStats with an EnemyStatBlock for HP/damage scaling.
-///   • Set "playerLayer" to your player's collision layer in the Inspector.
-///   • Animator triggers used (optional — script works without them):
-///       "RollWindup", "Roll", "JumpWindup", "InAir", "Slam", "Death"
 /// </summary>
 [RequireComponent(typeof(EntityStats))]
 public class FatRatBoss : MonoBehaviour
@@ -48,7 +17,6 @@ public class FatRatBoss : MonoBehaviour
 
     public enum AttackKind { Roll, Slam }
 
-    // ═════════════════════════════════════════════════════════════
     [Header("Detection & Movement")]
     [Tooltip("Distance at which the boss notices the player and starts chasing.")]
     public float aggroRange = 15f;
@@ -61,17 +29,14 @@ public class FatRatBoss : MonoBehaviour
              "this needs to grow with it. For a ~2x scaled rat, 7–9 is a good starting point.")]
     public float stopRange = 8f;
 
-    // ─────────────────────────────────────────
     [Header("Pre-Attack Pause")]
     [Tooltip("Seconds the boss stands still before EACH attack windup.")]
     public float pauseDuration = 2f;
 
-    // ─────────────────────────────────────────
     [Header("Attack Pattern")]
     [Tooltip("Order of attacks. Loops forever. Default: Roll, Roll, Slam.")]
     public AttackKind[] attackPattern = { AttackKind.Roll, AttackKind.Roll, AttackKind.Slam };
 
-    // ─────────────────────────────────────────
     [Header("Roll Attack")]
     [Tooltip("Seconds the boss spends balling up and aiming before launching the roll.")]
     public float rollWindupDuration = 1.5f;
@@ -91,7 +56,6 @@ public class FatRatBoss : MonoBehaviour
     [Tooltip("Recovery time after the roll completes before the boss resumes.")]
     public float rollRecoverDuration = 1.2f;
 
-    // ─────────────────────────────────────────
     [Header("Slam Attack")]
     [Tooltip("Time spent crouching before the boss leaves the ground.")]
     public float jumpWindupDuration = 0.45f;
@@ -112,8 +76,6 @@ public class FatRatBoss : MonoBehaviour
     [Tooltip("Recovery time after slam impact.")]
     public float slamRecoverDuration = 1.4f;
 
-    // ─────────────────────────────────────────
-    // ─────────────────────────────────────────
     [Header("Contact Damage (touch the rat = ouch)")]
     [Tooltip("If on, the player takes damage just from being close to the boss's body " +
              "(not just when an attack lands). Disabled during active attacks (Rolling, " +
@@ -138,7 +100,6 @@ public class FatRatBoss : MonoBehaviour
     [Tooltip("How long the contact knockback push lasts.")]
     public float contactKnockbackDuration = 0.2f;
 
-    // ─────────────────────────────────────────
     [Header("Hit Knockback")]
     [Tooltip("Force of the player shove when caught by the roll (pushed in the roll's " +
              "direction — you get carried by the body that rolled into you).")]
@@ -154,7 +115,6 @@ public class FatRatBoss : MonoBehaviour
     [Tooltip("Duration of the slam knockback.")]
     public float slamKnockbackDuration = 0.4f;
 
-    // ─────────────────────────────────────────
     [Header("References")]
     [Tooltip("Layer the player is on, for hit detection during attacks.")]
     public LayerMask playerLayer;
@@ -163,19 +123,15 @@ public class FatRatBoss : MonoBehaviour
              "Leave null to use the boss transform.")]
     public Transform attackOrigin;
 
-    // ─────────────────────────────────────────
     [Header("Indicator Colors")]
     public Color windupColor  = new Color(1f,   0.15f, 0.1f, 0.55f);
     public Color committedColor = new Color(1f, 0.6f,  0.0f, 0.85f);
 
-    // ─────────────────────────────────────────
     [Header("Debug")]
     public bool verbose = false;
     public bool showGizmos = true;
 
-    // ═════════════════════════════════════════════════════════════
-    // Private state
-    // ═════════════════════════════════════════════════════════════
+    // ── Private state ──
 
     private BossState     _state = BossState.Idle;
     private NavMeshAgent  _agent;
@@ -210,9 +166,7 @@ public class FatRatBoss : MonoBehaviour
     private MeshRenderer  _rectRenderer, _circleRenderer;
     private Material      _rectMat, _circleMat;
 
-    // ═════════════════════════════════════════════════════════════
-    // Unity lifecycle
-    // ═════════════════════════════════════════════════════════════
+    // ── Unity lifecycle ──
 
     void Start()
     {
@@ -270,9 +224,7 @@ public class FatRatBoss : MonoBehaviour
         TickContactDamage();
     }
 
-    // ═════════════════════════════════════════════════════════════
-    // Contact damage — touch the rat = ouch
-    // ═════════════════════════════════════════════════════════════
+    // ── Contact damage — touch the rat = ouch ──
 
     private void TickContactDamage()
     {
@@ -311,9 +263,7 @@ public class FatRatBoss : MonoBehaviour
         _playerMovement.TakeKnockback(direction, force, duration);
     }
 
-    // ═════════════════════════════════════════════════════════════
-    // State machine helpers
-    // ═════════════════════════════════════════════════════════════
+    // ── State machine helpers ──
 
     private void SetState(BossState next)
     {
@@ -338,9 +288,7 @@ public class FatRatBoss : MonoBehaviour
             transform.rotation = Quaternion.LookRotation(dir);
     }
 
-    // ═════════════════════════════════════════════════════════════
-    // Per-state ticks
-    // ═════════════════════════════════════════════════════════════
+    // ── Per-state ticks ──
 
     private void TickIdle()
     {
@@ -392,9 +340,7 @@ public class FatRatBoss : MonoBehaviour
         }
     }
 
-    // ─────────────────────────────────────────
-    // Roll attack
-    // ─────────────────────────────────────────
+    // ── Roll attack ──
 
     private void BeginRollWindup()
     {
@@ -519,9 +465,7 @@ public class FatRatBoss : MonoBehaviour
         return hits != null && hits.Length > 0;
     }
 
-    // ─────────────────────────────────────────
-    // Slam attack
-    // ─────────────────────────────────────────
+    // ── Slam attack ──
 
     private void BeginSlam()
     {
@@ -648,9 +592,7 @@ public class FatRatBoss : MonoBehaviour
         SetState(BossState.Chase);
     }
 
-    // ═════════════════════════════════════════════════════════════
-    // Damage / death
-    // ═════════════════════════════════════════════════════════════
+    // ── Damage / death ──
 
     private void DamagePlayer(int amount, string sourceTag)
     {
@@ -676,9 +618,7 @@ public class FatRatBoss : MonoBehaviour
         if (_animator != null) _animator.SetBool("Death", true);
     }
 
-    // ═════════════════════════════════════════════════════════════
-    // Indicators (rectangle for roll, disk for slam)
-    // ═════════════════════════════════════════════════════════════
+    // ── Indicators (rectangle for roll, disk for slam) ──
 
     private Vector3 HitOrigin() =>
         attackOrigin != null ? attackOrigin.position : transform.position;
@@ -743,9 +683,7 @@ public class FatRatBoss : MonoBehaviour
         return m;
     }
 
-    // ─────────────────────────────────────────
-    // Mesh builders (rect + disk)
-    // ─────────────────────────────────────────
+    // ── Mesh builders (rect + disk) ──
 
     private static Mesh BuildRectMesh(float width, float length)
     {
@@ -790,9 +728,7 @@ public class FatRatBoss : MonoBehaviour
         return mesh;
     }
 
-    // ═════════════════════════════════════════════════════════════
-    // Gizmos
-    // ═════════════════════════════════════════════════════════════
+    // ── Gizmos ──
 
     void OnDrawGizmos()
     {

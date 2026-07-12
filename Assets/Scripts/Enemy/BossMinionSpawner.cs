@@ -6,39 +6,16 @@ using System.Collections.Generic;
 /// Sits on the boss alongside <see cref="FatRatBoss"/>. Spawns waves of
 /// minion enemies during the fight based on HP thresholds AND/OR a recurring
 /// interval. Keeps the boss feel dynamic by pulling the player's attention
-/// between the boss attacks and incoming adds.
-///
-/// Two spawn triggers, both optional and combinable:
-///
-///   • HP THRESHOLDS — when the boss drops below a configured HP fraction
-///     for the first time (e.g. 75%, 50%, 25%), spawn a wave. Each threshold
-///     fires once per fight.
-///
-///   • INTERVAL TIMER — every N seconds while the boss is alive, spawn a
-///     wave. Optionally requires the boss to have been damaged at least once
-///     so it doesn't start spawning while the player is still entering.
-///
-/// Spawn positions are chosen by:
-///   1. Pick a random angle around the boss
-///   2. Pick a random distance between min and max range
-///   3. Sample the NavMesh at that point — if it's walkable, spawn there.
-///      If not, retry up to a few times.
-///
-/// The spawner tracks how many minions are alive and won't exceed
-/// <see cref="maxAliveMinions"/>. When a tracked minion dies, the slot
-/// frees up.
 /// </summary>
 [RequireComponent(typeof(EntityStats))]
 public class BossMinionSpawner : MonoBehaviour
 {
-    // ═════════════════════════════════════════════════════════════
     [Header("Minion Prefabs")]
     [Tooltip("Pool of enemy prefabs to spawn. The spawner picks one at random " +
              "from this list for each minion in a wave. Drag your grunt prefabs " +
              "here (GruntCone, GruntCircle, GruntRectangle, etc.).")]
     public GameObject[] minionPrefabs;
 
-    // ─────────────────────────────────────────
     [Header("HP Threshold Triggers")]
     [Tooltip("When the boss's HP fraction drops below any value in this list, " +
              "trigger a wave. Each threshold fires exactly once per fight.\n\n" +
@@ -49,7 +26,6 @@ public class BossMinionSpawner : MonoBehaviour
     [Tooltip("Minions per HP-threshold wave.")]
     public int hpThresholdWaveCount = 2;
 
-    // ─────────────────────────────────────────
     [Header("Interval Spawning")]
     [Tooltip("If on, spawns a wave every spawnInterval seconds while the boss is alive.")]
     public bool enableIntervalSpawn = true;
@@ -64,7 +40,6 @@ public class BossMinionSpawner : MonoBehaviour
     [Tooltip("Minions per interval wave.")]
     public int intervalWaveCount = 1;
 
-    // ─────────────────────────────────────────
     [Header("Spawn Geometry")]
     [Tooltip("Random angle around the boss is picked, then a distance between " +
              "these min/max values. Keeps minions from spawning ON the boss or " +
@@ -83,13 +58,11 @@ public class BossMinionSpawner : MonoBehaviour
              "isn't on the NavMesh. Prevents infinite loops on closed arenas.")]
     public int spawnAttempts = 6;
 
-    // ─────────────────────────────────────────
     [Header("Limits")]
     [Tooltip("Maximum minions alive at the same time. Prevents the arena from " +
              "getting flooded if the player is slow at clearing.")]
     public int maxAliveMinions = 5;
 
-    // ─────────────────────────────────────────
     [Header("Spawned Minion Behavior")]
     [Tooltip("If on, every spawned minion has its EnemyAI.permanentlyAggroed " +
              "flag set to true immediately. They ignore aggroRange and hunt the " +
@@ -106,14 +79,11 @@ public class BossMinionSpawner : MonoBehaviour
     [Range(0.5f, 3f)]
     public float minionSpeedMultiplier = 1.5f;
 
-    // ─────────────────────────────────────────
     [Header("Debug")]
     public bool verbose = false;
     public bool showGizmos = true;
 
-    // ═════════════════════════════════════════════════════════════
-    // Runtime
-    // ═════════════════════════════════════════════════════════════
+    // ── Runtime ──
     private EntityStats        _stats;
     private List<EntityStats>  _aliveMinions = new List<EntityStats>();
     private HashSet<float>     _thresholdsTriggered = new HashSet<float>();
@@ -121,7 +91,6 @@ public class BossMinionSpawner : MonoBehaviour
     private bool               _damageTaken;
     private bool               _bossAlive = true;
 
-    // ═════════════════════════════════════════════════════════════
 
     void Awake()
     {
@@ -156,9 +125,7 @@ public class BossMinionSpawner : MonoBehaviour
         _nextIntervalSpawn = Time.time + spawnInterval;
     }
 
-    // ═════════════════════════════════════════════════════════════
-    // Event handlers
-    // ═════════════════════════════════════════════════════════════
+    // ── Event handlers ──
 
     private void OnBossDamaged(int _)
     {
@@ -190,11 +157,11 @@ public class BossMinionSpawner : MonoBehaviour
         if (verbose) Debug.Log("[BossMinionSpawner] Boss died — spawner stopped.");
     }
 
-    // ═════════════════════════════════════════════════════════════
-    // Spawn logic
-    // ═════════════════════════════════════════════════════════════
+    // ── Spawn logic ──
 
-    /// <summary>Manually trigger a wave. Public so external scripts can fire it too.</summary>
+    /// <summary>
+    /// Manually trigger a wave. Public so external scripts can fire it too.
+    /// </summary>
     public void SpawnWave(int count)
     {
         if (minionPrefabs == null || minionPrefabs.Length == 0)
@@ -282,9 +249,7 @@ public class BossMinionSpawner : MonoBehaviour
         }
     }
 
-    // ═════════════════════════════════════════════════════════════
-    // Gizmos
-    // ═════════════════════════════════════════════════════════════
+    // ── Gizmos ──
 
     void OnDrawGizmosSelected()
     {

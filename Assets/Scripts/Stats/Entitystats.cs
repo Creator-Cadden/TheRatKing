@@ -52,7 +52,6 @@ public class EntityStats : MonoBehaviour
     // Speed: each point above base adds this to walk speed (sprint scales 1.33x)
     private const float SpeedBonusPerPoint = 0.5f;
 
-    // ─────────────────────────────────────────
     void Start()
     {
         if (BaseBlock == null)
@@ -68,9 +67,7 @@ public class EntityStats : MonoBehaviour
         if (isPlayer) RegenStamina();
     }
 
-    // ─────────────────────────────────────────
-    // Init
-    // ─────────────────────────────────────────
+    // ── Init ──
 
     private void InitStats()
     {
@@ -124,9 +121,7 @@ public class EntityStats : MonoBehaviour
                   $"HP:{CurrentHealth} STR:{Strength} STA:{MaxStamina} SPD:{Speed} TGH:{Toughness}");
     }
 
-    // ─────────────────────────────────────────
-    // Leveling
-    // ─────────────────────────────────────────
+    // ── Leveling ──
 
     public bool GainLevel()
     {
@@ -206,9 +201,7 @@ public class EntityStats : MonoBehaviour
         };
     }
 
-    // ─────────────────────────────────────────
-    // Weapons
-    // ─────────────────────────────────────────
+    // ── Weapons ──
 
     public void EquipWeapon(WeaponType weapon)
     {
@@ -244,9 +237,8 @@ public class EntityStats : MonoBehaviour
 
     /// <summary>
     /// Damage formula:
-    ///   Blade  = Strength * bladeStrengthMultiplier  (no flat base)
-    ///   Hammer = Strength * hammerStrengthMultiplier (no flat base, heavy penalty to speed)
-    ///   Bow    = Random(bowDamageMin, bowDamageMax)  (no strength scaling, ranged)
+    /// Blade  = Strength * bladeStrengthMultiplier  (no flat base)
+    /// Hammer = Strength * hammerStrengthMultiplier (no flat base, heavy penalty to speed)
     /// </summary>
     public int CalculateWeaponDamage()
     {
@@ -273,9 +265,7 @@ public class EntityStats : MonoBehaviour
         return Mathf.RoundToInt(charged);
     }
 
-    // ─────────────────────────────────────────
-    // Stamina
-    // ─────────────────────────────────────────
+    // ── Stamina ──
 
     public bool UseStamina(int amount)
     {
@@ -319,9 +309,7 @@ public class EntityStats : MonoBehaviour
         }
     }
 
-    // ─────────────────────────────────────────
-    // Health & Damage
-    // ─────────────────────────────────────────
+    // ── Health & Damage ──
 
     public void TakeDamage(int damage)
     {
@@ -366,9 +354,7 @@ public class EntityStats : MonoBehaviour
         onStatsChanged?.Invoke();
     }
 
-    // ─────────────────────────────────────────
-    // Save / Load
-    // ─────────────────────────────────────────
+    // ── Save / Load ──
 
     /// <summary>
     /// Restores runtime stat values from a SaveData object.

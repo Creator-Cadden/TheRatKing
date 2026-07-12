@@ -5,12 +5,6 @@ using UnityEngine.SceneManagement;
 /// <summary>
 /// Singleton GameManager — persists across scenes.
 /// Handles: player death, death overlay, retry/reset, save/load, scene loading.
-///
-/// Setup:
-///   1. Place on an empty GameObject in your FIRST scene (MainMenu or Floor1).
-///   2. Assign deathScreen in the Inspector if this is a game scene.
-///   3. Make sure your Player is tagged "Player" and spawn point tagged "SpawnPoint".
-///   4. Set mainMenuScene and firstGameScene to match your actual scene names.
 /// </summary>
 public class GameManager : MonoBehaviour
 {
@@ -60,9 +54,7 @@ public class GameManager : MonoBehaviour
 
     private bool _isDead;
 
-    // ═════════════════════════════════════════════════════════════
-    // Unity lifecycle
-    // ═════════════════════════════════════════════════════════════
+    // ── Unity lifecycle ──
 
     void Awake()
     {
@@ -91,9 +83,7 @@ public class GameManager : MonoBehaviour
             ActiveSave.totalPlayTime += Time.unscaledDeltaTime;
     }
 
-    // ═════════════════════════════════════════════════════════════
-    // Scene loaded — re-cache everything
-    // ═════════════════════════════════════════════════════════════
+    // ── Scene loaded — re-cache everything ──
 
     private void OnSceneLoaded(Scene scene, LoadSceneMode mode)
     {
@@ -155,9 +145,7 @@ public class GameManager : MonoBehaviour
         SaveCheckpoint(scene.name);
     }
 
-    // ═════════════════════════════════════════════════════════════
-    // Start new / continue
-    // ═════════════════════════════════════════════════════════════
+    // ── Start new / continue ──
 
     public void StartNewGame(int slot, string sceneName = "", string saveName = "",
         EntityStats.WeaponType startingWeapon = EntityStats.WeaponType.Blade)
@@ -206,31 +194,13 @@ public class GameManager : MonoBehaviour
         LoadScene(ActiveSave.currentSceneName);
     }
 
-    // ═════════════════════════════════════════════════════════════
-    // Level transition — used by LevelTransition triggers
-    // ═════════════════════════════════════════════════════════════
+    // ── Level transition — used by LevelTransition triggers ──
 
     /// <summary>
     /// Called by a LevelTransition trigger when the player crosses into
     /// the next level. Captures the player's CURRENT in-game stats (HP,
     /// stamina, XP, weapon, etc.) into ActiveSave with the destination
-    /// scene name and the new floor, then loads that scene.
-    ///
-    /// OnSceneLoaded will then:
-    ///   1. Apply ActiveSave to the freshly-instantiated player in the new
-    ///      scene (so all your stats carry over).
-    ///   2. Call SaveCheckpoint(scene.name) — writes ActiveSave to disk so
-    ///      Continue / Retry both bring you back to the START of this new
-    ///      level with the stats you had at the moment of transition.
-    ///
-    /// In test mode, no save is captured — just loads the scene.
     /// </summary>
-    /// <param name="sceneName">The scene to transition into.</param>
-    /// <param name="floorMode">
-    ///   <c>0</c> = leave currentFloor alone.
-    ///   <c>-1</c> = advance currentFloor by 1 (clamped to 3).
-    ///   <c>1..3</c> = set currentFloor to this explicit value.
-    /// </param>
     public void TransitionToLevel(string sceneName, int floorMode = -1)
     {
         if (string.IsNullOrEmpty(sceneName))
@@ -276,9 +246,7 @@ public class GameManager : MonoBehaviour
         LoadScene(sceneName);
     }
 
-    // ═════════════════════════════════════════════════════════════
-    // Test world flow — no save slot, weapon select then arena
-    // ═════════════════════════════════════════════════════════════
+    // ── Test world flow — no save slot, weapon select then arena ──
 
     /// <summary>
     /// Called by MainMenuUI when the "Test Arena" button is clicked.
@@ -315,9 +283,7 @@ public class GameManager : MonoBehaviour
         LoadScene(scene);
     }
 
-    // ═════════════════════════════════════════════════════════════
-    // Saving
-    // ═════════════════════════════════════════════════════════════
+    // ── Saving ──
 
     public void SaveCheckpoint(string sceneName)
     {
@@ -334,9 +300,7 @@ public class GameManager : MonoBehaviour
         Debug.Log($"[GameManager] Checkpoint saved — slot {ActiveSlot}, scene '{sceneName}'");
     }
 
-    // ═════════════════════════════════════════════════════════════
-    // Death flow  (same as your original, extended for saves)
-    // ═════════════════════════════════════════════════════════════
+    // ── Death flow  (same as your original, extended for saves) ──
 
     private void OnPlayerDeath()
     {
@@ -355,10 +319,7 @@ public class GameManager : MonoBehaviour
             deathScreen.Show();
     }
 
-    // ═════════════════════════════════════════════════════════════
-    // Retry — called by DeathScreen Retry button
-    // Reloads the checkpoint scene (start of current level)
-    // ═════════════════════════════════════════════════════════════
+    // ── Retry — called by DeathScreen Retry button Reloads the checkpoint scene (start of current level) ──
 
     public void Retry()
     {
@@ -394,9 +355,7 @@ public class GameManager : MonoBehaviour
         }
     }
 
-    // ═════════════════════════════════════════════════════════════
-    // Game flow — called by PauseMenu and DeathScreen buttons
-    // ═════════════════════════════════════════════════════════════
+    // ── Game flow — called by PauseMenu and DeathScreen buttons ──
 
     public void ResetToCheckpoint()
     {
@@ -435,10 +394,7 @@ public class GameManager : MonoBehaviour
         ReturnToMainMenu();
     }
 
-    // ═════════════════════════════════════════════════════════════
-    // In-place reset (fallback when no save system active)
-    // Preserves your original respawn-at-spawnpoint behaviour
-    // ═════════════════════════════════════════════════════════════
+    // ── In-place reset (fallback when no save system active) Preserves your original respawn-at-spawnpoint behaviour ──
 
     private void ResetPlayerInPlace()
     {
@@ -457,9 +413,7 @@ public class GameManager : MonoBehaviour
         }
     }
 
-    // ═════════════════════════════════════════════════════════════
-    // Helpers
-    // ═════════════════════════════════════════════════════════════
+    // ── Helpers ──
 
     private void LoadScene(string sceneName)
     {

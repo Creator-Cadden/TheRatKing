@@ -2,6 +2,11 @@ using UnityEngine;
 using System.Collections.Generic;
 using System.Collections;
 
+/// <summary>
+/// Global audio singleton (AudioManager.Instance). Lives on the Audio prefab dropped
+/// into each level. Play one-shots or loops via Play(SoundType) / PlayLooping(SoundType);
+/// add new sounds to the SoundType enum + the clip list in the Inspector.
+/// </summary>
 public class AudioManager : MonoBehaviour
 {
 

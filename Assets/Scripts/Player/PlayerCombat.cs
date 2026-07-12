@@ -2,31 +2,10 @@ using UnityEngine;
 using UnityEngine.InputSystem;
 
 /// <summary>
-/// Combat router. Reads input from the Input System and dispatches attacks
-/// to whichever per-weapon controller is appropriate for the equipped weapon:
-///
-///   Blade  -> <see cref="BladeCombat"/>
-///   Hammer -> <see cref="HammerCombat"/>
-///   Bow    -> <see cref="BowController"/>
-///
-/// PlayerCombat itself no longer holds per-weapon stats. Each weapon owns its
-/// own reach, cooldown, gizmos, and hit scan code. Adding a 4th weapon later
-/// is just: create a new controller, add a branch in <see cref="OnAttack"/>.
-///
-/// What stays here:
-///   • Input callbacks (OnAttack, OnAim).
-///   • Animator triggers fired on the rat body + active weapon's animator.
-///   • _hasJumpAttacked flag — shared across all weapons (one jump = one air attack).
-///   • _isAiming forwarded from PlayerInput's OnAim (BowController also reads OnAim
-///     via SendMessages from PlayerInput so it has its own copy too).
-///   • HUD accessors (AttackCooldownProgress / JumpAttackCooldownProgress) that
-///     forward to the active weapon controller. AttackCooldownHUD reads these.
-///   • Bow rate-of-fire cooldown — bow still uses _currentAttackCooldown / _lastAttackTime
-///     since it doesn't have its own controller for that yet.
-///   • RecalculateAttackCooldown() — recalculates speed-affected cooldown for the
-///     bow and forwards to BladeCombat. Called by EntityStats on stat changes.
-///   • BowMove body animation — SetBool("BowMove") on _primaryAnimator each frame
-///     while the bow is equipped, charging, and the player is moving.
+/// Combat router. Reads attack/aim input and dispatches to the equipped weapon's
+/// controller: Blade → BladeCombat, Hammer → HammerCombat, Bow → BowController.
+/// Also fires the shared Attk/AirAttk animator triggers on the rat body + active
+/// weapon animator. To add a weapon: new controller + a branch in OnAttack.
 /// </summary>
 public class PlayerCombat : MonoBehaviour
 {
@@ -63,9 +42,7 @@ public class PlayerCombat : MonoBehaviour
              "Must exactly match the parameter name in the rat body Animator Controller.")]
     public string bowMoveAnimParam = "BowMove";
 
-    // ─────────────────────────────────────────
-    // Cached components
-    // ─────────────────────────────────────────
+    // ── Cached components ──
     private CharacterController _controller;
     private EntityStats         _stats;
     private BladeCombat         _blade;
@@ -73,9 +50,7 @@ public class PlayerCombat : MonoBehaviour
     private BowController       _bow;
     private WeaponModelSwapper  _swapper;
 
-    // ─────────────────────────────────────────
-    // Shared state
-    // ─────────────────────────────────────────
+    // ── Shared state ──
     private float _lastAttackTime;
     private float _lastJumpAttackTime;
     private bool  _hasJumpAttacked;
@@ -87,9 +62,7 @@ public class PlayerCombat : MonoBehaviour
     // BowController uses for Hold / Moving on the bow's own animator.
     private bool _lastBowMoveSent;
 
-    // =========================================================
-    // Lifecycle
-    // =========================================================
+    // ── Lifecycle ──
 
     void Awake()
     {
@@ -131,9 +104,7 @@ public class PlayerCombat : MonoBehaviour
         PushBowMoveAnim();
     }
 
-    // =========================================================
-    // Cooldown recalc
-    // =========================================================
+    // ── Cooldown recalc ──
 
     /// <summary>
     /// Called by EntityStats on every stat change (Speed leveled, weapon swap, reset).
@@ -162,9 +133,7 @@ public class PlayerCombat : MonoBehaviour
         _hammer?.RecalculateCooldown();
     }
 
-    // =========================================================
-    // Input — OnAttack routes per equipped weapon
-    // =========================================================
+    // ── Input — OnAttack routes per equipped weapon ──
 
     public void OnAttack(InputValue value)
     {
@@ -247,17 +216,13 @@ public class PlayerCombat : MonoBehaviour
     /// </summary>
     public void OnAim(InputValue value) => _isAiming = value.isPressed;
 
-    // ─────────────────────────────────────────
-    // Weapon swap shortcut helpers (still useful for menus / pickups)
-    // ─────────────────────────────────────────
+    // ── Weapon swap shortcut helpers (still useful for menus / pickups) ──
 
     public void EquipBlade()  => _stats?.EquipWeapon(EntityStats.WeaponType.Blade);
     public void EquipHammer() => _stats?.EquipWeapon(EntityStats.WeaponType.Hammer);
     public void EquipBow()    => _stats?.EquipWeapon(EntityStats.WeaponType.Bow);
 
-    // =========================================================
-    // Animator helpers
-    // =========================================================
+    // ── Animator helpers ──
 
     private void FireAttackAnims(string trigger, string secondTrigger = null)
     {
@@ -293,10 +258,7 @@ public class PlayerCombat : MonoBehaviour
         _lastBowMoveSent = bowMove;
     }
 
-    // =========================================================
-    // HUD accessors — forward to the active weapon's controller
-    // (kept as PlayerCombat properties so AttackCooldownHUD doesn't change)
-    // =========================================================
+    // ── HUD accessors — forward to the active weapon's controller (kept as PlayerCombat properties so AttackCooldownHUD doesn't change) ──
 
     public float AttackCooldownProgress
     {

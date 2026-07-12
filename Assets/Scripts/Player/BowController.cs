@@ -5,29 +5,10 @@ using System.Collections;
 /// <summary>
 /// Bow-specific attack logic. Sits on the Player GameObject alongside
 /// <see cref="PlayerCombat"/>. Active only when the equipped weapon is Bow.
-///
-/// Three attack modes:
-///
-///   • FREE-LOOK SHOT (grounded, not aiming, LMB tap)
-///     Single arrow forward along the rat's facing. Mild auto-target nudge
-///     toward an enemy in a small cone in front.
-///
-///   • AIMED SHOT (RMB held, LMB press)
-///     LMB press starts a CHARGE. Hold to build damage (linear ramp 1× → max).
-///     Release to fire. A super-quick tap fires a basic 1× shot.
-///
-///   • JUMP-ATTACK TRIPLE (mid-air, LMB tap)
-///     Three rapid-stagger arrows fired toward the ground in front (animation
-///     pitches the rat ~45° down — the script reads the rat's actual forward
-///     so it follows that animation pose).
-///
-/// PlayerCombat delegates to this when the equipped weapon is Bow. Hammer
-/// and Blade keep the existing PlayerCombat HitScan path untouched.
 /// </summary>
 [RequireComponent(typeof(EntityStats))]
 public class BowController : MonoBehaviour
 {
-    // ─────────────────────────────────────────
     [Header("Projectile")]
     [Tooltip("Arrow prefab to spawn. Must have the Arrow component.")]
     public Arrow arrowPrefab;
@@ -52,7 +33,6 @@ public class BowController : MonoBehaviour
              "6 = clear arc, mid-range only. 9.81 = real-world drop.")]
     public float arrowGravity = 3f;
 
-    // ─────────────────────────────────────────
     [Header("Aim Direction (for aim-mode shots)")]
     [Tooltip("OPTIONAL — drag a transform whose forward direction is the aim " +
              "direction (e.g. the cameraPitch transform from PlayerMovement). " +
@@ -67,7 +47,6 @@ public class BowController : MonoBehaviour
              "shoot-where-camera-looks behavior automatically.")]
     public bool useMainCameraIfUnset = true;
 
-    // ─────────────────────────────────────────
     [Header("Charge (Aimed Shot)")]
     [Tooltip("Time in seconds to reach max charge from press to release.")]
     public float maxChargeTime = 1.4f;
@@ -87,7 +66,6 @@ public class BowController : MonoBehaviour
     [Tooltip("Optional UI hook — read this 0..1 value from your HUD to draw a charge bar.")]
     public float CurrentChargeFraction { get; private set; }
 
-    // ─────────────────────────────────────────
     [Header("Free-Look Auto-Target")]
     [Tooltip("Half-angle (degrees) of the cone in front of the rat that's " +
              "checked for auto-aim. 0 = no assist.")]
@@ -102,7 +80,6 @@ public class BowController : MonoBehaviour
     [Range(0f, 1f)]
     public float autoTargetStrength = 0.5f;
 
-    // ─────────────────────────────────────────
     [Header("Jump-Attack Triple Shot")]
     [Tooltip("How many shots the jump-attack fires (3 by default).")]
     public int  tripleShotCount    = 3;
@@ -123,7 +100,6 @@ public class BowController : MonoBehaviour
     [Range(0f, 80f)]
     public float jumpShotPitchDown = 30f;
 
-    // ─────────────────────────────────────────
     [Header("Animator Parameters")]
     [Tooltip("Name of the bool parameter on the bow's Animator that is set TRUE " +
              "while the player holds a charge (aim mode, LMB held). " +
@@ -138,20 +114,16 @@ public class BowController : MonoBehaviour
              "Must exactly match the parameter name in the bow Animator Controller.")]
     public string movingAnimParam = "Moving";
 
-    // ─────────────────────────────────────────
     [Header("Movement Detection")]
     [Tooltip("Minimum squared speed (units/sec squared) before the player is considered " +
              "to be moving. Raise slightly if IsMovingWhileHolding flickers at rest. " +
              "Default 0.01 works for most setups.")]
     public float movingSpeedThresholdSq = 0.01f;
 
-    // ─────────────────────────────────────────
     [Header("Debug")]
     public bool verbose = false;
 
-    // ─────────────────────────────────────────
-    // Private state
-    // ─────────────────────────────────────────
+    // ── Private state ──
     private EntityStats        _stats;
     private WeaponModelSwapper _swapper;
     private InputAction        _attackAction;   // resolved at runtime from PlayerInput
@@ -169,7 +141,6 @@ public class BowController : MonoBehaviour
     private Rigidbody           _rb;
     private CharacterController _cc;
 
-    // ─────────────────────────────────────────
 
     void Awake()
     {
@@ -223,9 +194,7 @@ public class BowController : MonoBehaviour
         PushAnimatorBools();
     }
 
-    // =========================================================
-    // Public API — called by PlayerCombat.OnAttack when weapon = Bow
-    // =========================================================
+    // ── Public API — called by PlayerCombat.OnAttack when weapon = Bow ──
 
     /// <summary>
     /// Called by PlayerCombat when LMB is pressed while aiming (RMB held).
@@ -280,9 +249,7 @@ public class BowController : MonoBehaviour
         StartCoroutine(TripleShotRoutine());
     }
 
-    // ─────────────────────────────────────────
-    // Animation state bools
-    // ─────────────────────────────────────────
+    // ── Animation state bools ──
 
     /// <summary>
     /// TRUE while the player is holding LMB in aim mode and a charge is building.
@@ -297,25 +264,15 @@ public class BowController : MonoBehaviour
     /// </summary>
     public bool IsMovingWhileHolding => _isCharging && IsMoving();
 
-    /// <summary>UI hook — true while LMB is held and a charge is building.</summary>
+    /// <summary>
+    /// UI hook — true while LMB is held and a charge is building.
+    /// </summary>
     public bool IsCharging => _isCharging;
 
-    // =========================================================
-    // Internals
-    // =========================================================
+    // ── Internals ──
 
     /// <summary>
     /// Pushes Hold and Moving bools to the bow's Animator each frame.
-    ///
-    /// Routing: WeaponModelSwapper.ActiveWeaponAnimator returns the bow's
-    /// Animator when the bow is equipped (bowAnimator field on the swapper),
-    /// and null otherwise — the same reference PlayerCombat uses to fire
-    /// "BowAttk" triggers. This means the bow Animator Controller receives
-    /// all its driving (attack triggers AND charge bools) from a single,
-    /// consistent source with no extra Inspector wiring needed.
-    ///
-    /// Only calls SetBool when the value changes to avoid redundant Animator
-    /// state machine evaluations.
     /// </summary>
     private void PushAnimatorBools()
     {
@@ -373,10 +330,7 @@ public class BowController : MonoBehaviour
     /// <summary>
     /// Returns the world-space aim direction used for shots while aiming.
     /// Priority order:
-    ///   1. aimDirectionSource.forward (manual Inspector override)
-    ///   2. Camera.main.transform.forward (the actual rendering camera —
-    ///      this is what the player SEES, so arrows match the view)
-    ///   3. transform.forward (last resort if no camera is tagged MainCamera)
+    /// 1. aimDirectionSource.forward (manual Inspector override)
     /// </summary>
     private Vector3 GetAimDirection()
     {
@@ -438,9 +392,7 @@ public class BowController : MonoBehaviour
         arrow.Launch(direction, spd, damage, stagger, enemyLayer, arrowLifetime, arrowGravity);
     }
 
-    // ─────────────────────────────────────────
-    // Movement detection
-    // ─────────────────────────────────────────
+    // ── Movement detection ──
 
     /// <summary>
     /// Returns true if the player has meaningful horizontal velocity.
@@ -464,9 +416,7 @@ public class BowController : MonoBehaviour
         return false;
     }
 
-    // ─────────────────────────────────────────
-    // Auto-target lookup
-    // ─────────────────────────────────────────
+    // ── Auto-target lookup ──
 
     private EntityStats FindAutoTarget()
     {
@@ -502,9 +452,7 @@ public class BowController : MonoBehaviour
         return best;
     }
 
-    // ─────────────────────────────────────────
-    // Gizmos — auto-target cone preview
-    // ─────────────────────────────────────────
+    // ── Gizmos — auto-target cone preview ──
 
     void OnDrawGizmosSelected()
     {

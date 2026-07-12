@@ -1,15 +1,18 @@
 using UnityEngine;
 
 // Right-click in Project → Create → Rat King → Enemy Stat Block
+/// <summary>
+/// ScriptableObject holding every tunable number for ONE enemy type (damage, speed,
+/// attack shape + dimensions, aggro, knockback resistance). Make one asset per enemy
+/// kind; prefabs reference it through EntityStats. Edits affect all users of the asset.
+/// </summary>
 [CreateAssetMenu(fileName = "NewEnemyStatBlock", menuName = "Rat King/Enemy Stat Block")]
 public class EnemyStatBlock : BaseStatBlock
 {
     // Note: baseStamina from BaseStatBlock is unused on enemies.
     // attackCooldown controls attack frequency instead.
 
-    // ─────────────────────────────────────────
-    // ATTACK DAMAGE
-    // ─────────────────────────────────────────
+    // ── ATTACK DAMAGE ──
 
     [Header("Attack Damage")]
     [Tooltip("Minimum base damage per hit")]
@@ -22,9 +25,7 @@ public class EnemyStatBlock : BaseStatBlock
              "Total damage = Random(min, max) + (Strength × this value)")]
     public int attackStrengthBonus = 2;
 
-    // ─────────────────────────────────────────
-    // ATTACK SHAPE
-    // ─────────────────────────────────────────
+    // ── ATTACK SHAPE ──
 
     [Header("Attack Shape")]
     [Tooltip("Which shape this enemy's attack uses.\n" +
@@ -33,9 +34,7 @@ public class EnemyStatBlock : BaseStatBlock
              "Rectangle  = forward box    — set rectWidth + rectLength")]
     public AttackShape attackShape = AttackShape.Cone;
 
-    // ─────────────────────────────────────────
-    // ATTACK HITBOX — shared
-    // ─────────────────────────────────────────
+    // ── ATTACK HITBOX — shared ──
 
     [Header("Attack Hitbox — Shared")]
     [Tooltip("Vertical height of the overlap check in world units.\n" +
@@ -44,9 +43,7 @@ public class EnemyStatBlock : BaseStatBlock
              "slightly above or below the attack origin.")]
     public float attackHeight = 1.5f;
 
-    // ─────────────────────────────────────────
-    // ATTACK HITBOX — Cone
-    // ─────────────────────────────────────────
+    // ── ATTACK HITBOX — Cone ──
 
     [Header("Attack Hitbox — Cone")]
     [Tooltip("Radius of the attack cone in world units.\n" +
@@ -60,9 +57,7 @@ public class EnemyStatBlock : BaseStatBlock
     [Range(10f, 360f)]
     public float attackAngle = 60f;
 
-    // ─────────────────────────────────────────
-    // ATTACK HITBOX — Circle
-    // ─────────────────────────────────────────
+    // ── ATTACK HITBOX — Circle ──
 
     [Header("Attack Hitbox — Circle")]
     [Tooltip("Radius of the full-circle AoE in world units.\n" +
@@ -70,9 +65,7 @@ public class EnemyStatBlock : BaseStatBlock
              "Only used when attackShape = Circle.")]
     public float circleRadius = 2f;
 
-    // ─────────────────────────────────────────
-    // ATTACK HITBOX — Rectangle
-    // ─────────────────────────────────────────
+    // ── ATTACK HITBOX — Rectangle ──
 
     [Header("Attack Hitbox — Rectangle")]
     [Tooltip("Side-to-side width of the rectangular hitbox in world units.\n" +
@@ -84,9 +77,7 @@ public class EnemyStatBlock : BaseStatBlock
              "Only used when attackShape = Rectangle.")]
     public float rectLength = 2.5f;
 
-    // ─────────────────────────────────────────
-    // TIMING
-    // ─────────────────────────────────────────
+    // ── TIMING ──
 
     [Header("Attack Timing")]
     [Tooltip("Seconds between each attack.")]
@@ -100,9 +91,7 @@ public class EnemyStatBlock : BaseStatBlock
              "the attack state is force-cleared after this many seconds.")]
     public float attackAnimTimeout = 2.5f;
 
-    // ─────────────────────────────────────────
-    // DETECTION & MOVEMENT
-    // ─────────────────────────────────────────
+    // ── DETECTION & MOVEMENT ──
 
     [Header("Detection & Movement")]
     [Tooltip("Radius at which this enemy notices and chases the player.")]
@@ -124,9 +113,7 @@ public class EnemyStatBlock : BaseStatBlock
              "Set to 0 to disable persistent aggro and rely only on aggroRange.")]
     public float damagedAggroDuration = 60f;
 
-    // ─────────────────────────────────────────
-    // FLOOR SCALING — multiplies stats per dungeon floor above floor 1
-    // ─────────────────────────────────────────
+    // ── FLOOR SCALING — multiplies stats per dungeon floor above floor 1 ──
 
     [Header("Floor Scaling")]
     [Tooltip("Multiplier compounded onto baseHealth per dungeon floor above floor 1.\n" +
@@ -149,9 +136,7 @@ public class EnemyStatBlock : BaseStatBlock
     [Range(0.5f, 3f)]
     public float staminaScalePerFloor = 1.0f;
 
-    // ─────────────────────────────────────────
-    // KNOCKBACK RESPONSE
-    // ─────────────────────────────────────────
+    // ── KNOCKBACK RESPONSE ──
 
     [Header("Knockback Response")]
     [Tooltip("Force each Toughness point absorbs from an incoming hit.\n" +
@@ -170,9 +155,7 @@ public class EnemyStatBlock : BaseStatBlock
     [Tooltip("Raw knockback force from a bow hit (before Toughness reduction)")]
     public float bowKnockbackForce    = 2f;
 
-    // ─────────────────────────────────────────
-    // HELPERS
-    // ─────────────────────────────────────────
+    // ── HELPERS ──
 
     /// <summary>
     /// The flat XZ distance at which this enemy should attempt to attack.

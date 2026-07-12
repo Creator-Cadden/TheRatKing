@@ -1,5 +1,10 @@
 using UnityEngine;
 
+/// <summary>
+/// LEGACY gate — polls every frame until no colliders remain on the 'Enemy' layer,
+/// then slides down. Still used in lvl1–3. New rooms should prefer EncounterController:
+/// it is event-driven, tracks an explicit enemy list, and supports multiple rooms per scene.
+/// </summary>
 public class DoorBlock : MonoBehaviour
 {
     [SerializeField] private float moveDistance = 5f;

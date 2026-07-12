@@ -1,6 +1,13 @@
 using UnityEngine;
 using UnityEngine.AI;
 
+/// <summary>
+/// Movement/aggro brain for regular enemies (NOT the boss — see FatRatBoss).
+/// Drives the NavMeshAgent: idle → chase when player is in aggro range → stop at
+/// attack reach (read from EnemyCombat.CurrentAttackReach) → knockback handling.
+/// BossMinionSpawner sets speedMultiplier/permanentlyAggroed right after Instantiate,
+/// BEFORE Start() runs — Start() bakes speedMultiplier into agent.speed.
+/// </summary>
 public class EnemyAI : MonoBehaviour
 {
     [Header("Legacy Attack Migration")]
@@ -206,17 +213,6 @@ public class EnemyAI : MonoBehaviour
 
     /// <summary>
     /// Primary entry — call this when the player hits this enemy.
-    ///
-    ///   sourcePosition    = world position the hit came from (for push direction)
-    ///   staggerForce      = weapon-specific stagger force (PlayerCombat passes
-    ///                       blade/hammer/bow stagger forces). Determines if the
-    ///                       attack also cancels this enemy's windup.
-    ///   attackerToughness = the player's current Toughness. The knockback push
-    ///                       only fires if attackerToughness > THIS enemy's
-    ///                       Toughness. The attack-cancel only fires when the
-    ///                       stagger check also passes (staggerForce > enemy
-    ///                       Toughness). Keeps lighter weapons honest and
-    ///                       prevents stunlock combos on tougher enemies.
     /// </summary>
     public void TakeKnockback(Vector3 sourcePosition, int staggerForce, int attackerToughness)
     {
