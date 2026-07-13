@@ -1,17 +1,15 @@
 using UnityEngine;
 
 /// <summary>
-/// Enemy attack logic: windup telegraph (cone / circle / rectangle indicator),
-/// then a shape hit-check against the player. Shape + numbers come from the
-/// EnemyStatBlock; Captains override the shape each attack via CaptainCombat.
-/// EnemyAI reads CurrentAttackReach to know how close to chase.
+/// Decal (Tier 2) enemy combat: telegraphed shape indicator during windup,
+/// then a shape hit-check. Fully data-driven from the stat block's Decal
+/// Attacks list + cycle mode (Captain = 3 entries + Sequence, Tough dash =
+/// 1 rect entry). Used by Tough/Captain prefabs; enemies with basic attacks
+/// use their own EnemyCombatBase subclass (GruntCombat) instead or as well.
+/// CaptainCombat is DEPRECATED — the cycle now lives in the stat block.
 /// </summary>
-public class EnemyCombat : MonoBehaviour
+public class EnemyCombat : EnemyCombatBase
 {
-    [Header("Combat Setup")]
-    public LayerMask  playerLayer;
-    public Transform  attackOrigin;
-
     [Header("Attack Indicator")]
     [Tooltip("Color shown during the windup telegraph. Alpha fades in over attackWindupTime.")]
     public Color windupColor  = new Color(1f, 0.15f, 0.1f, 0.55f);
@@ -19,64 +17,69 @@ public class EnemyCombat : MonoBehaviour
     [Tooltip("Color flashed at the moment the hit fires.")]
     public Color executeColor = new Color(1f, 0.6f, 0f, 0.75f);
 
-    [Header("Debug")]
-    public bool verboseAttackLog = false;
-
-    // ── References ─────────────────────────────────────────────────────
-    private EntityStats    _selfStats;
-    private EntityStats    _playerStats;
-    private EnemyStatBlock _sb;
-    private Animator       _animator;
-    private Transform      _player;
-
     // ── State ──────────────────────────────────────────────────────────
+    // (playerLayer, attackOrigin, verboseAttackLog, stat/player refs,
+    //  _lastAttackTime and _lockedRotation now live in EnemyCombatBase.)
     private bool  _isAttacking;
     private bool  _isWindingUp;
     private float _attackStartTime;
     private float _windupStartTime;
-    private float _lastAttackTime;
+    private float _nextAttackReadyTime;   // per-entry cooldown gate
 
-    // ── Rotation lock ──────────────────────────────────────────────────
-    private Quaternion _lockedRotation;
-    public  bool       IsRotationLocked => _isWindingUp || _isAttacking;
+    public override bool IsRotationLocked => _isWindingUp || _isAttacking;
 
-    // ── Runtime shape override ─────────────────────────────────────────
-    // Lets a controller (e.g. CaptainCombat) swap which attack shape this
-    // EnemyCombat uses on a per-attack basis without editing the SO.
-    // Set to null to fall back to the stat block's configured shape.
-    public AttackShape? RuntimeShapeOverride;
+    // ── Decal attack selection ─────────────────────────────────────────
+    // The stat block holds the decal attack LIST + cycle mode. This tracks
+    // which entry is active. Cycle advances just before each windup.
+    private int _decalIndex = -1;
 
-    /// <summary>
-    /// The shape this enemy will actually use for its next/current attack.
-    /// </summary>
-    public AttackShape ActiveShape =>
-        RuntimeShapeOverride.HasValue ? RuntimeShapeOverride.Value :
-        (_sb != null ? _sb.attackShape : AttackShape.Cone);
-
-    /// <summary>
-    /// Reach distance for the currently-active attack shape.
-    /// EnemyAI reads this instead of EnemyStatBlock.AttackReach so dynamic
-    /// shape switching (Captain) actually changes the chase/attack range.
-    /// </summary>
-    public float CurrentAttackReach
+    /// <summary>The decal attack entry this enemy will use next/currently.
+    /// Null when the stat block has no decal attacks configured.</summary>
+    public DecalAttackConfig CurrentDecal
     {
         get
         {
-            if (_sb == null) return 1.8f;
-            return ActiveShape switch
-            {
-                AttackShape.Circle    => _sb.circleRadius,
-                AttackShape.Rectangle => _sb.rectLength,
-                _                     => _sb.attackRadius,   // Cone
-            };
+            if (_sb == null || !_sb.hasDecalAttack ||
+                _sb.decalAttacks == null || _sb.decalAttacks.Length == 0)
+                return null;
+            int i = Mathf.Clamp(Mathf.Max(0, _decalIndex), 0, _sb.decalAttacks.Length - 1);
+            return _sb.decalAttacks[i];
         }
     }
 
-    /// <summary>
-    /// Fires the moment a new windup is about to start. Lets controllers
-    /// (CaptainCombat, future variants) pick a fresh shape just-in-time.
-    /// </summary>
-    public System.Action OnBeforeWindup;
+    /// <summary>Shape of the current decal entry (Cone fallback).</summary>
+    public AttackShape ActiveShape => CurrentDecal?.shape ?? AttackShape.Cone;
+
+    /// <summary>Reach of the current decal entry — EnemyAI closes to this.</summary>
+    public override float CurrentAttackReach => CurrentDecal?.Reach ?? 1.8f;
+
+    /// <summary>Advance the decal index according to the stat block's cycle mode.
+    /// Called just before each windup so reach is evaluated on the NEW entry.</summary>
+    private void PickNextDecal()
+    {
+        int count = _sb.decalAttacks != null ? _sb.decalAttacks.Length : 0;
+        if (count <= 1) { _decalIndex = 0; return; }
+
+        switch (_sb.decalCycleMode)
+        {
+            case DecalCycleMode.Sequence:
+                _decalIndex = (_decalIndex + 1) % count;
+                break;
+            case DecalCycleMode.Random:
+                int j;
+                do { j = Random.Range(0, count); }
+                while (j == _decalIndex);
+                _decalIndex = j;
+                break;
+            default:                       // None
+                _decalIndex = 0;
+                break;
+        }
+
+        if (verboseAttackLog)
+            Debug.Log($"[EnemyCombat] {gameObject.name} next decal → " +
+                      $"{_sb.decalAttacks[_decalIndex].name} ({_sb.decalAttacks[_decalIndex].shape})");
+    }
 
     // ── Indicator ──────────────────────────────────────────────────────
     private GameObject            _indicator;
@@ -94,16 +97,12 @@ public class EnemyCombat : MonoBehaviour
     private float _cachedRectL;
 
     // ── Public ─────────────────────────────────────────────────────────
-    public bool       IsBusy            => _isAttacking || _isWindingUp;
-    public Vector3    HitOriginPosition => HitOrigin.position;
-    private Transform HitOrigin         => attackOrigin != null ? attackOrigin : transform;
+    public override bool IsBusy => _isAttacking || _isWindingUp;
 
-    void Awake()
+    protected override void Awake()
     {
-        _selfStats = GetComponent<EntityStats>();
-        _animator  = GetComponentInChildren<Animator>();
-        _sb        = _selfStats != null ? _selfStats.enemyStatBlock : null;
-        _mpb       = new MaterialPropertyBlock();
+        base.Awake();
+        _mpb = new MaterialPropertyBlock();
     }
 
     void OnDestroy()
@@ -129,22 +128,7 @@ public class EnemyCombat : MonoBehaviour
         Gizmos.DrawWireSphere(transform.position, sb.stopRange);
     }
 
-    public void ConfigureRuntime(Transform player, EntityStats playerStats,
-        Transform fallbackOrigin, LayerMask fallbackLayer, bool verbose)
-    {
-        _player          = player;
-        _playerStats     = playerStats;
-        verboseAttackLog = verbose;
-
-        if (attackOrigin      == null && fallbackOrigin != null)   attackOrigin = fallbackOrigin;
-        if (playerLayer.value == 0    && fallbackLayer.value != 0) playerLayer  = fallbackLayer;
-
-        if (_selfStats == null) _selfStats = GetComponent<EntityStats>();
-        if (_animator  == null) _animator  = GetComponentInChildren<Animator>();
-        if (_sb == null && _selfStats != null) _sb = _selfStats.enemyStatBlock;
-    }
-
-    public void Tick()
+    public override void Tick()
     {
         if (_sb == null) return;
 
@@ -163,37 +147,37 @@ public class EnemyCombat : MonoBehaviour
 
         if (_isWindingUp)
         {
-            float t = Mathf.Clamp01((Time.time - _windupStartTime) / _sb.attackWindupTime);
+            float windup = CurrentDecal != null ? CurrentDecal.windupTime : 0.6f;
+            float t = Mathf.Clamp01((Time.time - _windupStartTime) / Mathf.Max(0.0001f, windup));
             Color c = windupColor;
             c.a *= t;
             SetIndicatorColor(c);
 
-            if (Time.time >= _windupStartTime + _sb.attackWindupTime)
+            if (Time.time >= _windupStartTime + windup)
                 ExecuteAttack();
         }
     }
 
-    public void TryStartAttack(float distToPlayer)
+    public override void TryStartAttack(float distToPlayer)
     {
         if (_sb == null || _player == null)                   return;
+        if (!_sb.hasDecalAttack)                              return;
         if (_isAttacking || _isWindingUp)                     return;
-        if (Time.time < _lastAttackTime + _sb.attackCooldown) return;
+        if (Time.time < _nextAttackReadyTime)                 return;
 
-        // Pick the shape for THIS attack first — controllers (e.g. CaptainCombat)
-        // hook in here to cycle/randomize before reach is evaluated.
-        OnBeforeWindup?.Invoke();
+        // Advance the cycle FIRST so reach is evaluated on the new entry.
+        PickNextDecal();
+        if (CurrentDecal == null)                             return;
 
         if (distToPlayer > CurrentAttackReach + 0.35f)        return;
 
-        _lastAttackTime  = Time.time;
+        // Cooldown is per-entry — a big cone can have a longer recovery than
+        // the quick rect lunge. Timed from windup start (same as before).
+        _nextAttackReadyTime = Time.time + CurrentDecal.cooldown;
         _isWindingUp     = true;
         _windupStartTime = Time.time;
 
-        Vector3 lookDir = _player.position - transform.position;
-        lookDir.y = 0f;
-        if (lookDir.sqrMagnitude > 0.001f)
-            transform.rotation = Quaternion.LookRotation(lookDir);
-        _lockedRotation = transform.rotation;
+        FaceAndLockOntoPlayer();
 
         BuildIndicator();
         SnapIndicatorToOrigin();
@@ -232,43 +216,43 @@ public class EnemyCombat : MonoBehaviour
         }
     }
 
-    public void OnAttackHitFrame()
+    public override void OnAttackHitFrame()
     {
         if (_sb == null || _playerStats == null || _selfStats == null) return;
 
-        AttackShape shape = ActiveShape;
-        bool hit = shape switch
+        DecalAttackConfig atk = CurrentDecal;
+        if (atk == null) return;
+
+        bool hit = atk.shape switch
         {
-            AttackShape.Circle    => CheckCircleHit(),
-            AttackShape.Rectangle => CheckRectHit(),
-            _                     => CheckConeHit(),
+            AttackShape.Circle    => CheckCircleHit(atk),
+            AttackShape.Rectangle => CheckRectHit(atk),
+            _                     => CheckConeHit(atk),
         };
 
         if (!hit) return;
 
-        int damage = Random.Range(_sb.attackDamageMin, _sb.attackDamageMax + 1)
-                   + _selfStats.Strength * _sb.attackStrengthBonus;
-
+        int damage = RollDamage(atk.damageMin, atk.damageMax);
         _playerStats.TakeDamage(damage);
 
         if (verboseAttackLog)
-            Debug.Log($"[EnemyCombat] {gameObject.name} hit player for {damage} ({shape})");
+            Debug.Log($"[EnemyCombat] {gameObject.name} hit player for {damage} ({atk.name}/{atk.shape})");
     }
 
-    public void OnAttackEnd()
+    public override void OnAttackEnd()
     {
         _isAttacking = false;
         ShowIndicator(false);
     }
 
-    public void CancelAttackState()
+    public override void CancelAttackState()
     {
         _isWindingUp = false;
         _isAttacking = false;
         ShowIndicator(false);
     }
 
-    public void CancelWindup()
+    public override void CancelWindup()
     {
         _isWindingUp = false;
         if (!_isAttacking) ShowIndicator(false);
@@ -276,14 +260,14 @@ public class EnemyCombat : MonoBehaviour
 
     // ── Hit detection ──
 
-    private bool CheckConeHit()
+    private bool CheckConeHit(DecalAttackConfig atk)
     {
         Vector3 o         = HitOriginPosition;
-        float   halfAngle = _sb.attackAngle * 0.5f;
-        Vector3 bottom    = o - Vector3.up * (_sb.attackHeight * 0.5f);
-        Vector3 top       = o + Vector3.up * (_sb.attackHeight * 0.5f);
+        float   halfAngle = atk.coneAngle * 0.5f;
+        Vector3 bottom    = o - Vector3.up * (atk.height * 0.5f);
+        Vector3 top       = o + Vector3.up * (atk.height * 0.5f);
 
-        foreach (Collider hit in Physics.OverlapCapsule(bottom, top, _sb.attackRadius, playerLayer))
+        foreach (Collider hit in Physics.OverlapCapsule(bottom, top, atk.coneRadius, playerLayer))
         {
             Vector3 toTarget = hit.transform.position - o;
             toTarget.y = 0f;
@@ -293,19 +277,19 @@ public class EnemyCombat : MonoBehaviour
         return false;
     }
 
-    private bool CheckCircleHit()
+    private bool CheckCircleHit(DecalAttackConfig atk)
     {
         Vector3 o      = HitOriginPosition;
-        Vector3 bottom = o - Vector3.up * (_sb.attackHeight * 0.5f);
-        Vector3 top    = o + Vector3.up * (_sb.attackHeight * 0.5f);
-        return Physics.OverlapCapsule(bottom, top, _sb.circleRadius, playerLayer).Length > 0;
+        Vector3 bottom = o - Vector3.up * (atk.height * 0.5f);
+        Vector3 top    = o + Vector3.up * (atk.height * 0.5f);
+        return Physics.OverlapCapsule(bottom, top, atk.circleRadius, playerLayer).Length > 0;
     }
 
-    private bool CheckRectHit()
+    private bool CheckRectHit(DecalAttackConfig atk)
     {
         Vector3 originXZ = new Vector3(transform.position.x, HitOriginPosition.y, transform.position.z);
-        Vector3 center   = originXZ + transform.forward * (_sb.rectLength * 0.5f);
-        Vector3 halfExt  = new Vector3(_sb.rectWidth * 0.5f, _sb.attackHeight * 0.5f, _sb.rectLength * 0.5f);
+        Vector3 center   = originXZ + transform.forward * (atk.rectLength * 0.5f);
+        Vector3 halfExt  = new Vector3(atk.rectWidth * 0.5f, atk.height * 0.5f, atk.rectLength * 0.5f);
         return Physics.OverlapBox(center, halfExt, transform.rotation, playerLayer).Length > 0;
     }
 
@@ -313,34 +297,33 @@ public class EnemyCombat : MonoBehaviour
 
     private void BuildIndicator()
     {
-        if (_sb == null) return;
+        DecalAttackConfig atk = CurrentDecal;
+        if (atk == null) return;
 
         EnsureIndicatorObject();
 
-        AttackShape shape = ActiveShape;
-
-        bool needsRebuild = _lastBuiltShape != shape
-            || !Mathf.Approximately(_cachedRadius,  _sb.attackRadius)
-            || !Mathf.Approximately(_cachedAngle,   _sb.attackAngle)
-            || !Mathf.Approximately(_cachedCircleR, _sb.circleRadius)
-            || !Mathf.Approximately(_cachedRectW,   _sb.rectWidth)
-            || !Mathf.Approximately(_cachedRectL,   _sb.rectLength);
+        bool needsRebuild = _lastBuiltShape != atk.shape
+            || !Mathf.Approximately(_cachedRadius,  atk.coneRadius)
+            || !Mathf.Approximately(_cachedAngle,   atk.coneAngle)
+            || !Mathf.Approximately(_cachedCircleR, atk.circleRadius)
+            || !Mathf.Approximately(_cachedRectW,   atk.rectWidth)
+            || !Mathf.Approximately(_cachedRectL,   atk.rectLength);
 
         if (needsRebuild)
         {
-            _indicatorFilter.sharedMesh = shape switch
+            _indicatorFilter.sharedMesh = atk.shape switch
             {
-                AttackShape.Circle    => BuildDiskMesh(_sb.circleRadius, 48),
-                AttackShape.Rectangle => BuildRectMesh(_sb.rectWidth, _sb.rectLength),
-                _                     => BuildConeMesh(_sb.attackRadius, _sb.attackAngle, 32),
+                AttackShape.Circle    => BuildDiskMesh(atk.circleRadius, 48),
+                AttackShape.Rectangle => BuildRectMesh(atk.rectWidth, atk.rectLength),
+                _                     => BuildConeMesh(atk.coneRadius, atk.coneAngle, 32),
             };
 
-            _lastBuiltShape = shape;
-            _cachedRadius   = _sb.attackRadius;
-            _cachedAngle    = _sb.attackAngle;
-            _cachedCircleR  = _sb.circleRadius;
-            _cachedRectW    = _sb.rectWidth;
-            _cachedRectL    = _sb.rectLength;
+            _lastBuiltShape = atk.shape;
+            _cachedRadius   = atk.coneRadius;
+            _cachedAngle    = atk.coneAngle;
+            _cachedCircleR  = atk.circleRadius;
+            _cachedRectW    = atk.rectWidth;
+            _cachedRectL    = atk.rectLength;
         }
     }
 

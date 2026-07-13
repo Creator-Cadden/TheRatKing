@@ -30,7 +30,7 @@ public class EnemyAI : MonoBehaviour
     private EntityStats _playerStats;
     private Animator _animator;
     private EnemyStatBlock _sb;
-    private EnemyCombat _combat;
+    private EnemyCombatBase _combat;   // any enemy type's combat script (GruntCombat, EnemyCombat legacy, ...)
 
     private bool  _isAggroed;
     private bool  _isKnockedBack;
@@ -62,6 +62,11 @@ public class EnemyAI : MonoBehaviour
     // exact frame the lock releases and start the post-attack pause.
     private bool _wasRotationLocked;
 
+    /// <summary>True during the brief stand-still window after an attack —
+    /// exposed for debug visuals (GruntCombat's state ball) and future
+    /// punish-window logic.</summary>
+    public bool IsInPostAttackPause => _isPostAttackPause;
+
     void Start()
     {
         _stats = GetComponent<EntityStats>();
@@ -75,7 +80,10 @@ public class EnemyAI : MonoBehaviour
 
         _sb = _stats.enemyStatBlock;
 
-        _combat = GetComponent<EnemyCombat>();
+        // Find whichever combat script this enemy type uses (GruntCombat,
+        // legacy EnemyCombat, future ToughCombat...). Only auto-add the legacy
+        // decal version if the prefab has no combat script at all.
+        _combat = GetComponent<EnemyCombatBase>();
         if (_combat == null) _combat = gameObject.AddComponent<EnemyCombat>();
 
         _agent = GetComponent<NavMeshAgent>();
@@ -291,53 +299,12 @@ public class EnemyAI : MonoBehaviour
 
         if (!showAttackGizmo) return;
 
-        Gizmos.color = new Color(1f, 0.1f, 0.1f, 0.9f);
-
-        DrawConePrismGizmo(
-            hitOrigin,
-            transform.forward,
-            sb.attackRadius,
-            sb.attackAngle,
-            sb.attackHeight
-        );
-    }
-
-    private void DrawConePrismGizmo(Vector3 origin, Vector3 forward, float radius, float angleDeg, float height)
-    {
-        int segments = 24;
-        float halfH = height * 0.5f;
-        float halfAngle = angleDeg * 0.5f;
-        Vector3 up = Vector3.up;
-
-        Vector3[] topArc    = new Vector3[segments + 1];
-        Vector3[] bottomArc = new Vector3[segments + 1];
-
-        for (int i = 0; i <= segments; i++)
+        // Attack reach ring — basic attack reach (each combat script draws its
+        // own detailed hit-volume gizmo; this is just the engage distance).
+        if (sb.hasBasicAttack && sb.basicAttack != null)
         {
-            float t   = (float)i / segments;
-            float a   = Mathf.Lerp(-halfAngle, halfAngle, t);
-            Quaternion rot = Quaternion.Euler(0, a, 0);
-            Vector3 dir    = rot * forward;
-            topArc[i]    = origin + dir * radius + up * halfH;
-            bottomArc[i] = origin + dir * radius - up * halfH;
+            Gizmos.color = new Color(1f, 0.1f, 0.1f, 0.9f);
+            Gizmos.DrawWireSphere(hitOrigin, sb.basicAttack.reach);
         }
-
-        for (int i = 0; i < segments; i++)
-        {
-            Gizmos.DrawLine(topArc[i],    topArc[i + 1]);
-            Gizmos.DrawLine(bottomArc[i], bottomArc[i + 1]);
-        }
-
-        for (int i = 0; i <= segments; i++)
-            Gizmos.DrawLine(topArc[i], bottomArc[i]);
-
-        Vector3 topOrigin    = origin + up * halfH;
-        Vector3 bottomOrigin = origin - up * halfH;
-
-        Gizmos.DrawLine(topOrigin,    topArc[0]);
-        Gizmos.DrawLine(bottomOrigin, bottomArc[0]);
-        Gizmos.DrawLine(topOrigin,    topArc[segments]);
-        Gizmos.DrawLine(bottomOrigin, bottomArc[segments]);
-        Gizmos.DrawLine(topOrigin,    bottomOrigin);
     }
 }

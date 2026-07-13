@@ -1,170 +1,219 @@
+using System;
 using UnityEngine;
 
 // Right-click in Project → Create → Rat King → Enemy Stat Block
+
 /// <summary>
-/// ScriptableObject holding every tunable number for ONE enemy type (damage, speed,
-/// attack shape + dimensions, aggro, knockback resistance). Make one asset per enemy
-/// kind; prefabs reference it through EntityStats. Edits affect all users of the asset.
+/// How the decal attack list is walked when the enemy has more than one entry.
+/// </summary>
+public enum DecalCycleMode
+{
+    [InspectorName("None (always first entry)")]
+    None,
+    [InspectorName("Sequence (1 → 2 → 3 → 1 ...)")]
+    Sequence,
+    [InspectorName("Random (never repeats the same one)")]
+    Random,
+}
+
+/// <summary>
+/// Tier 1 attack — no decal. The windup ANIMATION is the telegraph.
+/// Read by per-enemy scripts like GruntCombat (hit volume position/size
+/// lives on the script's attackPoint, not here).
+/// </summary>
+[Serializable]
+public class BasicAttackConfig
+{
+    [Tooltip("Minimum damage per hit (before Strength bonus).")]
+    public int damageMin = 5;
+
+    [Tooltip("Maximum damage per hit (before Strength bonus).")]
+    public int damageMax = 5;
+
+    [Tooltip("Distance at which the enemy will attempt this attack.")]
+    public float reach = 1.7f;
+
+    [Tooltip("Seconds of windup (rear-back pose) before the strike. " +
+             "Match this to the windup animation length.")]
+    public float windupTime = 0.45f;
+
+    [Tooltip("Seconds after this attack before the next attack can start.")]
+    public float cooldown = 1.3f;
+}
+
+/// <summary>
+/// Tier 2 attack — telegraphed by a floor decal. One entry per distinct
+/// attack; the cycle mode on the stat block decides how entries rotate
+/// (Captain = 3 entries + Sequence, Tough dash = 1 rect entry, Balloon =
+/// 1 circle entry).
+/// </summary>
+[Serializable]
+public class DecalAttackConfig
+{
+    [Tooltip("Label shown in the Inspector list — has no gameplay effect.")]
+    public string name = "Attack";
+
+    [Tooltip("Cone = forward arc. Circle = 360° area. Rectangle = forward box (dash/charge).")]
+    public AttackShape shape = AttackShape.Cone;
+
+    [Header("Damage")]
+    [Tooltip("Minimum damage (before Strength bonus). Decals hit harder than basics.")]
+    public int damageMin = 15;
+
+    [Tooltip("Maximum damage (before Strength bonus).")]
+    public int damageMax = 15;
+
+    [Header("Cone (only when shape = Cone)")]
+    [Tooltip("Forward reach of the cone. Also the attack range for this entry.")]
+    public float coneRadius = 3f;
+
+    [Range(10f, 360f)]
+    [Tooltip("Sweep of the cone in degrees. 90 = quarter circle.")]
+    public float coneAngle = 90f;
+
+    [Header("Circle (only when shape = Circle)")]
+    [Tooltip("Radius of the 360° area. Also the attack range for this entry.")]
+    public float circleRadius = 2.5f;
+
+    [Header("Rectangle (only when shape = Rectangle)")]
+    [Tooltip("Side-to-side width of the box.")]
+    public float rectWidth = 1.5f;
+
+    [Tooltip("Forward length of the box. Also the attack range for this entry.")]
+    public float rectLength = 4f;
+
+    [Header("Shared")]
+    [Tooltip("Vertical height of the damage volume (hits slightly above/below).")]
+    public float height = 1.5f;
+
+    [Tooltip("Seconds the decal shows before the hit lands. Decals are a promise — " +
+             "give the player time to move.")]
+    public float windupTime = 0.8f;
+
+    [Tooltip("Seconds after this attack before the next attack can start.")]
+    public float cooldown = 2f;
+
+    /// <summary>Distance at which the enemy attempts this attack.</summary>
+    public float Reach => shape switch
+    {
+        AttackShape.Circle    => circleRadius,
+        AttackShape.Rectangle => rectLength,
+        _                     => coneRadius,
+    };
+}
+
+/// <summary>
+/// All tunable numbers for ONE enemy type, organized by the two-tier telegraph
+/// grammar: Basic Attack (no decal, animation telegraph) vs Decal Attacks
+/// (floor telegraph, optional rotation cycle). One asset per enemy kind;
+/// prefabs reference it through EntityStats. Per-enemy BEHAVIOR lives in the
+/// enemy's own combat script (GruntCombat etc.) — only DATA lives here.
+/// Inherited from BaseStatBlock: baseHealth, baseStrength, baseSpeed,
+/// baseToughness (baseStamina is unused on enemies).
 /// </summary>
 [CreateAssetMenu(fileName = "NewEnemyStatBlock", menuName = "Rat King/Enemy Stat Block")]
 public class EnemyStatBlock : BaseStatBlock
 {
-    // Note: baseStamina from BaseStatBlock is unused on enemies.
-    // attackCooldown controls attack frequency instead.
+    // ── IDENTITY ──
 
-    // ── ATTACK DAMAGE ──
+    [Header("Identity")]
+    [Tooltip("Display name for '+X XP from {name}' and (later) miniboss health bars. " +
+             "Blank = GameObject's name.")]
+    public string displayName = "";
 
-    [Header("Attack Damage")]
-    [Tooltip("Minimum base damage per hit")]
-    public int attackDamageMin = 8;
+    [Tooltip("XP granted when this enemy dies. EnemyXPDrop reads this.")]
+    public int xpReward = 10;
 
-    [Tooltip("Maximum base damage per hit")]
-    public int attackDamageMax = 10;
+    // ── MOVEMENT & AGGRO ──
 
-    [Tooltip("Flat bonus damage added per point of Strength.\n" +
-             "Total damage = Random(min, max) + (Strength × this value)")]
-    public int attackStrengthBonus = 2;
+    [Header("Movement & Aggro")]
+    [Tooltip("NavMesh movement speed toward the player.")]
+    public float moveSpeed = 3.5f;
 
-    // ── ATTACK SHAPE ──
-
-    [Header("Attack Shape")]
-    [Tooltip("Which shape this enemy's attack uses.\n" +
-             "Cone       = forward arc    — set attackRadius + attackAngle\n" +
-             "Circle     = full 360° area — set circleRadius\n" +
-             "Rectangle  = forward box    — set rectWidth + rectLength")]
-    public AttackShape attackShape = AttackShape.Cone;
-
-    // ── ATTACK HITBOX — shared ──
-
-    [Header("Attack Hitbox — Shared")]
-    [Tooltip("Vertical height of the overlap check in world units.\n" +
-             "Does NOT affect the visible flat indicator — only controls how tall\n" +
-             "the damage volume is so it can still hit the player if they are\n" +
-             "slightly above or below the attack origin.")]
-    public float attackHeight = 1.5f;
-
-    // ── ATTACK HITBOX — Cone ──
-
-    [Header("Attack Hitbox — Cone")]
-    [Tooltip("Radius of the attack cone in world units.\n" +
-             "This is ALSO the distance at which the enemy will attempt to attack.\n" +
-             "Only used when attackShape = Cone.")]
-    public float attackRadius = 1.8f;
-
-    [Tooltip("Sweep of the attack cone in degrees.\n" +
-             "60 = focused forward swing. 180 = wide half-circle.\n" +
-             "Only used when attackShape = Cone.")]
-    [Range(10f, 360f)]
-    public float attackAngle = 60f;
-
-    // ── ATTACK HITBOX — Circle ──
-
-    [Header("Attack Hitbox — Circle")]
-    [Tooltip("Radius of the full-circle AoE in world units.\n" +
-             "This is ALSO the distance at which the enemy will attempt to attack.\n" +
-             "Only used when attackShape = Circle.")]
-    public float circleRadius = 2f;
-
-    // ── ATTACK HITBOX — Rectangle ──
-
-    [Header("Attack Hitbox — Rectangle")]
-    [Tooltip("Side-to-side width of the rectangular hitbox in world units.\n" +
-             "Only used when attackShape = Rectangle.")]
-    public float rectWidth = 1.5f;
-
-    [Tooltip("Forward reach of the rectangular hitbox in world units.\n" +
-             "This is ALSO the distance at which the enemy will attempt to attack.\n" +
-             "Only used when attackShape = Rectangle.")]
-    public float rectLength = 2.5f;
-
-    // ── TIMING ──
-
-    [Header("Attack Timing")]
-    [Tooltip("Seconds between each attack.")]
-    public float attackCooldown = 1.5f;
-
-    [Tooltip("Seconds the enemy shows the indicator before the hit lands.\n" +
-             "Gives the player time to react and step out.")]
-    public float attackWindupTime = 0.6f;
-
-    [Tooltip("Safety timeout. If the attack animation never fires its end event\n" +
-             "the attack state is force-cleared after this many seconds.")]
-    public float attackAnimTimeout = 2.5f;
-
-    // ── DETECTION & MOVEMENT ──
-
-    [Header("Detection & Movement")]
     [Tooltip("Radius at which this enemy notices and chases the player.")]
     public float aggroRange = 8f;
 
-    [Tooltip("Distance at which the enemy stops walking and waits to attack.\n" +
-             "Set this to roughly match your attack reach so the enemy stops\n" +
-             "just before it fires. Does NOT control when the attack fires —\n" +
-             "the attack shape's own reach does that.")]
+    [Tooltip("Distance at which the enemy stops walking and waits to attack. " +
+             "Set roughly to the shortest attack reach.")]
     public float stopRange = 1.5f;
 
-    [Tooltip("NavMesh movement speed toward the player.")]
-    public float moveSpeed = 10f;
-
-    [Header("Damage Memory")]
-    [Tooltip("Seconds the enemy stays aggro'd after being damaged, even if the player walks " +
-             "out of aggroRange. Prevents ranged 'plink-from-safety' cheese — the enemy will " +
-             "actively hunt anyone who hits it for this long.\n" +
-             "Set to 0 to disable persistent aggro and rely only on aggroRange.")]
+    [Tooltip("Seconds the enemy stays aggro'd after being damaged even outside " +
+             "aggroRange (anti plink-from-safety). 0 = disabled.")]
     public float damagedAggroDuration = 60f;
 
-    // ── FLOOR SCALING — multiplies stats per dungeon floor above floor 1 ──
+    // ── BASIC ATTACK (TIER 1 — no decal, animation is the telegraph) ──
+
+    [Header("Basic Attack (Tier 1 — no decal)")]
+    [Tooltip("Does this enemy have an unmarked melee attack? Grunt: yes (its only " +
+             "attack). Tough/Captain: yes (filler swipe). Balloon/Boss: no.")]
+    public bool hasBasicAttack = true;
+
+    public BasicAttackConfig basicAttack = new BasicAttackConfig();
+
+    // ── DECAL ATTACKS (TIER 2 — floor telegraph) ──
+
+    [Header("Decal Attacks (Tier 2 — floor telegraph)")]
+    [Tooltip("Does this enemy have telegraphed decal attacks? Grunt: no. " +
+             "Tough: 1 (rect dash). Captain: 3 (cone/circle/rect rotation). " +
+             "Balloon: 1 (circle).")]
+    public bool hasDecalAttack = false;
+
+    [Tooltip("How the list below is walked when there's more than one entry.\n" +
+             "None = always the first entry. Sequence = fixed learnable rotation " +
+             "(the Captain's midterm pattern). Random = shuffled, no repeats.")]
+    public DecalCycleMode decalCycleMode = DecalCycleMode.None;
+
+    [Tooltip("One entry per distinct decal attack, each with its own shape, " +
+             "damage, and timing.")]
+    public DecalAttackConfig[] decalAttacks = new DecalAttackConfig[0];
+
+    // ── DAMAGE SCALING ──
+
+    [Header("Damage Scaling")]
+    [Tooltip("Flat bonus damage added per point of Strength to EVERY attack " +
+             "(basic and decal): total = Random(min,max) + Strength × this. " +
+             "Combined with strengthScalePerFloor this is how enemy damage " +
+             "grows on deeper floors. FatRatBoss reads this too.")]
+    public int attackStrengthBonus = 0;
+
+    // ── FLOOR SCALING ──
 
     [Header("Floor Scaling")]
-    [Tooltip("Multiplier compounded onto baseHealth per dungeon floor above floor 1.\n" +
-             "Floor 1: HP × 1\n" +
-             "Floor 2: HP × healthScalePerFloor\n" +
-             "Floor 3: HP × healthScalePerFloor²\n" +
-             "1.0 = no scaling. 1.25 = +25% per floor (1.56× by floor 3).")]
+    [Tooltip("Multiplier compounded onto baseHealth per floor above 1. " +
+             "1.0 = none. 1.25 = +25%/floor.")]
     [Range(0.5f, 3f)]
     public float healthScalePerFloor = 1.25f;
 
-    [Tooltip("Same scaling rule, applied to Strength. Because attack damage = " +
-             "Random(min,max) + Strength × attackStrengthBonus, scaling Strength " +
-             "automatically scales the enemy's damage output too.")]
+    [Tooltip("Same rule applied to Strength (scales damage via attackStrengthBonus).")]
     [Range(0.5f, 3f)]
     public float strengthScalePerFloor = 1.20f;
 
-    [Tooltip("Same scaling rule, applied to MaxStamina. Mostly cosmetic for enemies " +
-             "since they don't use stamina the way the player does — leave at 1.0 " +
-             "unless you've wired enemy stamina into something.")]
+    [Tooltip("Same rule applied to MaxStamina. Cosmetic for enemies — leave at 1.")]
     [Range(0.5f, 3f)]
     public float staminaScalePerFloor = 1.0f;
 
     // ── KNOCKBACK RESPONSE ──
 
     [Header("Knockback Response")]
-    [Tooltip("Force each Toughness point absorbs from an incoming hit.\n" +
-             "finalForce = weaponForce - (Toughness × this value)")]
+    [Tooltip("Force each Toughness point absorbs: finalForce = weaponForce − (Toughness × this).")]
     public float toughnessReductionPerPoint = 1f;
 
-    [Tooltip("Duration of knockback movement in seconds")]
+    [Tooltip("Duration of knockback movement in seconds.")]
     public float knockbackDuration = 0.2f;
 
-    [Tooltip("Raw knockback force from a blade hit (before Toughness reduction)")]
+    [Tooltip("Raw knockback force from a blade hit (before Toughness reduction).")]
     public float bladeKnockbackForce  = 5f;
 
-    [Tooltip("Raw knockback force from a hammer hit (before Toughness reduction)")]
+    [Tooltip("Raw knockback force from a hammer hit (before Toughness reduction).")]
     public float hammerKnockbackForce = 12f;
 
-    [Tooltip("Raw knockback force from a bow hit (before Toughness reduction)")]
+    [Tooltip("Raw knockback force from a bow hit (before Toughness reduction).")]
     public float bowKnockbackForce    = 2f;
 
-    // ── HELPERS ──
+    // ── SAFETY ──
 
-    /// <summary>
-    /// The flat XZ distance at which this enemy should attempt to attack.
-    /// Driven entirely by the attack shape's reach — NOT by stopRange.
-    /// </summary>
-    public float AttackReach => attackShape switch
-    {
-        AttackShape.Circle    => circleRadius,
-        AttackShape.Rectangle => rectLength,
-        _                     => attackRadius,  // Cone
-    };
+    [Header("Safety")]
+    [Tooltip("If an attack animation never fires its end event, the attack state " +
+             "is force-cleared after this many seconds.")]
+    public float attackAnimTimeout = 2.5f;
 }
