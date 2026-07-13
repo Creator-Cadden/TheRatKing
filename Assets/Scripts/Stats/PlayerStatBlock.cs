@@ -29,18 +29,26 @@ public class PlayerStatBlock : BaseStatBlock
     public int floorTwoCap   = 10;
     public int floorThreeCap = 15;
 
-    // ── WEAPON DAMAGE Blade  — damage = Strength * bladeStrengthMultiplier. Fast, mobile. Hammer — damage = Strength * hammerStrengthMultiplier. Slow, heavy. Bow    — damage = Strength * bowStrengthMultiplier (default 1). Charged shot while aiming = damage * bowChargedMultiplier. ──
+    // ── WEAPON DAMAGE — Souls-style formula: damage = weaponBase + Strength × multiplier.
+    // The flat base makes each Strength point a smooth % gain instead of doubling
+    // damage at low Strength (the old no-base formula forced crazy multipliers). ──
 
     [Header("Blade")]
-    [Tooltip("Blade damage = Strength x this. No flat base damage.")]
-    public int bladeStrengthMultiplier = 2;
+    [Tooltip("Flat base damage added before Strength scaling. Blade dmg = this + Strength × multiplier.")]
+    public int bladeBaseDamage = 5;
+
+    [Tooltip("Blade damage gained per point of Strength.")]
+    public int bladeStrengthMultiplier = 1;
 
     [Tooltip("Toughness added while blade is equipped")]
     public int bladeToughnessBonus = 1;
 
     [Header("Hammer")]
-    [Tooltip("Hammer damage = Strength x this. No flat base damage.")]
-    public int hammerStrengthMultiplier = 4;
+    [Tooltip("Flat base damage added before Strength scaling. Hammer dmg = this + Strength × multiplier.")]
+    public int hammerBaseDamage = 30;
+
+    [Tooltip("Hammer damage gained per point of Strength.")]
+    public int hammerStrengthMultiplier = 2;
 
     [Tooltip("Toughness added while hammer is equipped")]
     public int hammerToughnessBonus = 4;
@@ -52,7 +60,10 @@ public class PlayerStatBlock : BaseStatBlock
     public float hammerAttackSpeedFraction = 0.5f;
 
     [Header("Bow")]
-    [Tooltip("Bow damage = Strength x this. Default 1 means no amplification.")]
+    [Tooltip("Flat base damage added before Strength scaling. Bow quick shot = this + Strength × multiplier.")]
+    public int bowBaseDamage = 0;
+
+    [Tooltip("Bow damage gained per point of Strength.")]
     public int bowStrengthMultiplier = 1;
 
     [Tooltip("Bow gives no Toughness bonus.")]
@@ -70,10 +81,13 @@ public class PlayerStatBlock : BaseStatBlock
     [Tooltip("Stamina drained per second while sprinting")]
     public float sprintStaminaPerSecond = 5f;
 
-    [Tooltip("Flat stamina cost per roll/dodge")]
+    [Tooltip("Flat stamina cost per roll/dodge. The roll fires with ANY stamina " +
+             "remaining (drains to 0 if there isn't enough) — only a fully empty " +
+             "bar blocks it.")]
     public int rollStaminaCost = 15;
 
-    [Tooltip("Flat stamina cost per jump")]
+    [Tooltip("UNUSED — jumping is free since the July 2026 playtest. " +
+             "Kept so existing stat block assets don't lose serialized data.")]
     public int jumpStaminaCost = 5;
 
     // ── STAMINA REGEN ──

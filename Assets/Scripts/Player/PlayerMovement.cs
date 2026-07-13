@@ -284,17 +284,12 @@ public class PlayerMovement : MonoBehaviour
 
         if (_jumpPressed && _isGrounded)
         {
-            int jumpCost = _stats?.playerStatBlock?.jumpStaminaCost ?? 5;
-            if (_stats != null && !_stats.UseStamina(jumpCost))
-            {
-                _jumpPressed = false;
-            }
-            else
-            {
-                _velocity.y  = Mathf.Sqrt(jumpForce * -2f * gravity);
-                _jumpPressed = false;
-                SetBool("Jump", true);
-            }
+            // Jumping is FREE — no stamina cost (playtest feedback: stamina-gated
+            // jumps made platforming feel unfair). jumpStaminaCost on the stat
+            // block is now unused.
+            _velocity.y  = Mathf.Sqrt(jumpForce * -2f * gravity);
+            _jumpPressed = false;
+            SetBool("Jump", true);
         }
 
         _velocity.y += gravity * Time.deltaTime;
@@ -309,10 +304,13 @@ public class PlayerMovement : MonoBehaviour
         if (_isAiming)  return;
         if (Time.time < _lastRollTime + rollCooldown) return;
 
+        // Roll works with ANY stamina left — even 1 point — draining whatever
+        // remains (playtest feedback: being denied a last-sliver escape dodge
+        // felt bad). Only a completely empty bar blocks the roll.
         int rollCost = _stats?.playerStatBlock?.rollStaminaCost ?? 12;
-        if (_stats != null && !_stats.UseStamina(rollCost))
+        if (_stats != null && !_stats.UseStaminaPartial(rollCost))
         {
-            Debug.Log("[PlayerMovement] Not enough stamina to roll");
+            Debug.Log("[PlayerMovement] Out of stamina — can't roll");
             return;
         }
 

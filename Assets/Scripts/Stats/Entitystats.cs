@@ -49,6 +49,11 @@ public class EntityStats : MonoBehaviour
     private float _lastStaminaUseTime;
     private float _staminaRegenAccumulator;
 
+    // The save GameManager applied to this instance (if any). Unity's sceneLoaded
+    // event fires BETWEEN Awake and Start, so ApplySaveData runs before Start —
+    // and InitStats would wipe it. Start re-applies this so the save always wins.
+    private SaveData _appliedSave;
+
     // Speed: each point above base adds this to walk speed (sprint scales 1.33x)
     private const float SpeedBonusPerPoint = 0.5f;
 
@@ -60,6 +65,12 @@ public class EntityStats : MonoBehaviour
             return;
         }
         InitStats();
+
+        // If a save was applied before Start ran, InitStats just reset the player
+        // to base stats — re-apply the save on top. (Fixes stats/XP not carrying
+        // over between levels.)
+        if (_appliedSave != null)
+            ApplySaveData(_appliedSave);
     }
 
     void Update()
@@ -236,9 +247,9 @@ public class EntityStats : MonoBehaviour
     }
 
     /// <summary>
-    /// Damage formula:
-    /// Blade  = Strength * bladeStrengthMultiplier  (no flat base)
-    /// Hammer = Strength * hammerStrengthMultiplier (no flat base, heavy penalty to speed)
+    /// Souls-style damage formula: weaponBase + Strength × multiplier.
+    /// The flat base keeps low-Strength damage sane and makes each point a
+    /// smooth percentage gain instead of doubling damage early.
     /// </summary>
     public int CalculateWeaponDamage()
     {
@@ -246,21 +257,22 @@ public class EntityStats : MonoBehaviour
 
         return EquippedWeapon switch
         {
-            WeaponType.Blade  => Strength * playerStatBlock.bladeStrengthMultiplier,
-            WeaponType.Hammer => Strength * playerStatBlock.hammerStrengthMultiplier,
-            WeaponType.Bow    => Strength * playerStatBlock.bowStrengthMultiplier,
+            WeaponType.Blade  => playerStatBlock.bladeBaseDamage  + Strength * playerStatBlock.bladeStrengthMultiplier,
+            WeaponType.Hammer => playerStatBlock.hammerBaseDamage + Strength * playerStatBlock.hammerStrengthMultiplier,
+            WeaponType.Bow    => playerStatBlock.bowBaseDamage    + Strength * playerStatBlock.bowStrengthMultiplier,
             _                 => 0
         };
     }
 
     /// <summary>
     /// Charged bow shot — full aim-hold release.
-    /// Damage = Strength * bowStrengthMultiplier * bowChargedMultiplier
+    /// Damage = (bowBaseDamage + Strength × bowStrengthMultiplier) × bowChargedMultiplier
     /// </summary>
     public int CalculateChargedBowDamage()
     {
         if (playerStatBlock == null || EquippedWeapon != WeaponType.Bow) return 0;
-        float charged = Strength * playerStatBlock.bowStrengthMultiplier
+        float charged = (playerStatBlock.bowBaseDamage
+                         + Strength * playerStatBlock.bowStrengthMultiplier)
                         * playerStatBlock.bowChargedMultiplier;
         return Mathf.RoundToInt(charged);
     }
@@ -270,6 +282,21 @@ public class EntityStats : MonoBehaviour
     public bool UseStamina(int amount)
     {
         if (CurrentStamina < amount) return false;
+        CurrentStamina           = Mathf.Max(0, CurrentStamina - amount);
+        _lastStaminaUseTime      = Time.time;
+        _staminaRegenAccumulator = 0f;
+        return true;
+    }
+
+    /// <summary>
+    /// Spends up to <paramref name="amount"/> stamina, succeeding as long as ANY
+    /// stamina remains (drains to 0 if there isn't enough). Used by the dodge roll —
+    /// playtest feedback: the player should always be able to burn their last sliver
+    /// of stamina to escape.
+    /// </summary>
+    public bool UseStaminaPartial(int amount)
+    {
+        if (CurrentStamina <= 0) return false;
         CurrentStamina           = Mathf.Max(0, CurrentStamina - amount);
         _lastStaminaUseTime      = Time.time;
         _staminaRegenAccumulator = 0f;
@@ -362,6 +389,8 @@ public class EntityStats : MonoBehaviour
     /// </summary>
     public void ApplySaveData(SaveData data)
     {
+        _appliedSave   = data;   // remembered so Start can re-apply after InitStats
+
         MaxHealth      = data.maxHealth;
         CurrentHealth  = data.currentHealth;
         Strength       = data.strength;

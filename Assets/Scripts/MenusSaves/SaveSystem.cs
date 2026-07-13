@@ -38,7 +38,14 @@ public static class SaveSystem
 
         string json = File.ReadAllText(path);
         SaveData data = JsonUtility.FromJson<SaveData>(json);
-        return data ?? new SaveData();
+        if (data == null) return new SaveData();
+
+        // Heal saves written before the July 2026 hasData fix: a file on disk
+        // with a scene name IS a real save, even if its hasData flag says false.
+        if (!data.hasData && !string.IsNullOrEmpty(data.currentSceneName))
+            data.hasData = true;
+
+        return data;
     }
 
     public static bool SlotHasData(int slot)
@@ -71,6 +78,11 @@ public static class SaveSystem
     {
         var data = new SaveData
         {
+            // hasData MUST be true here — SaveData defaults to false, and both
+            // GameManager.HasActiveGame and ApplyToStats refuse to touch a save
+            // whose hasData is false. Missing this line was the "stats reset
+            // every level" bug (July 2026).
+            hasData          = true,
             saveName         = saveName,
             currentSceneName = sceneName,
             currentFloor     = stats.CurrentFloor,
