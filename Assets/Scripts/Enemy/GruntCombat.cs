@@ -43,22 +43,8 @@ public class GruntCombat : EnemyCombatBase
     [Header("Gizmos")]
     public bool showHitGizmo = true;
 
-    [Header("Debug State Ball (in-game visual)")]
-    [Tooltip("Floats a small colored ball above the rat showing its combat state: " +
-             "yellow = windup, red = strike, cyan = post-attack pause, " +
-             "green = on cooldown. Hidden when ready/idle. Turn OFF for builds.")]
-    public bool showStateBall = true;
-
-    [Tooltip("Height above the enemy's pivot.")]
-    public float stateBallHeight = 2.2f;
-
-    [Tooltip("Diameter of the ball in world units.")]
-    public float stateBallSize = 0.25f;
-
-    public Color windupStateColor   = Color.yellow;
-    public Color strikeStateColor   = Color.red;
-    public Color pauseStateColor    = Color.cyan;
-    public Color cooldownStateColor = Color.green;
+    // (State ball visuals moved to the reusable EnemyStateDebugBalls component —
+    //  add that alongside this script to see windup/strike/recover/cooldown.)
 
     // ── State machine ──
     private enum Phase { Idle, WindingUp, Striking }
@@ -68,10 +54,7 @@ public class GruntCombat : EnemyCombatBase
     private float _strikeStartTime;
     private bool  _hitResolved;
 
-    // ── Debug state ball ──
-    private GameObject _stateBall;
-    private Material   _stateBallMat;
-    private EnemyAI    _ai;
+    private EnemyAI _ai;   // for post-attack-pause state reporting
 
     public override bool IsBusy => _phase != Phase.Idle;
 
@@ -181,76 +164,17 @@ public class GruntCombat : EnemyCombatBase
         _ai = GetComponent<EnemyAI>();
     }
 
-    void OnDestroy()
+    public override CombatDebugState BasicDebugState
     {
-        if (_stateBall != null)    Destroy(_stateBall);
-        if (_stateBallMat != null) Destroy(_stateBallMat);
-    }
-
-    // ── Debug state ball ──
-    // LateUpdate (not Tick) so the ball also shows states while EnemyAI isn't
-    // ticking combat (knockback, post-attack pause).
-    void LateUpdate()
-    {
-        if (!showStateBall || (_selfStats != null && _selfStats.IsDead))
+        get
         {
-            if (_stateBall != null) _stateBall.SetActive(false);
-            return;
-        }
-
-        bool onCooldown = Basic != null && Time.time < _lastAttackTime + Basic.cooldown;
-
-        Color color;
-        if      (_phase == Phase.WindingUp)                color = windupStateColor;
-        else if (_phase == Phase.Striking)                 color = strikeStateColor;
-        else if (_ai != null && _ai.IsInPostAttackPause)   color = pauseStateColor;
-        else if (onCooldown)                               color = cooldownStateColor;
-        else
-        {
-            // Ready + idle — no ball.
-            if (_stateBall != null) _stateBall.SetActive(false);
-            return;
-        }
-
-        EnsureStateBall();
-        _stateBall.SetActive(true);
-        _stateBall.transform.position = transform.position + Vector3.up * stateBallHeight;
-        _stateBallMat.color = color;
-    }
-
-    private void EnsureStateBall()
-    {
-        if (_stateBall != null) return;
-
-        _stateBall = GameObject.CreatePrimitive(PrimitiveType.Sphere);
-        _stateBall.name = "StateDebugBall";
-        Destroy(_stateBall.GetComponent<Collider>());
-
-        _stateBall.transform.SetParent(transform, worldPositionStays: false);
-        _stateBall.transform.localScale = Vector3.one * stateBallSize;
-
-        // Sprites/Default — always included in builds, supports plain color.
-        Shader shader = Shader.Find("Sprites/Default")
-                     ?? Shader.Find("Universal Render Pipeline/Unlit")
-                     ?? Shader.Find("Unlit/Color");
-        _stateBallMat = new Material(shader);
-
-        var rend = _stateBall.GetComponent<MeshRenderer>();
-        rend.material          = _stateBallMat;
-        rend.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
-        rend.receiveShadows    = false;
-    }
-
-    private void SetTriggerIfPresent(string trigger)
-    {
-        if (_animator == null || string.IsNullOrEmpty(trigger)) return;
-        foreach (var p in _animator.parameters)
-        {
-            if (p.type == AnimatorControllerParameterType.Trigger && p.name == trigger)
-            {
-                _animator.SetTrigger(trigger);
-                return;
-            }
+            if (_selfStats != null && _selfStats.IsDead)     return CombatDebugState.None;
+            if (_phase == Phase.WindingUp)                   return CombatDebugState.Windup;
+            if (_phase == Phase.Striking)                    return CombatDebugState.Strike;
+            if (_ai != null && _ai.IsInPostAttackPause)      return CombatDebugState.Recover;
+            if (Basic != null &&
+                Time.time < _lastAttackTime + Basic.cooldown) return CombatDebugState.Cooldown;
+            return CombatDebugState.None;
         }
     }
 

@@ -177,22 +177,27 @@ public class EnemyAI : MonoBehaviour
         if (!_isAggroed) return;
 
         float walkThreshold   = _sb.stopRange;
-        // Use combat's CurrentAttackReach (not _sb.AttackReach) so dynamic
-        // shape switching on a Captain actually affects approach distance.
         float attackThreshold = _combat.CurrentAttackReach + 0.35f;
 
-        if (dist > walkThreshold)
+        // Offer the attack FIRST, from anywhere within the current reach — the
+        // combat script decides if this distance suits any of its attacks
+        // (Tough dashes from 3-6m; grunt only bites within ~1.7m). Gating this
+        // behind stopRange made ranged attacks like the dash unreachable.
+        if (dist <= attackThreshold)
         {
-            _agent.SetDestination(_player.position);
-            _combat.CancelWindup();
+            _combat.TryStartAttack(dist);
+            if (_combat.IsBusy)
+            {
+                _agent.ResetPath();
+                return;
+            }
         }
-        else
-        {
-            _agent.ResetPath();
 
-            if (dist <= attackThreshold)
-                _combat.TryStartAttack(dist);
-        }
+        // No attack started — keep chasing until inside stopRange.
+        if (dist > walkThreshold)
+            _agent.SetDestination(_player.position);
+        else
+            _agent.ResetPath();
     }
 
     public void OnAttackHitFrame() => _combat?.OnAttackHitFrame();

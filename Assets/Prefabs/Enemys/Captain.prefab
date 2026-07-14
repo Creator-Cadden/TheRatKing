@@ -195,6 +195,9 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::EnemyHealthBar
   fillImage: {fileID: 1146912080207112054}
   hpLabel: {fileID: 4835228504388555829}
+  followTarget: {fileID: 0}
+  followOffset: {x: 0, y: 0.8, z: 0}
+  followHeightOnly: 1
   heightOffset: 2.2
   lerpSpeed: 8
   hideWhenFull: 1
@@ -2072,12 +2075,9 @@ GameObject:
   - component: {fileID: 8957907906107227107}
   - component: {fileID: 6015527843994063247}
   - component: {fileID: 3357798724440066613}
-  - component: {fileID: 5576730520163128918}
   - component: {fileID: 1944321113366032264}
   - component: {fileID: 2468626106829317605}
   - component: {fileID: 2450698315223244741}
-  - component: {fileID: 1326294091498258646}
-  - component: {fileID: 5244623921385267904}
   - component: {fileID: 3981245705369780244}
   m_Layer: 6
   m_Name: Captain
@@ -2202,25 +2202,8 @@ MonoBehaviour:
   showAttackGizmo: 1
   showAggroGizmo: 1
   verboseAttackLog: 0
---- !u!114 &5576730520163128918
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 7551827925079598176}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 10966e622fc773546a34ff403b424a96, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::EnemyCombat
-  playerLayer:
-    serializedVersion: 2
-    m_Bits: 8
-  attackOrigin: {fileID: 3002551657486608964}
-  windupColor: {r: 1, g: 0.15, b: 0.1, a: 0.55}
-  executeColor: {r: 1, g: 0.6, b: 0, a: 0.75}
-  verboseAttackLog: 1
+  permanentlyAggroed: 0
+  speedMultiplier: 1
 --- !u!114 &1944321113366032264
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -2289,35 +2272,6 @@ MonoBehaviour:
   fadeDuration: 1.5
   destroyOnDone: 1
   deathEffectPrefab: {fileID: 0}
---- !u!114 &1326294091498258646
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 7551827925079598176}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 60a60569048604041b6609a13f1b595e, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::EnemyXPDrop
-  xpValue: 15
-  displayName: 
-  playerTag: Player
---- !u!114 &5244623921385267904
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 7551827925079598176}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 730a9967fe3d4144abd28066067c0103, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::CaptainCombat
-  mode: 0
-  verbose: 0
 --- !u!114 &3981245705369780244
 MonoBehaviour:
   m_ObjectHideFlags: 0

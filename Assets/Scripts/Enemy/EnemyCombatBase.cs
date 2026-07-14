@@ -16,6 +16,12 @@ public abstract class EnemyCombatBase : MonoBehaviour
              "use their own more specific attack point and ignore this.")]
     public Transform attackOrigin;
 
+    [Header("Decal Grounding")]
+    [Tooltip("Layers treated as ground when decals raycast down to find the real " +
+             "floor (the NavMesh often bakes slightly above the visual floor). " +
+             "Exclude the Enemy and Player layers. Unused by enemies without decals.")]
+    public LayerMask groundLayers = ~0;
+
     [Header("Debug")]
     public bool verboseAttackLog = false;
 
@@ -62,6 +68,16 @@ public abstract class EnemyCombatBase : MonoBehaviour
 
     public Vector3 HitOriginPosition => HitOrigin.position;
     protected Transform HitOrigin => attackOrigin != null ? attackOrigin : transform;
+
+    // ── Debug state reporting (read by EnemyStateDebugBalls) ──
+
+    public enum CombatDebugState { None, Windup, Strike, Recover, Cooldown }
+
+    /// <summary>State of this enemy's BASIC (Tier 1) attack, for debug visuals.</summary>
+    public virtual CombatDebugState BasicDebugState => CombatDebugState.None;
+
+    /// <summary>State of this enemy's DECAL (Tier 2) attack, for debug visuals.</summary>
+    public virtual CombatDebugState DecalDebugState => CombatDebugState.None;
 
     protected virtual void Awake()
     {
@@ -134,6 +150,51 @@ public abstract class EnemyCombatBase : MonoBehaviour
     {
         if (_sb == null || _sb.basicAttack == null) return 1;
         return RollDamage(_sb.basicAttack.damageMin, _sb.basicAttack.damageMax);
+    }
+
+    /// <summary>Raycast straight down from <paramref name="anchor"/> to find the
+    /// REAL floor height (skipping this enemy's own colliders). Returns true and
+    /// the floor Y when ground is found within <paramref name="maxDistance"/>.</summary>
+    protected bool TryFindGroundY(Vector3 anchor, out float groundY, float maxDistance = 12f)
+    {
+        Vector3 origin = new Vector3(anchor.x,
+                                     Mathf.Max(anchor.y, transform.position.y) + 1f,
+                                     anchor.z);
+        groundY = float.NegativeInfinity;
+        bool found = false;
+
+        foreach (RaycastHit h in Physics.RaycastAll(origin, Vector3.down,
+                     maxDistance, groundLayers, QueryTriggerInteraction.Ignore))
+        {
+            if (h.transform.root == transform.root) continue;   // skip own colliders
+            if (h.point.y > groundY) { groundY = h.point.y; found = true; }
+        }
+        return found;
+    }
+
+    /// <summary>Anchor point snapped down onto the detected floor. Falls back to
+    /// the anchor unchanged if no ground is found. Use for placing decals so they
+    /// sit on the real floor instead of the NavMesh's approximation.</summary>
+    protected Vector3 GroundSnap(Vector3 anchor)
+    {
+        if (TryFindGroundY(anchor, out float y))
+            return new Vector3(anchor.x, y, anchor.z);
+        return anchor;
+    }
+
+    /// <summary>Fire an animator trigger only if the controller actually has it —
+    /// lets combat scripts work before their animations are authored.</summary>
+    protected void SetTriggerIfPresent(string trigger)
+    {
+        if (_animator == null || string.IsNullOrEmpty(trigger)) return;
+        foreach (var p in _animator.parameters)
+        {
+            if (p.type == AnimatorControllerParameterType.Trigger && p.name == trigger)
+            {
+                _animator.SetTrigger(trigger);
+                return;
+            }
+        }
     }
 
     /// <summary>Deal damage to the player (no-op if refs missing).</summary>

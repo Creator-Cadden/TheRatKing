@@ -17,6 +17,10 @@ public class EnemyCombat : EnemyCombatBase
     [Tooltip("Color flashed at the moment the hit fires.")]
     public Color executeColor = new Color(1f, 0.6f, 0f, 0.75f);
 
+    [Tooltip("Vertical offset of the decal from this enemy's pivot (its ground " +
+             "position on the NavMesh). Negative pushes it lower if it floats.")]
+    public float indicatorYOffset = 0.03f;
+
     // ── State ──────────────────────────────────────────────────────────
     // (playerLayer, attackOrigin, verboseAttackLog, stat/player refs,
     //  _lastAttackTime and _lockedRotation now live in EnemyCombatBase.)
@@ -98,6 +102,17 @@ public class EnemyCombat : EnemyCombatBase
 
     // ── Public ─────────────────────────────────────────────────────────
     public override bool IsBusy => _isAttacking || _isWindingUp;
+
+    public override CombatDebugState DecalDebugState
+    {
+        get
+        {
+            if (_isWindingUp)                      return CombatDebugState.Windup;
+            if (_isAttacking)                      return CombatDebugState.Strike;
+            if (Time.time < _nextAttackReadyTime)  return CombatDebugState.Cooldown;
+            return CombatDebugState.None;
+        }
+    }
 
     protected override void Awake()
     {
@@ -330,7 +345,10 @@ public class EnemyCombat : EnemyCombatBase
     private void SnapIndicatorToOrigin()
     {
         if (_indicator == null) return;
-        _indicator.transform.position = new Vector3(transform.position.x, HitOrigin.position.y, transform.position.z);
+        // Attack Origin XZ, snapped down to the raycast-detected real floor
+        // (damage checks also use Attack Origin, so visual and hit zone align).
+        _indicator.transform.position = GroundSnap(HitOrigin.position)
+                                      + Vector3.up * indicatorYOffset;
         _indicator.transform.rotation = Quaternion.Euler(0f, transform.eulerAngles.y, 0f);
     }
 

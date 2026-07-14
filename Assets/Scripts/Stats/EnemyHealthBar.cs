@@ -16,8 +16,25 @@ public class EnemyHealthBar : MonoBehaviour
     [Tooltip("Optional TMP label showing current / max HP.")]
     public TMP_Text hpLabel;
 
+    [Header("Follow")]
+    [Tooltip("What the bar tracks. Assign a body part — the balloon's bobbing " +
+             "Body, a head bone, etc. — and the bar moves WITH it (bob included). " +
+             "Leave empty to use the old behavior: enemy root + Height Offset.")]
+    public Transform followTarget;
+
+    [Tooltip("Offset from the Follow Target in world axes (Y lifts it above the part). " +
+             "Only used when Follow Target is assigned.")]
+    public Vector3 followOffset = new Vector3(0f, 0.8f, 0f);
+
+    [Tooltip("ON: only the follow target's HEIGHT is tracked (the bob), while the " +
+             "bar stays horizontally centered over the enemy — use this when model/" +
+             "bone pivots are off-center and the bar drifts sideways.\n" +
+             "OFF: the bar follows the target's full position.")]
+    public bool followHeightOnly = true;
+
     [Header("Appearance")]
-    [Tooltip("Height above the enemy's origin in world units.")]
+    [Tooltip("Height above the enemy's ROOT in world units — used only when " +
+             "Follow Target is empty.")]
     public float heightOffset = 2.2f;
 
     [Tooltip("How fast the bar lerps to the new value (visual smoothing).")]
@@ -141,8 +158,25 @@ public class EnemyHealthBar : MonoBehaviour
         if (_cam != null)
             transform.rotation = Quaternion.LookRotation(transform.position - _cam.transform.position);
 
-        // Keep position above enemy origin
-        if (transform.parent != null)
+        // Follow the assigned body part (bobs with it), or fall back to the
+        // old fixed-height-above-root behavior.
+        if (followTarget != null)
+        {
+            if (followHeightOnly && _stats != null)
+            {
+                // Height from the bone (the bob), XZ centered on the enemy —
+                // immune to off-center model/armature pivots.
+                Vector3 center = _stats.transform.position;
+                transform.position = new Vector3(center.x,
+                                                 followTarget.position.y,
+                                                 center.z) + followOffset;
+            }
+            else
+            {
+                transform.position = followTarget.position + followOffset;
+            }
+        }
+        else if (transform.parent != null)
             transform.position = transform.parent.position + Vector3.up * heightOffset;
 
         // Smooth fill

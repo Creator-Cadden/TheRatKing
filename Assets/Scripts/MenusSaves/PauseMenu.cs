@@ -32,8 +32,30 @@ public class PauseMenu : MonoBehaviour
         settingsButton?.onClick.AddListener(OnSettings);
         mainMenuButton?.onClick.AddListener(OnMainMenu);
 
+        // If the Inspector slot is empty (e.g. the TestingArena UI copy), find
+        // the panel by name instead of leaving it stuck visible on screen.
+        if (pauseMenuRoot == null)
+            AutoFindRoot();
+
         // Start hidden — root must be active in Editor so children initialize
         SetVisible(false);
+    }
+
+    private void AutoFindRoot()
+    {
+        foreach (Transform child in transform)
+        {
+            string n = child.name.ToLowerInvariant();
+            if (n.Contains("pause") || n.Contains("panel"))
+            {
+                pauseMenuRoot = child.gameObject;
+                Debug.LogWarning($"[PauseMenu] pauseMenuRoot wasn't assigned — auto-found " +
+                                 $"'{child.name}'. Assign it in the Inspector to silence this.");
+                return;
+            }
+        }
+        Debug.LogWarning("[PauseMenu] pauseMenuRoot not assigned and no child named " +
+                         "*pause*/*panel* found — the menu can't hide itself.");
     }
 
     void OnDestroy()

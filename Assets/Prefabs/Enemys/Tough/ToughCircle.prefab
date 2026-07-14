@@ -2087,11 +2087,9 @@ GameObject:
   - component: {fileID: 8122127667694087911}
   - component: {fileID: 9104197369803441094}
   - component: {fileID: 6635314007943766940}
-  - component: {fileID: 7642987347436459720}
   - component: {fileID: 8959211455890827980}
   - component: {fileID: 561196148744693195}
   - component: {fileID: 6278494239365450972}
-  - component: {fileID: 2599029033898566294}
   - component: {fileID: 399675293569674060}
   m_Layer: 6
   m_Name: ToughCircle
@@ -2216,25 +2214,8 @@ MonoBehaviour:
   showAttackGizmo: 1
   showAggroGizmo: 1
   verboseAttackLog: 0
---- !u!114 &7642987347436459720
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 9133258055266130852}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 10966e622fc773546a34ff403b424a96, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::EnemyCombat
-  playerLayer:
-    serializedVersion: 2
-    m_Bits: 8
-  attackOrigin: {fileID: 6072877588925817965}
-  windupColor: {r: 1, g: 0.15, b: 0.1, a: 0.55}
-  executeColor: {r: 1, g: 0.6, b: 0, a: 0.75}
-  verboseAttackLog: 1
+  permanentlyAggroed: 0
+  speedMultiplier: 1
 --- !u!114 &8959211455890827980
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -2303,21 +2284,6 @@ MonoBehaviour:
   fadeDuration: 1.5
   destroyOnDone: 1
   deathEffectPrefab: {fileID: 0}
---- !u!114 &2599029033898566294
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 9133258055266130852}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 60a60569048604041b6609a13f1b595e, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::EnemyXPDrop
-  xpValue: 10
-  displayName: 
-  playerTag: Player
 --- !u!114 &399675293569674060
 MonoBehaviour:
   m_ObjectHideFlags: 0

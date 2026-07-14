@@ -93,6 +93,10 @@ public class DecalAttackConfig
     [Tooltip("Seconds after this attack before the next attack can start.")]
     public float cooldown = 2f;
 
+    [Tooltip("Seconds of vulnerable recovery after the hit lands — the punish " +
+             "window. Give big attacks (wide cones) the longest recovery.")]
+    public float recoverTime = 1f;
+
     /// <summary>Distance at which the enemy attempts this attack.</summary>
     public float Reach => shape switch
     {
@@ -166,6 +170,13 @@ public class EnemyStatBlock : BaseStatBlock
     [Tooltip("One entry per distinct decal attack, each with its own shape, " +
              "damage, and timing.")]
     public DecalAttackConfig[] decalAttacks = new DecalAttackConfig[0];
+
+    [Tooltip("Interleave rule for enemies that have BOTH tiers: the decal attack " +
+             "is locked until this many basic attacks have landed since the last " +
+             "decal, then it becomes the next attack. Makes the rhythm learnable " +
+             "(e.g. 2 = swipe, swipe, DASH, repeat).\n" +
+             "0 = no chain — the decal fires whenever it's off cooldown and in range.")]
+    public int basicAttacksBetweenDecals = 0;
 
     // ── DAMAGE SCALING ──
 
