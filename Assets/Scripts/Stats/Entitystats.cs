@@ -84,12 +84,27 @@ public class EntityStats : MonoBehaviour
     {
         BaseStatBlock b = BaseBlock;
 
-        MaxHealth     = b.baseHealth;
-        Strength      = b.baseStrength;
-        MaxStamina    = b.baseStamina;
-        Speed         = b.baseSpeed;
-        BaseToughness = b.baseToughness;
-        Toughness     = BaseToughness;
+        MaxHealth = b.baseHealth;
+        Strength  = b.baseStrength;
+
+        if (isPlayer && playerStatBlock != null)
+        {
+            // Player owns Stamina & Speed. The player has NO Toughness — stagger
+            // resistance is an enemy-only concept now, so it stays 0.
+            MaxStamina    = playerStatBlock.baseStamina;
+            Speed         = playerStatBlock.baseSpeed;
+            BaseToughness = 0;
+            Toughness     = 0;
+        }
+        else
+        {
+            // Enemies own Toughness. They have no stamina and move via
+            // EnemyStatBlock.moveSpeed, so the generic Speed stat is unused here.
+            MaxStamina    = 0;
+            Speed         = 0;
+            BaseToughness = enemyStatBlock != null ? enemyStatBlock.baseToughness : 0;
+            Toughness     = BaseToughness;
+        }
 
         // ── Per-floor enemy scaling ───────────────────────────────────
         // Enemies get harder the deeper the player is.
@@ -123,10 +138,7 @@ public class EntityStats : MonoBehaviour
         _staminaRegenAccumulator = 0f;
 
         if (isPlayer)
-        {
-            ApplyWeaponToughnessBonus();
             NotifySpeedChanged();
-        }
 
         Debug.Log($"[EntityStats] {gameObject.name} ready — " +
                   $"HP:{CurrentHealth} STR:{Strength} STA:{MaxStamina} SPD:{Speed} TGH:{Toughness}");
@@ -184,7 +196,7 @@ public class EntityStats : MonoBehaviour
         PlayerMovement pm = GetComponent<PlayerMovement>();
         if (pm == null) return;
 
-        int baseSpd     = BaseBlock?.baseSpeed ?? 5;
+        int baseSpd     = playerStatBlock != null ? playerStatBlock.baseSpeed : 5;
         int bonusPoints = Speed - baseSpd;
 
         // Pass hammer fraction so movement knows to apply it on top of speed bonus
@@ -218,7 +230,6 @@ public class EntityStats : MonoBehaviour
     {
         if (!isPlayer) return;
         EquippedWeapon = weapon;
-        ApplyWeaponToughnessBonus();
 
         // Push move speed change (hammer penalty or removal of it)
         NotifySpeedChanged();
@@ -228,22 +239,7 @@ public class EntityStats : MonoBehaviour
         pc?.RecalculateAttackCooldown();
 
         onStatsChanged?.Invoke();
-        Debug.Log($"[EntityStats] Equipped {weapon} — Toughness:{Toughness}");
-    }
-
-    private void ApplyWeaponToughnessBonus()
-    {
-        if (playerStatBlock == null) return;
-
-        int bonus = EquippedWeapon switch
-        {
-            WeaponType.Blade  => playerStatBlock.bladeToughnessBonus,
-            WeaponType.Hammer => playerStatBlock.hammerToughnessBonus,
-            WeaponType.Bow    => playerStatBlock.bowToughnessBonus,
-            _                 => 0
-        };
-
-        Toughness = BaseToughness + bonus;
+        Debug.Log($"[EntityStats] Equipped {weapon}.");
     }
 
     /// <summary>
@@ -400,7 +396,6 @@ public class EntityStats : MonoBehaviour
         CurrentFloor   = data.currentFloor;
 
         EquippedWeapon = (WeaponType)data.equippedWeapon;
-        ApplyWeaponToughnessBonus();
         NotifySpeedChanged();
 
         onStatsChanged?.Invoke();

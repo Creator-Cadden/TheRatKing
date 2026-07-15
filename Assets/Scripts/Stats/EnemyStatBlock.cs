@@ -112,12 +112,21 @@ public class DecalAttackConfig
 /// (floor telegraph, optional rotation cycle). One asset per enemy kind;
 /// prefabs reference it through EntityStats. Per-enemy BEHAVIOR lives in the
 /// enemy's own combat script (GruntCombat etc.) — only DATA lives here.
-/// Inherited from BaseStatBlock: baseHealth, baseStrength, baseSpeed,
-/// baseToughness (baseStamina is unused on enemies).
+/// Inherited from BaseStatBlock: baseHealth, baseStrength. Enemies have no
+/// stamina and use moveSpeed (below) for movement, so baseStamina/baseSpeed
+/// don't exist here. Toughness is enemy-only and lives on this block.
 /// </summary>
 [CreateAssetMenu(fileName = "NewEnemyStatBlock", menuName = "Rat King/Enemy Stat Block")]
 public class EnemyStatBlock : BaseStatBlock
 {
+    // ── DEFENSE ──
+
+    [Header("Defense")]
+    [Tooltip("Stagger resistance (enemy-only). A player weapon staggers this enemy " +
+             "when the weapon's Impact/staggerForce is greater than this value. " +
+             "Tiers (design): Grunt 0 · Soldier 1 · Strong 2 · Elite 3 · Mini-boss 4 · Boss 5.")]
+    public int baseToughness = 3;
+
     // ── IDENTITY ──
 
     [Header("Identity")]

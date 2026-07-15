@@ -9,6 +9,15 @@ using UnityEngine;
 [CreateAssetMenu(fileName = "PlayerStatBlock", menuName = "Rat King/Player Stat Block")]
 public class PlayerStatBlock : BaseStatBlock
 {
+    // ── PLAYER CORE (moved off BaseStatBlock — enemies don't use these) ──
+
+    [Header("Player Core")]
+    [Tooltip("Pool spent on dodges and sprinting")]
+    public int baseStamina = 50;
+
+    [Tooltip("Movement speed and attack recovery rate")]
+    public int baseSpeed = 5;
+
     // ── LEVELING ──
 
     [Header("Per Level Point")]
@@ -40,18 +49,12 @@ public class PlayerStatBlock : BaseStatBlock
     [Tooltip("Blade damage gained per point of Strength.")]
     public int bladeStrengthMultiplier = 1;
 
-    [Tooltip("Toughness added while blade is equipped")]
-    public int bladeToughnessBonus = 1;
-
     [Header("Hammer")]
     [Tooltip("Flat base damage added before Strength scaling. Hammer dmg = this + Strength × multiplier.")]
     public int hammerBaseDamage = 30;
 
     [Tooltip("Hammer damage gained per point of Strength.")]
     public int hammerStrengthMultiplier = 2;
-
-    [Tooltip("Toughness added while hammer is equipped")]
-    public int hammerToughnessBonus = 4;
 
     [Tooltip("Fraction of normal move speed while hammer is equipped. 0.667 = one third reduction.")]
     public float hammerMoveSpeedFraction = 0.667f;
@@ -65,9 +68,6 @@ public class PlayerStatBlock : BaseStatBlock
 
     [Tooltip("Bow damage gained per point of Strength.")]
     public int bowStrengthMultiplier = 1;
-
-    [Tooltip("Bow gives no Toughness bonus.")]
-    public int bowToughnessBonus = 0;
 
     [Tooltip("Charged aimed shot multiplies damage by this. Default 3 = triple damage.")]
     public float bowChargedMultiplier = 3f;

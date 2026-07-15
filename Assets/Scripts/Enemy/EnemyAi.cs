@@ -233,8 +233,10 @@ public class EnemyAI : MonoBehaviour
 
         int enemyToughness = _stats?.Toughness ?? 0;
 
-        // ── 1. Knockback gate: attacker must be tougher than the target ──
-        if (attackerToughness <= enemyToughness) return;
+        // ── 1. attackerToughness is deprecated (the player no longer has a
+        //       Toughness stat). Knockback is now gated purely by the weapon's
+        //       Impact (staggerForce) vs the enemy's Toughness, below.
+        _ = attackerToughness;
 
         // ── 2. Pick the weapon's base force from the enemy's stat block ──
         float baseForce = staggerForce switch

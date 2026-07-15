@@ -6,19 +6,14 @@ using UnityEngine;
 /// </summary>
 public abstract class BaseStatBlock : ScriptableObject
 {
+    // Only TRULY shared stats live here. Stamina & Speed are player-only
+    // (enemies use EnemyStatBlock.moveSpeed and have no stamina); Toughness is
+    // enemy-only (the player has no stagger-resistance stat). Those fields live
+    // on PlayerStatBlock / EnemyStatBlock respectively.
     [Header("Core Stats")]
     [Tooltip("Starting HP pool")]
     public int baseHealth    = 100;
 
     [Tooltip("Scales melee damage output")]
     public int baseStrength  = 10;
-
-    [Tooltip("Pool spent on dodges and sprinting")]
-    public int baseStamina   = 50;
-
-    [Tooltip("Movement speed and attack recovery rate")]
-    public int baseSpeed     = 5;
-
-    [Tooltip("Fixed — never leveled. Modified only by equipped weapon on the player.")]
-    public int baseToughness = 3;
 }
