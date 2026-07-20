@@ -131,11 +131,20 @@ public class PlayerMovement : MonoBehaviour
         aimCamera.Priority      = defaultPriority;
 
         _aimYaw = transform.eulerAngles.y;
+
+        // Auto-resolve the Enemy layer if the mask wasn't set in the Inspector.
+        if (enemyLayers.value == 0)
+        {
+            int enemyLayer = LayerMask.NameToLayer("Enemy");
+            if (enemyLayer >= 0) enemyLayers = 1 << enemyLayer;
+        }
     }
 
     void Update()
     {
         _isGrounded = _controller.isGrounded;
+
+        CheckEnemyHeadSlide();   // no camping on enemy backs
 
         if (!_isRolling && !IsStaggered)
         {
@@ -190,6 +199,61 @@ public class PlayerMovement : MonoBehaviour
     // ── Hit reactions (Impact overhaul) ──
     // Basic enemy hits: small knockback + brief i-frames, NO control loss.
     // Decal hits: STAGGER — control lockout + bigger knockback + i-frames.
+
+    [Header("Enemy Head Slide (no camping on enemies)")]
+    [Tooltip("Layers counted as enemies. Leave empty to auto-resolve the " +
+             "'Enemy' layer at startup.")]
+    public LayerMask enemyLayers;
+
+    [Tooltip("Slide-off speed while standing on top of an enemy — makes enemy " +
+             "backs unstandable instead of a free safe spot. Must comfortably " +
+             "beat walk speed or the player can fight the slide.")]
+    public float enemyHeadSlideSpeed = 6f;
+
+    private Vector3 _enemyHeadSlide;
+    private bool    _standingOnEnemy;
+
+    // OVERLAP-based probe (casts that start inside a collider silently miss —
+    // the classic reason "detect what I'm standing on" fails). Every frame we
+    // overlap a sphere at the player capsule's bottom against the Enemy layer;
+    // if the contact point is BELOW our feet, we're on top of someone: shed off
+    // their SIDE (never along a long body's back ridge) and deny ground status.
+    private void CheckEnemyHeadSlide()
+    {
+        _standingOnEnemy = false;
+
+        float   r      = _controller.radius;
+        Vector3 bottom = transform.position + _controller.center
+                       - Vector3.up * (_controller.height * 0.5f - r);
+        float feetY = bottom.y - r;
+
+        foreach (Collider col in Physics.OverlapSphere(
+                     bottom + Vector3.down * 0.15f, r + 0.1f,
+                     enemyLayers, QueryTriggerInteraction.Ignore))
+        {
+            // Where does this enemy touch us? Below the feet = we're ON it.
+            Vector3 closest = col.ClosestPoint(transform.position);
+            if (closest.y > feetY + 0.1f) continue;   // side contact = body-block, fine
+
+            var ai = col.GetComponentInParent<EnemyAI>();
+            Transform enemy = ai != null ? ai.transform : col.transform;
+
+            Vector3 away = transform.position - enemy.position;
+            away.y = 0f;
+
+            Vector3 side = enemy.right; side.y = 0f;
+            bool alongRidge = away.sqrMagnitude < 0.04f ||
+                              (side.sqrMagnitude > 0.001f &&
+                               Mathf.Abs(Vector3.Dot(away.normalized, enemy.forward.normalized)) > 0.8f);
+            if (alongRidge && side.sqrMagnitude > 0.001f)
+                away = side * (Vector3.Dot(away, side) >= 0f ? 1f : -1f);
+            if (away.sqrMagnitude < 0.001f) away = transform.forward;
+
+            _enemyHeadSlide  = away.normalized * enemyHeadSlideSpeed;
+            _standingOnEnemy = true;   // enemy backs are NOT ground — no jumping off
+            break;
+        }
+    }
 
     [Header("Hit Reactions")]
     [Tooltip("Knockback force from a basic enemy hit (no control loss).")]
@@ -452,7 +516,7 @@ public class PlayerMovement : MonoBehaviour
         SetBool("Contact", false);
         if (landedThisFrame) SetBool("Contact", true);
 
-        if (_jumpPressed && _isGrounded && !IsStaggered)
+        if (_jumpPressed && _isGrounded && !IsStaggered && !_standingOnEnemy)
         {
             // Jumping is FREE — no stamina cost (playtest feedback: stamina-gated
             // jumps made platforming feel unfair). jumpStaminaCost on the stat
@@ -467,6 +531,16 @@ public class PlayerMovement : MonoBehaviour
         // During stagger flight, the constant ballistic momentum rides along
         // with gravity in the same Move — full arc, no mid-air decay.
         Vector3 flightVelocity = _inStaggerFlight ? _staggerHorizVelocity : Vector3.zero;
+
+        // Enemy-head slide: shed off any enemy we're standing on, decaying fast
+        // once we're clear.
+        if (_enemyHeadSlide.sqrMagnitude > 0.01f)
+        {
+            flightVelocity += _enemyHeadSlide;
+            _enemyHeadSlide = Vector3.MoveTowards(_enemyHeadSlide, Vector3.zero,
+                                                  12f * Time.deltaTime);
+        }
+
         _controller.Move((_velocity + flightVelocity) * Time.deltaTime);
     }
 

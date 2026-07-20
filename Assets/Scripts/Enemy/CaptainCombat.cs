@@ -148,15 +148,18 @@ public class CaptainCombat : EnemyCombatBase
     {
         if (_sb == null) return;
 
-        HoldLockedRotation();
-
         switch (_phase)
         {
             case Phase.SwipeWindup:
+            {
+                float dur = Basic != null ? Basic.windupTime : 0.7f;
+                TrackOrHold(1f - Mathf.Clamp01((_phaseEndTime - Time.time) / Mathf.Max(0.0001f, dur)));
                 if (Time.time >= _phaseEndTime) BeginSwipeStrike();
                 break;
+            }
 
             case Phase.SwipeStrike:
+                HoldLockedRotation();
                 if (!_swipeHitResolved && fallbackHitDelay > 0f &&
                     Time.time >= _strikeStartTime + fallbackHitDelay)
                     ResolveSwipeHit();
@@ -173,6 +176,11 @@ public class CaptainCombat : EnemyCombatBase
             {
                 float windup = _currentDecal != null ? _currentDecal.windupTime : 1f;
                 float t = Mathf.Clamp01(1f - (_phaseEndTime - Time.time) / Mathf.Max(0.0001f, windup));
+
+                // Shape tracks early, locks late — the decal rotates with it,
+                // so the cone/rect promise stays honest at the lock.
+                TrackOrHold(t);
+
                 Color c = windupColor;
                 c.a *= t;
                 SetIndicatorColor(c);
@@ -183,6 +191,7 @@ public class CaptainCombat : EnemyCombatBase
             }
 
             case Phase.DecalStrike:
+                HoldLockedRotation();
                 if (!_decalHitResolved &&
                     Time.time >= _strikeStartTime + decalHitDelay)
                     ResolveDecalHit();

@@ -19,13 +19,13 @@ MonoBehaviour:
   xpReward: 5
   moveSpeed: 3.5
   aggroRange: 8
-  stopRange: 1.5
+  stopRange: 2
   damagedAggroDuration: 60
   hasBasicAttack: 1
   basicAttack:
     damageMin: 0
     damageMax: 0
-    reach: 1.7
+    reach: 2.2
     windupTime: 1
     cooldown: 2
   hasDecalAttack: 0

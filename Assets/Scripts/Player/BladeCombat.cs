@@ -254,10 +254,20 @@ public class BladeCombat : MonoBehaviour
                 if (ang > angle * 0.5f) continue;
             }
 
-            hit.GetComponent<EntityStats>()?.TakeDamage(damage);
-            hit.GetComponent<EnemyAI>()?.ApplyHitReaction(attackOrigin.position, impact);
+            // Parent search — colliders may live on bones/children of the enemy.
+            var es = hit.GetComponentInParent<EntityStats>();
+            if (es == null || _hitThisSwing.Contains(es)) continue;   // one hit per enemy per swing
+            _hitThisSwing.Add(es);
+
+            es.TakeDamage(damage);
+            hit.GetComponentInParent<EnemyAI>()?.ApplyHitReaction(attackOrigin.position, impact);
         }
+        _hitThisSwing.Clear();
     }
+
+    // Enemies can have several colliders (bone hitboxes) — dedupe per swing.
+    private readonly System.Collections.Generic.HashSet<EntityStats> _hitThisSwing
+        = new System.Collections.Generic.HashSet<EntityStats>();
 
     // ── Jump spin visual ──
 

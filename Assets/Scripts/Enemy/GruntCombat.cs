@@ -79,16 +79,23 @@ public class GruntCombat : EnemyCombatBase
     {
         if (_sb == null) return;
 
-        HoldLockedRotation();
-
         switch (_phase)
         {
             case Phase.WindingUp:
+            {
+                // Track the player early in the windup, hard-lock late — natural
+                // turn-to-attack, but circling only pays off after the lock.
+                float dur = Basic != null ? Basic.windupTime : 0.5f;
+                float t   = 1f - Mathf.Clamp01((_windupEndTime - Time.time) / Mathf.Max(0.0001f, dur));
+                TrackOrHold(t);
+
                 if (Time.time >= _windupEndTime)
                     BeginStrike();
                 break;
+            }
 
             case Phase.Striking:
+                HoldLockedRotation();
                 // Fallback hit if no animation event is wired yet.
                 if (!_hitResolved && fallbackHitDelay > 0f &&
                     Time.time >= _strikeStartTime + fallbackHitDelay)

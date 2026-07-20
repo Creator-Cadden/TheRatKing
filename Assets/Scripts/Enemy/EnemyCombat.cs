@@ -164,8 +164,8 @@ public class EnemyCombat : EnemyCombatBase
             ShowIndicator(false);
         }
 
-        if (IsRotationLocked)
-            transform.rotation = _lockedRotation;
+        if (_isAttacking)
+            HoldLockedRotation();
 
         if ((_isWindingUp || _isAttacking) && _indicator != null && _indicator.activeSelf)
             SnapIndicatorToOrigin();
@@ -174,6 +174,10 @@ public class EnemyCombat : EnemyCombatBase
         {
             float windup = CurrentDecal != null ? CurrentDecal.windupTime : 0.6f;
             float t = Mathf.Clamp01((Time.time - _windupStartTime) / Mathf.Max(0.0001f, windup));
+
+            // Track early, lock late — indicator rotates with the tracking.
+            TrackOrHold(t);
+
             Color c = windupColor;
             c.a *= t;
             SetIndicatorColor(c);

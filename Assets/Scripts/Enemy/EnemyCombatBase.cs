@@ -136,20 +136,52 @@ public abstract class EnemyCombatBase : MonoBehaviour
 
     // ── Shared helpers for subclasses ──
 
-    /// <summary>Snap-face the player on the XZ plane and remember that rotation
-    /// as the lock direction for the rest of the attack.</summary>
+    // ── Windup tracking (natural turn-to-attack, hard lock for the dodge) ──
+
+    [Header("Windup Tracking")]
+    [Tooltip("Degrees/sec the enemy turns toward the player DURING a windup — " +
+             "fast but visible rotation, never a snap. Also the anti-circling " +
+             "cap: it out-turns an orbiting player at close range.")]
+    public float windupTurnSpeed = 240f;
+
+    [Range(0f, 1f)]
+    [Tooltip("Fraction of the windup spent tracking. After this point the facing " +
+             "HARD LOCKS — sidestepping during the locked portion is the earned " +
+             "dodge. 0.6 = tracks the first 60%.")]
+    public float windupLockFraction = 0.6f;
+
+    /// <summary>Begin an attack's facing: no snap — just adopt the current
+    /// rotation as the initial lock. TrackOrHold turns us during the windup.</summary>
     protected void FaceAndLockOntoPlayer()
     {
-        if (_player == null) return;
-        Vector3 lookDir = _player.position - transform.position;
-        lookDir.y = 0f;
-        if (lookDir.sqrMagnitude > 0.001f)
-            transform.rotation = Quaternion.LookRotation(lookDir);
         _lockedRotation = transform.rotation;
     }
 
-    /// <summary>Call from Tick while attacking — holds the locked facing so
-    /// root motion / NavMesh drift can't turn the enemy mid-attack.</summary>
+    /// <summary>Call every Tick during a WINDUP with 0-1 progress: tracks the
+    /// player at windupTurnSpeed until the lock fraction, then holds — the
+    /// telegraph's direction promise.</summary>
+    protected void TrackOrHold(float windupProgress01)
+    {
+        if (windupProgress01 < windupLockFraction && _player != null)
+        {
+            Vector3 look = _player.position - transform.position;
+            look.y = 0f;
+            if (look.sqrMagnitude > 0.001f)
+            {
+                Quaternion target = Quaternion.LookRotation(look);
+                transform.rotation = Quaternion.RotateTowards(
+                    transform.rotation, target, windupTurnSpeed * Time.deltaTime);
+            }
+            _lockedRotation = transform.rotation;
+        }
+        else
+        {
+            transform.rotation = _lockedRotation;
+        }
+    }
+
+    /// <summary>Call from Tick while EXECUTING an attack — holds the locked
+    /// facing so root motion / NavMesh drift can't turn the enemy mid-strike.</summary>
     protected void HoldLockedRotation()
     {
         if (IsRotationLocked)

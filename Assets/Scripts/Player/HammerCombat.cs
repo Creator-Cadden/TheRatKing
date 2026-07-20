@@ -181,6 +181,10 @@ public class HammerCombat : MonoBehaviour
     private int  _comboStep;
     private bool _pendingFinisher;   // captured at swing start, used at resolve
 
+    // Enemies can have several colliders (bone hitboxes) — dedupe per attack.
+    private readonly System.Collections.Generic.HashSet<EntityStats> _hitThisAttack
+        = new System.Collections.Generic.HashSet<EntityStats>();
+
     /// <summary>The combo step that JUST fired (0-based) — PlayerCombat pushes
     /// this to the animator's ComboStep int.</summary>
     public int LastComboStep { get; private set; }
@@ -245,10 +249,16 @@ public class HammerCombat : MonoBehaviour
             float   angle    = Vector3.Angle(transform.forward, toTarget);
             if (angle > swingAngle * 0.5f) continue;
 
-            hit.GetComponent<EntityStats>()?.TakeDamage(damage);
-            hit.GetComponent<EnemyAI>()?.ApplyHitReaction(attackOrigin.position, impact);
+            // Parent search — colliders may live on bones/children of the enemy.
+            var es = hit.GetComponentInParent<EntityStats>();
+            if (es == null || _hitThisAttack.Contains(es)) continue;   // one hit per enemy
+            _hitThisAttack.Add(es);
+
+            es.TakeDamage(damage);
+            hit.GetComponentInParent<EnemyAI>()?.ApplyHitReaction(attackOrigin.position, impact);
             hitsLanded++;
         }
+        _hitThisAttack.Clear();
 
         // Visual: arc ripple along the swing cone
         AttackRipple.SpawnArc(attackOrigin.position, transform.forward,
@@ -271,10 +281,16 @@ public class HammerCombat : MonoBehaviour
         Collider[] hits = Physics.OverlapSphere(attackOrigin.position, slamRadius, enemyLayer);
         foreach (Collider hit in hits)
         {
-            hit.GetComponent<EntityStats>()?.TakeDamage(damage);
-            hit.GetComponent<EnemyAI>()?.ApplyHitReaction(attackOrigin.position, impact);
+            // Parent search — colliders may live on bones/children of the enemy.
+            var es = hit.GetComponentInParent<EntityStats>();
+            if (es == null || _hitThisAttack.Contains(es)) continue;   // one hit per enemy
+            _hitThisAttack.Add(es);
+
+            es.TakeDamage(damage);
+            hit.GetComponentInParent<EnemyAI>()?.ApplyHitReaction(attackOrigin.position, impact);
             hitsLanded++;
         }
+        _hitThisAttack.Clear();
 
         // Visual: 360 ring ripple at the slam radius
         AttackRipple.SpawnRing(attackOrigin.position, slamRadius,

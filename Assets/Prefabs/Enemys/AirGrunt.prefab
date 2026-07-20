@@ -2127,7 +2127,6 @@ GameObject:
   - component: {fileID: 2708311238362617652}
   - component: {fileID: 1298752342338609005}
   - component: {fileID: 6595486224667793269}
-  - component: {fileID: 4911297456352470812}
   - component: {fileID: 1528883219231323932}
   - component: {fileID: 432785655294805081}
   - component: {fileID: 566662665750419713}
@@ -2216,27 +2215,6 @@ MeshRenderer:
   m_SortingOrder: 0
   m_MaskInteraction: 0
   m_AdditionalVertexStreams: {fileID: 0}
---- !u!65 &4911297456352470812
-BoxCollider:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 6995378065054885359}
-  m_Material: {fileID: 0}
-  m_IncludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_ExcludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_LayerOverridePriority: 0
-  m_IsTrigger: 0
-  m_ProvidesContacts: 0
-  m_Enabled: 1
-  serializedVersion: 3
-  m_Size: {x: 1.03, y: 0.44895792, z: 0.94}
-  m_Center: {x: -0, y: 3.3766391, z: 0}
 --- !u!114 &1528883219231323932
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -2253,12 +2231,26 @@ MonoBehaviour:
     serializedVersion: 2
     m_Bits: 8
   attackOrigin: {fileID: 4836094181973910189}
+  turnSpeedDegrees: 300
+  personalSpace: 1.2
+  backpedalSpeed: 1.5
+  orbitSpeed: 1.2
   postAttackDelay: 0.4
   showAttackGizmo: 1
   showAggroGizmo: 1
   verboseAttackLog: 0
   permanentlyAggroed: 0
   speedMultiplier: 1
+  launchUpFactor: 0.55
+  launchPerMargin: 0.2
+  bounciness: 0.45
+  maxBounces: 2
+  bounceHorizontalKeep: 0.6
+  flinchWindupDelay: 0.3
+  decalWindupDelay: 0.35
+  staggerDuration: 0.7
+  flinchNudgeForce: 2.5
+  showReactionDebug: 1
 --- !u!114 &432785655294805081
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -2275,7 +2267,11 @@ MonoBehaviour:
     serializedVersion: 2
     m_Bits: 8
   attackOrigin: {fileID: 4836094181973910189}
+  groundLayers:
+    serializedVersion: 2
+    m_Bits: 4294967295
   verboseAttackLog: 1
+  maxWindupDelay: 1
   body: {fileID: 3002083549373035143}
   hoverHeight: 2.5
   groundedHeight: 0.3
@@ -2652,6 +2648,9 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::EnemyHealthBar
   fillImage: {fileID: 5607544244815990182}
   hpLabel: {fileID: 1419929180315400389}
+  followTarget: {fileID: 0}
+  followOffset: {x: 0, y: 0.8, z: 0}
+  followHeightOnly: 1
   heightOffset: 2.2
   lerpSpeed: 8
   hideWhenFull: 1

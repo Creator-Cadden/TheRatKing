@@ -14,6 +14,25 @@ public class EnemyAI : MonoBehaviour
     public LayerMask playerLayer;
     public Transform attackOrigin;
 
+    [Header("Facing & Spacing (engaged idle)")]
+    [Tooltip("Degrees/sec the enemy turns to face the player while in range — " +
+             "smooth tracking instead of the frozen-then-snap look.")]
+    public float turnSpeedDegrees = 300f;
+
+    [Tooltip("If the player gets closer than this, the enemy backs up — no more " +
+             "standing inside each other.")]
+    public float personalSpace = 1.2f;
+
+    [Tooltip("Backpedal speed when the player crowds it.")]
+    public float backpedalSpeed = 1.5f;
+
+    [Tooltip("Sideways drift speed while waiting on attack cooldown — reads as " +
+             "circling prey. 0 = off. Try 1.0-1.5 for the natural look.")]
+    public float orbitSpeed = 1.2f;
+
+    // Each enemy picks a persistent circling direction so packs don't sync up.
+    private int _orbitDir = 1;
+
     [Header("Post-Attack")]
     [Tooltip("Seconds after an attack completes before the enemy resumes rotating and chasing.\n" +
              "Gives the player a window to reposition after dodging.")]
@@ -98,6 +117,8 @@ public class EnemyAI : MonoBehaviour
             _player = playerObj.transform;
             _playerStats = playerObj.GetComponent<EntityStats>();
         }
+
+        _orbitDir = Random.value < 0.5f ? -1 : 1;   // per-enemy circling direction
 
         _stats.onDeath.AddListener(OnDeath);
         _stats.onDamageTaken.AddListener(OnDamaged);

@@ -171,15 +171,18 @@ public class ToughCombat : EnemyCombatBase
     {
         if (_sb == null) return;
 
-        HoldLockedRotation();
-
         switch (_phase)
         {
             case Phase.SwipeWindup:
+            {
+                float dur = Basic != null ? Basic.windupTime : 0.55f;
+                TrackOrHold(1f - Mathf.Clamp01((_phaseEndTime - Time.time) / Mathf.Max(0.0001f, dur)));
                 if (Time.time >= _phaseEndTime) BeginSwipeStrike();
                 break;
+            }
 
             case Phase.SwipeStrike:
+                HoldLockedRotation();
                 if (!_swipeHitResolved && fallbackHitDelay > 0f &&
                     Time.time >= _strikeStartTime + fallbackHitDelay)
                     ResolveSwipeHit();
@@ -196,6 +199,11 @@ public class ToughCombat : EnemyCombatBase
             {
                 float windup = Dash != null ? Dash.windupTime : 0.8f;
                 float t = Mathf.Clamp01(1f - (_phaseEndTime - Time.time) / Mathf.Max(0.0001f, windup));
+
+                // The charge corridor tracks early, then locks — the rect decal
+                // rotates with it, so the telegraph stays honest.
+                TrackOrHold(t);
+
                 Color c = windupColor;
                 c.a *= t;
                 SetIndicatorColor(c);
@@ -207,6 +215,7 @@ public class ToughCombat : EnemyCombatBase
 
             case Phase.Dashing:
             {
+                HoldLockedRotation();
                 // Charge along the locked direction.
                 transform.position = Vector3.MoveTowards(
                     transform.position, _dashEnd, dashSpeed * Time.deltaTime);
