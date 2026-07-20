@@ -66,10 +66,10 @@ public class HammerCombat : MonoBehaviour
     [Tooltip("Layer mask used by hit detection.")]
     public LayerMask enemyLayer;
 
-    [Header("Stagger Force (overrides PlayerCombat default)")]
-    [Tooltip("Stagger force passed to EnemyAI.TakeKnockback for both swing and " +
-             "slam. Hammer = 8 by default — interrupts grunts (T 1-2) and " +
-             "anyone with Toughness below this value.")]
+    [Header("Stagger Force (DEPRECATED)")]
+    [Tooltip("UNUSED — replaced by the Impact system (PlayerStatBlock's " +
+             "hammerImpactBasic/Special: 3 basic / 4 slam). Kept so prefab " +
+             "data isn't lost.")]
     public int staggerForce = 8;
 
     [Header("Visual Ripple")]
@@ -193,7 +193,7 @@ public class HammerCombat : MonoBehaviour
         if (attackOrigin == null) return;
 
         int damage    = _stats?.CalculateWeaponDamage() ?? 10;
-        int tough     = _stats?.Toughness ?? 0;
+        int impact    = _stats?.GetWeaponImpact(special: false) ?? 3;
         int hitsLanded = 0;
 
         Collider[] hits = Physics.OverlapSphere(attackOrigin.position, swingRadius, enemyLayer);
@@ -204,7 +204,7 @@ public class HammerCombat : MonoBehaviour
             if (angle > swingAngle * 0.5f) continue;
 
             hit.GetComponent<EntityStats>()?.TakeDamage(damage);
-            hit.GetComponent<EnemyAI>()?.TakeKnockback(attackOrigin.position, staggerForce, tough);
+            hit.GetComponent<EnemyAI>()?.ApplyHitReaction(attackOrigin.position, impact);
             hitsLanded++;
         }
 
@@ -222,7 +222,7 @@ public class HammerCombat : MonoBehaviour
 
         int baseDmg = _stats?.CalculateWeaponDamage() ?? 10;
         int damage  = Mathf.RoundToInt(baseDmg * slamDamageMultiplier);
-        int tough   = _stats?.Toughness ?? 0;
+        int impact  = _stats?.GetWeaponImpact(special: true) ?? 4;   // jump slam = special tier
         int hitsLanded = 0;
 
         // Use OverlapSphere — full 360° around the player. No angle filter.
@@ -230,7 +230,7 @@ public class HammerCombat : MonoBehaviour
         foreach (Collider hit in hits)
         {
             hit.GetComponent<EntityStats>()?.TakeDamage(damage);
-            hit.GetComponent<EnemyAI>()?.TakeKnockback(attackOrigin.position, staggerForce, tough);
+            hit.GetComponent<EnemyAI>()?.ApplyHitReaction(attackOrigin.position, impact);
             hitsLanded++;
         }
 

@@ -103,6 +103,16 @@ public class EnemyCombat : EnemyCombatBase
     // ── Public ─────────────────────────────────────────────────────────
     public override bool IsBusy => _isAttacking || _isWindingUp;
 
+    // Impact system: everything this legacy script does is a DECAL —
+    // windup delayable (capped), the strike untouchable.
+    public override bool IsInDecalAction => IsBusy;
+
+    public override void DelayCurrentWindup(float seconds)
+    {
+        if (!_isWindingUp) return;
+        _windupStartTime += AccrueWindupDelay(seconds);   // pushes the windup end back
+    }
+
     public override CombatDebugState DecalDebugState
     {
         get
@@ -189,8 +199,9 @@ public class EnemyCombat : EnemyCombatBase
         // Cooldown is per-entry — a big cone can have a longer recovery than
         // the quick rect lunge. Timed from windup start (same as before).
         _nextAttackReadyTime = Time.time + CurrentDecal.cooldown;
-        _isWindingUp     = true;
-        _windupStartTime = Time.time;
+        _isWindingUp        = true;
+        _windupStartTime    = Time.time;
+        _windupDelayAccrued = 0f;
 
         FaceAndLockOntoPlayer();
 
@@ -248,10 +259,10 @@ public class EnemyCombat : EnemyCombatBase
         if (!hit) return;
 
         int damage = RollDamage(atk.damageMin, atk.damageMax);
-        _playerStats.TakeDamage(damage);
+        DamagePlayer(damage, decalHit: true);
 
         if (verboseAttackLog)
-            Debug.Log($"[EnemyCombat] {gameObject.name} hit player for {damage} ({atk.name}/{atk.shape})");
+            Debug.Log($"[EnemyCombat] {gameObject.name} hit player ({atk.name}/{atk.shape})");
     }
 
     public override void OnAttackEnd()

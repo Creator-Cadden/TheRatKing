@@ -58,6 +58,15 @@ public class GruntCombat : EnemyCombatBase
 
     public override bool IsBusy => _phase != Phase.Idle;
 
+    // Impact system: grunt has no decal; its basic windup can be flinch-delayed.
+    public override bool IsInBasicWindup => _phase == Phase.WindingUp;
+
+    public override void DelayCurrentWindup(float seconds)
+    {
+        if (_phase != Phase.WindingUp) return;
+        _windupEndTime += AccrueWindupDelay(seconds);
+    }
+
     // All tuning comes from the stat block's Basic Attack section.
     private BasicAttackConfig Basic => _sb != null ? _sb.basicAttack : null;
 
@@ -114,9 +123,10 @@ public class GruntCombat : EnemyCombatBase
         if (Time.time < _lastAttackTime + Basic.cooldown)        return;
         if (distToPlayer > CurrentAttackReach + 0.35f)           return;
 
-        _lastAttackTime = Time.time;
-        _phase          = Phase.WindingUp;
-        _windupEndTime  = Time.time + Basic.windupTime;
+        _lastAttackTime      = Time.time;
+        _phase               = Phase.WindingUp;
+        _windupEndTime       = Time.time + Basic.windupTime;
+        _windupDelayAccrued  = 0f;
 
         FaceAndLockOntoPlayer();
         SetTriggerIfPresent(windupTrigger);
@@ -139,7 +149,7 @@ public class GruntCombat : EnemyCombatBase
         _hitResolved = true;
 
         if (PlayerOverlapsSphere(HitPoint.position, hitRadius))
-            DamagePlayer(RollBasicAttackDamage());
+            DamagePlayer(RollBasicAttackDamage(), decalHit: false);
     }
 
     public override void OnAttackEnd()

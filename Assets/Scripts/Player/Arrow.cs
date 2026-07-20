@@ -134,7 +134,7 @@ public class Arrow : MonoBehaviour
             {
                 stats.TakeDamage(damage);
                 other.GetComponentInParent<EnemyAI>()
-                    ?.TakeKnockback(transform.position, staggerForce);
+                    ?.ApplyHitReaction(transform.position, staggerForce);   // staggerForce = the arrow's Impact value
 
                 if (verbose)
                     Debug.Log($"[Arrow] Hit {other.name} for {damage} dmg.");

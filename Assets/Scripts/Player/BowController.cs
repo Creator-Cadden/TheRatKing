@@ -320,7 +320,7 @@ public class BowController : MonoBehaviour
         // so the player can aim up at flying enemies. No auto-target assist
         // while aiming — the player chose to aim manually.
         Vector3 dir = GetAimDirection();
-        SpawnArrow(dir, dmg, spd);
+        SpawnArrow(dir, dmg, spd, charged: true);
 
         if (verbose)
             Debug.Log($"[BowController] Aimed shot — charge {chargeFraction:F2}, " +
@@ -375,7 +375,7 @@ public class BowController : MonoBehaviour
         if (verbose) Debug.Log($"[BowController] Triple-shot fired {tripleShotCount} arrows.");
     }
 
-    private void SpawnArrow(Vector3 direction, int damage, float speedOverride = -1f)
+    private void SpawnArrow(Vector3 direction, int damage, float speedOverride = -1f, bool charged = false)
     {
         if (arrowPrefab == null || arrowSpawnPoint == null)
         {
@@ -387,9 +387,10 @@ public class BowController : MonoBehaviour
                                   arrowSpawnPoint.position,
                                   Quaternion.LookRotation(direction.normalized));
 
-        float spd     = speedOverride > 0f ? speedOverride : arrowSpeed;
-        int   stagger = 2; // bow stagger — could pull from PlayerCombat if exposed
-        arrow.Launch(direction, spd, damage, stagger, enemyLayer, arrowLifetime, arrowGravity);
+        float spd    = speedOverride > 0f ? speedOverride : arrowSpeed;
+        // Impact rides along in the arrow's staggerForce slot: basic 1 / charged 2.
+        int   impact = _stats != null ? _stats.GetWeaponImpact(charged) : (charged ? 2 : 1);
+        arrow.Launch(direction, spd, damage, impact, enemyLayer, arrowLifetime, arrowGravity);
     }
 
     // ── Movement detection ──

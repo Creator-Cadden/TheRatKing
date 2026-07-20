@@ -94,6 +94,17 @@ public class ToughCombat : EnemyCombatBase
 
     public override bool IsBusy => _phase != Phase.Idle;
 
+    // Impact system: swipe windup is flinch-delayable; the dash is a DECAL —
+    // windup can only be delayed (capped), the charge itself is unstoppable.
+    public override bool IsInBasicWindup => _phase == Phase.SwipeWindup;
+    public override bool IsInDecalAction => _phase == Phase.DashWindup || _phase == Phase.Dashing;
+
+    public override void DelayCurrentWindup(float seconds)
+    {
+        if (_phase != Phase.SwipeWindup && _phase != Phase.DashWindup) return;
+        _phaseEndTime += AccrueWindupDelay(seconds);
+    }
+
     private BasicAttackConfig Basic => _sb != null ? _sb.basicAttack : null;
 
     private DecalAttackConfig Dash =>
@@ -205,7 +216,7 @@ public class ToughCombat : EnemyCombatBase
                     PlayerOverlapsSphere(transform.position + Vector3.up * 0.6f, dashHitRadius))
                 {
                     _dashHitResolved = true;
-                    DamagePlayer(RollDamage(Dash.damageMin, Dash.damageMax));
+                    DamagePlayer(RollDamage(Dash.damageMin, Dash.damageMax), decalHit: true);
                 }
 
                 if (Vector3.SqrMagnitude(transform.position - _dashEnd) < 0.01f)
@@ -266,8 +277,9 @@ public class ToughCombat : EnemyCombatBase
     {
         _lastSwipeTime = Time.time;
         _swipesSinceDash++;
-        _phase         = Phase.SwipeWindup;
-        _phaseEndTime  = Time.time + Basic.windupTime;
+        _phase              = Phase.SwipeWindup;
+        _phaseEndTime       = Time.time + Basic.windupTime;
+        _windupDelayAccrued = 0f;
 
         FaceAndLockOntoPlayer();
         SetTriggerIfPresent(swipeWindupTrigger);
@@ -291,17 +303,18 @@ public class ToughCombat : EnemyCombatBase
 
         Transform point = attackPoint != null ? attackPoint : HitOrigin;
         if (PlayerOverlapsSphere(point.position, hitRadius))
-            DamagePlayer(RollBasicAttackDamage());
+            DamagePlayer(RollBasicAttackDamage(), decalHit: false);
     }
 
     // ── Dash ──
 
     private void StartDashWindup()
     {
-        _lastDashTime    = Time.time;
-        _swipesSinceDash = 0;
-        _phase           = Phase.DashWindup;
-        _phaseEndTime = Time.time + Dash.windupTime;
+        _lastDashTime       = Time.time;
+        _swipesSinceDash    = 0;
+        _phase              = Phase.DashWindup;
+        _phaseEndTime       = Time.time + Dash.windupTime;
+        _windupDelayAccrued = 0f;
 
         FaceAndLockOntoPlayer();   // direction locks NOW — sidestep after this wins
         if (_agent != null && _agent.isOnNavMesh) _agent.ResetPath();

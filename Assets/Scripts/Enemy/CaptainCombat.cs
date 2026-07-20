@@ -78,6 +78,17 @@ public class CaptainCombat : EnemyCombatBase
 
     public override bool IsBusy => _phase != Phase.Idle;
 
+    // Impact system: filler swipe windup is flinch-delayable; the rotation
+    // moves are DECALS — windup delayable (capped), strike untouchable.
+    public override bool IsInBasicWindup => _phase == Phase.SwipeWindup;
+    public override bool IsInDecalAction => _phase == Phase.DecalWindup || _phase == Phase.DecalStrike;
+
+    public override void DelayCurrentWindup(float seconds)
+    {
+        if (_phase != Phase.SwipeWindup && _phase != Phase.DecalWindup) return;
+        _phaseEndTime += AccrueWindupDelay(seconds);
+    }
+
     private BasicAttackConfig Basic => _sb != null ? _sb.basicAttack : null;
 
     private DecalAttackConfig Pending =>
@@ -219,8 +230,9 @@ public class CaptainCombat : EnemyCombatBase
     {
         _lastSwipeTime = Time.time;
         _basicsSinceDecal++;
-        _phase        = Phase.SwipeWindup;
-        _phaseEndTime = Time.time + Basic.windupTime;
+        _phase              = Phase.SwipeWindup;
+        _phaseEndTime       = Time.time + Basic.windupTime;
+        _windupDelayAccrued = 0f;
 
         FaceAndLockOntoPlayer();
         SetTriggerIfPresent(swipeWindupTrigger);
@@ -244,19 +256,20 @@ public class CaptainCombat : EnemyCombatBase
 
         Transform point = attackPoint != null ? attackPoint : HitOrigin;
         if (PlayerOverlapsSphere(point.position, hitRadius))
-            DamagePlayer(RollBasicAttackDamage());
+            DamagePlayer(RollBasicAttackDamage(), decalHit: false);
     }
 
     // ── Decal attack ──
 
     private void StartDecal()
     {
-        _currentDecal     = Pending;
-        _lastDecalTime    = Time.time;
-        _basicsSinceDecal = 0;
-        _phase            = Phase.DecalWindup;
-        _phaseEndTime     = Time.time + _currentDecal.windupTime;
-        _decalHitResolved = false;
+        _currentDecal       = Pending;
+        _lastDecalTime      = Time.time;
+        _basicsSinceDecal   = 0;
+        _phase              = Phase.DecalWindup;
+        _phaseEndTime       = Time.time + _currentDecal.windupTime;
+        _decalHitResolved   = false;
+        _windupDelayAccrued = 0f;
 
         // Precompute which entry comes NEXT so reach is stable while EnemyAI
         // approaches for the next rotation step.
@@ -316,7 +329,7 @@ public class CaptainCombat : EnemyCombatBase
         };
 
         if (hit)
-            DamagePlayer(RollDamage(_currentDecal.damageMin, _currentDecal.damageMax));
+            DamagePlayer(RollDamage(_currentDecal.damageMin, _currentDecal.damageMax), decalHit: true);
     }
 
     private bool CheckConeHit(DecalAttackConfig atk)

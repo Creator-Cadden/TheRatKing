@@ -64,6 +64,8 @@ public class PlayerCombat : MonoBehaviour
 
     // ── Lifecycle ──
 
+    private PlayerMovement _movement;
+
     void Awake()
     {
         _controller = GetComponent<CharacterController>();
@@ -72,6 +74,7 @@ public class PlayerCombat : MonoBehaviour
         _hammer     = GetComponent<HammerCombat>();
         _bow        = GetComponent<BowController>();
         _swapper    = GetComponent<WeaponModelSwapper>();
+        _movement   = GetComponent<PlayerMovement>();
     }
 
     void Start()
@@ -141,6 +144,7 @@ public class PlayerCombat : MonoBehaviour
         bool isGrounded = _controller.isGrounded;
 
         if (_stats == null) return;
+        if (_movement != null && _movement.IsStaggered) return;   // staggered — no attacking
         var weapon = _stats.EquippedWeapon;
 
         // ── Bow path ───────────────────────────────────────────────

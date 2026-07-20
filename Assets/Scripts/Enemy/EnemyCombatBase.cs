@@ -66,6 +66,38 @@ public abstract class EnemyCombatBase : MonoBehaviour
     /// <summary>Hard-cancel everything (knockback, stagger, death).</summary>
     public virtual void CancelAttackState() { }
 
+    // ── Impact system hooks ──
+
+    /// <summary>True while winding up OR executing a DECAL (Tier 2) attack.
+    /// Decal actions can never be cancelled — staggers only delay the windup.</summary>
+    public virtual bool IsInDecalAction => false;
+
+    /// <summary>True while winding up a BASIC (Tier 1) attack — flinches delay it.</summary>
+    public virtual bool IsInBasicWindup => false;
+
+    [Tooltip("Max total seconds a single windup can be pushed back by flinches/" +
+             "staggers. Stops fast weapons from chain-delaying a decal forever " +
+             "(which would be a stealth interrupt).")]
+    public float maxWindupDelay = 1f;
+
+    protected float _windupDelayAccrued;   // reset by each script at windup start
+
+    /// <summary>How much of the requested delay is still allowed this windup.</summary>
+    protected float AccrueWindupDelay(float requested)
+    {
+        float allowed = Mathf.Min(requested, maxWindupDelay - _windupDelayAccrued);
+        if (allowed <= 0f) return 0f;
+        _windupDelayAccrued += allowed;
+        return allowed;
+    }
+
+    /// <summary>Push the current windup back by up to <paramref name="seconds"/>
+    /// (capped per windup). No-op outside windups — committed attacks can't be slowed.</summary>
+    public virtual void DelayCurrentWindup(float seconds) { }
+
+    /// <summary>Public animator-trigger access for EnemyAI (Flinch/Stagger cues).</summary>
+    public void FireAnimTrigger(string trigger) => SetTriggerIfPresent(trigger);
+
     public Vector3 HitOriginPosition => HitOrigin.position;
     protected Transform HitOrigin => attackOrigin != null ? attackOrigin : transform;
 
@@ -197,12 +229,28 @@ public abstract class EnemyCombatBase : MonoBehaviour
         }
     }
 
-    /// <summary>Deal damage to the player (no-op if refs missing).</summary>
-    protected void DamagePlayer(int amount)
+    private PlayerMovement _playerMovement;
+
+    /// <summary>Deal damage to the player + apply the matching hit reaction.
+    /// decalHit = true → player STAGGER (action cancel + control lockout + knockback).
+    /// decalHit = false → basic hit reaction (anim + small knockback + brief i-frames,
+    /// no control loss). Per the Impact overhaul design.</summary>
+    protected void DamagePlayer(int amount, bool decalHit)
     {
         if (_playerStats == null) return;
+        if (_playerStats.IsInvulnerable) return;   // don't stack reactions during i-frames
+
         _playerStats.TakeDamage(amount);
+
+        if (_playerMovement == null && _playerStats != null)
+            _playerMovement = _playerStats.GetComponent<PlayerMovement>();
+        _playerMovement?.ApplyHitReaction(transform.position, decalHit);
+
         if (verboseAttackLog)
-            Debug.Log($"[{GetType().Name}] {gameObject.name} hit player for {amount}");
+            Debug.Log($"[{GetType().Name}] {gameObject.name} hit player for {amount} " +
+                      $"({(decalHit ? "DECAL → stagger" : "basic → flinch")})");
     }
+
+    /// <summary>Back-compat overload — treats the hit as a basic (non-decal) hit.</summary>
+    protected void DamagePlayer(int amount) => DamagePlayer(amount, false);
 }

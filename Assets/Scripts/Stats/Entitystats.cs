@@ -261,6 +261,22 @@ public class EntityStats : MonoBehaviour
     }
 
     /// <summary>
+    /// Impact of the equipped weapon (the stagger stat — offense only).
+    /// special = jump/charged attacks (+1 tier over basic per the design doc).
+    /// </summary>
+    public int GetWeaponImpact(bool special)
+    {
+        if (playerStatBlock == null) return 1;
+        return EquippedWeapon switch
+        {
+            WeaponType.Blade  => special ? playerStatBlock.bladeImpactSpecial  : playerStatBlock.bladeImpactBasic,
+            WeaponType.Hammer => special ? playerStatBlock.hammerImpactSpecial : playerStatBlock.hammerImpactBasic,
+            WeaponType.Bow    => special ? playerStatBlock.bowImpactSpecial    : playerStatBlock.bowImpactBasic,
+            _                 => 1
+        };
+    }
+
+    /// <summary>
     /// Charged bow shot — full aim-hold release.
     /// Damage = (bowBaseDamage + Strength × bowStrengthMultiplier) × bowChargedMultiplier
     /// </summary>
@@ -334,9 +350,23 @@ public class EntityStats : MonoBehaviour
 
     // ── Health & Damage ──
 
+    // Brief invulnerability window (player only) granted after being hit —
+    // prevents multi-hit shredding while a hit-reaction plays.
+    private float _invulnerableUntil = -999f;
+
+    public bool IsInvulnerable => isPlayer && Time.time < _invulnerableUntil;
+
+    /// <summary>Grant hit-reaction i-frames (player only, no effect on enemies).</summary>
+    public void GrantInvulnerability(float seconds)
+    {
+        if (!isPlayer || seconds <= 0f) return;
+        _invulnerableUntil = Mathf.Max(_invulnerableUntil, Time.time + seconds);
+    }
+
     public void TakeDamage(int damage)
     {
         if (IsDead) return;
+        if (IsInvulnerable) return;   // hit-reaction i-frames
         int finalDamage = Mathf.Max(1, damage);
         CurrentHealth   = Mathf.Max(0, CurrentHealth - finalDamage);
         onDamageTaken?.Invoke(finalDamage);

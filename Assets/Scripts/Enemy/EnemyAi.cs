@@ -128,6 +128,13 @@ public class EnemyAI : MonoBehaviour
             return;
         }
 
+        // Stagger lockout — stumbling, can't move or attack until it ends.
+        if (IsStaggered)
+        {
+            if (_agent.enabled && _agent.isOnNavMesh) _agent.ResetPath();
+            return;
+        }
+
         _combat.verboseAttackLog = verboseAttackLog;
         _combat.Tick();
 
@@ -224,56 +231,91 @@ public class EnemyAI : MonoBehaviour
         }
     }
 
+    // ── Impact reaction system ──────────────────────────────────────────
+    // Reaction = Impact − Toughness:
+    //   below 0 → shrug (nothing) · 0 → flinch (delays a basic windup)
+    //   · +1 or more → stagger (cancel + lockout + knockback).
+    // DECAL actions are unstoppable: any flinch/stagger-tier hit only DELAYS
+    // the decal windup (capped in EnemyCombatBase). Perks may interrupt later.
+
+    [Header("Impact Reactions")]
+    [Tooltip("Seconds a flinch (Impact == Toughness) pushes a basic windup back.")]
+    public float flinchWindupDelay = 0.3f;
+
+    [Tooltip("Seconds each stagger-tier hit pushes a DECAL windup back " +
+             "(decals can't be cancelled — only delayed, capped per windup).")]
+    public float decalWindupDelay = 0.35f;
+
+    [Tooltip("Seconds the enemy is locked out of acting after a stagger.")]
+    public float staggerDuration = 0.7f;
+
+    private float _staggerUntil = -999f;
+
+    /// <summary>True while stumbling from a stagger — can't move or attack.</summary>
+    public bool IsStaggered => Time.time < _staggerUntil;
+
     /// <summary>
-    /// Primary entry — call this when the player hits this enemy.
+    /// Primary entry — call when a player attack hits this enemy.
+    /// impact = the weapon attack's Impact value (EntityStats.GetWeaponImpact).
     /// </summary>
-    public void TakeKnockback(Vector3 sourcePosition, int staggerForce, int attackerToughness)
+    public void ApplyHitReaction(Vector3 sourcePosition, int impact)
     {
-        if (_sb == null) return;
+        if (_sb == null || _stats == null || _stats.IsDead) return;
 
-        int enemyToughness = _stats?.Toughness ?? 0;
+        int margin = impact - _stats.Toughness;
+        if (margin < 0) return;   // shrug — powers through
 
-        // ── 1. attackerToughness is deprecated (the player no longer has a
-        //       Toughness stat). Knockback is now gated purely by the weapon's
-        //       Impact (staggerForce) vs the enemy's Toughness, below.
-        _ = attackerToughness;
-
-        // ── 2. Pick the weapon's base force from the enemy's stat block ──
-        float baseForce = staggerForce switch
+        // Decal hyper armor: never cancelled, only delayed during its windup.
+        if (_combat != null && _combat.IsInDecalAction)
         {
-            int f when f >= 8 => _sb.hammerKnockbackForce,
-            int f when f <= 2 => _sb.bowKnockbackForce,
-            _                 => _sb.bladeKnockbackForce
-        };
-
-        float finalForce = baseForce - (enemyToughness * _sb.toughnessReductionPerPoint);
-        if (finalForce <= 0f) return;
-
-        // ── 3. Apply the physical push ──
-        Vector3 direction = (transform.position - sourcePosition).normalized;
-        direction.y = 0.3f;
-        _knockbackVelocity = direction * finalForce;
-        _knockbackTimer    = _sb.knockbackDuration;
-        _isKnockedBack     = true;
-
-        // ── 4. Cancel windup + play stun anim only if THIS weapon can stagger
-        //       this enemy (staggerForce > enemy Toughness).
-        bool canStagger = _stats != null && _stats.ShouldStagger(staggerForce);
-        if (canStagger)
-        {
-            _combat.CancelAttackState();
-            _animator.SetTrigger("Stun");
+            _combat.DelayCurrentWindup(decalWindupDelay);
+            _combat.FireAnimTrigger("Flinch");
+            return;
         }
+
+        if (margin == 0)
+        {
+            // Flinch: feedback + tax. Basic windup gets pushed back; no cancel,
+            // no knockback, no lockout.
+            _combat?.DelayCurrentWindup(flinchWindupDelay);
+            _combat?.FireAnimTrigger("Flinch");
+            return;
+        }
+
+        // ── Stagger: cancel + lockout + knockback ──
+        _combat?.CancelAttackState();
+        _staggerUntil = Time.time + staggerDuration;
+
+        float baseForce = impact switch
+        {
+            >= 3 => _sb.hammerKnockbackForce,
+            2    => _sb.bladeKnockbackForce,
+            _    => _sb.bowKnockbackForce
+        };
+        float finalForce = baseForce - (_stats.Toughness * _sb.toughnessReductionPerPoint);
+        if (finalForce > 0f)
+        {
+            Vector3 direction = (transform.position - sourcePosition).normalized;
+            direction.y = 0.3f;
+            _knockbackVelocity = direction * finalForce;
+            _knockbackTimer    = _sb.knockbackDuration;
+            _isKnockedBack     = true;
+        }
+
+        // "Stun" is the existing animator trigger name; "Stagger" for new setups.
+        _animator.SetTrigger("Stun");
+        _combat?.FireAnimTrigger("Stagger");
     }
 
-    // ── Backward-compatible overloads ───────────────────────────────────
-    // Any older caller that doesn't pass attackerToughness assumes a very high
-    // attacker toughness so knockback always fires (preserves old behavior).
+    // ── Legacy adapters (old staggerForce-based callers) ────────────────
+    public void TakeKnockback(Vector3 sourcePosition, int staggerForce, int _)
+        => ApplyHitReaction(sourcePosition, staggerForce >= 8 ? 3 : Mathf.Clamp(staggerForce, 0, 5));
+
     public void TakeKnockback(Vector3 sourcePosition, int staggerForce)
-        => TakeKnockback(sourcePosition, staggerForce, int.MaxValue);
+        => TakeKnockback(sourcePosition, staggerForce, 0);
 
     public void TakeKnockback(Vector3 sourcePosition)
-        => TakeKnockback(sourcePosition, 3, int.MaxValue);
+        => TakeKnockback(sourcePosition, 2, 0);
 
     private void OnDeath()
     {

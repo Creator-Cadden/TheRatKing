@@ -72,6 +72,17 @@ public class BalloonCombat : EnemyCombatBase
 
     public override bool IsBusy => _phase != Phase.Hover;
 
+    // Impact system: the drop is a DECAL — its windup can only be delayed
+    // (capped); the drop/grounded/rise phases are untouchable by reactions.
+    public override bool IsInDecalAction =>
+        _phase == Phase.Windup || _phase == Phase.Drop;
+
+    public override void DelayCurrentWindup(float seconds)
+    {
+        if (_phase != Phase.Windup) return;
+        _phaseEndTime += AccrueWindupDelay(seconds);
+    }
+
     // The balloon's single decal entry (first in the stat block's list).
     private DecalAttackConfig Decal =>
         (_sb != null && _sb.hasDecalAttack &&
@@ -180,10 +191,11 @@ public class BalloonCombat : EnemyCombatBase
         if (Time.time < _lastAttackTime + Decal.cooldown)      return;
         if (distToPlayer > CurrentAttackReach + 0.35f)         return;
 
-        _lastAttackTime = Time.time;
-        _phase          = Phase.Windup;
-        _phaseEndTime   = Time.time + Decal.windupTime;
-        _hitResolved    = false;
+        _lastAttackTime     = Time.time;
+        _phase              = Phase.Windup;
+        _phaseEndTime       = Time.time + Decal.windupTime;
+        _hitResolved        = false;
+        _windupDelayAccrued = 0f;
 
         FaceAndLockOntoPlayer();
         if (_agent != null && _agent.isOnNavMesh) _agent.ResetPath();
@@ -213,7 +225,7 @@ public class BalloonCombat : EnemyCombatBase
         // Same anchor as the decal visual — what you see is what hits.
         Vector3 center = GroundCenter() + Vector3.up * (Decal.height * 0.5f);
         if (PlayerOverlapsSphere(center, Decal.circleRadius))
-            DamagePlayer(RollDamage(Decal.damageMin, Decal.damageMax));
+            DamagePlayer(RollDamage(Decal.damageMin, Decal.damageMax), decalHit: true);
 
         // Indicator's job is done the moment the hit lands.
         ShowIndicator(false);

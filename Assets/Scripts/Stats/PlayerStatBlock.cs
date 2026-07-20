@@ -38,6 +38,21 @@ public class PlayerStatBlock : BaseStatBlock
     public int floorTwoCap   = 10;
     public int floorThreeCap = 15;
 
+    // ── IMPACT (stagger stat — offense only) ──
+    // Reaction on hit = Impact − enemy Toughness (0–5 tiers):
+    //   below 0 → shrug (nothing) · exactly 0 → flinch (delays a basic windup)
+    //   · +1 or more → stagger (cancels action + lockout + knockback).
+    // Decal (Tier 2) attacks can NEVER be cancelled — staggers only DELAY their
+    // windup (capped). True decal interruption is reserved for future perks.
+
+    [Header("Impact (per weapon: basic / special = jump-charged)")]
+    public int bladeImpactBasic    = 1;
+    public int bladeImpactSpecial  = 2;
+    public int hammerImpactBasic   = 3;
+    public int hammerImpactSpecial = 4;
+    public int bowImpactBasic      = 1;
+    public int bowImpactSpecial    = 2;
+
     // ── WEAPON DAMAGE — Souls-style formula: damage = weaponBase + Strength × multiplier.
     // The flat base makes each Strength point a smooth % gain instead of doubling
     // damage at low Strength (the old no-base formula forced crazy multipliers). ──

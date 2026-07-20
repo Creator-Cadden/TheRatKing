@@ -137,7 +137,7 @@ public class PlayerMovement : MonoBehaviour
     {
         _isGrounded = _controller.isGrounded;
 
-        if (!_isRolling)
+        if (!_isRolling && !IsStaggered)
         {
             HandleMovement();
             HandleRotation();
@@ -185,6 +185,77 @@ public class PlayerMovement : MonoBehaviour
         _knockbackForce        = force;
         _knockbackTimer        = duration;
         _knockbackInitialTimer = duration;
+    }
+
+    // ── Hit reactions (Impact overhaul) ──
+    // Basic enemy hits: small knockback + brief i-frames, NO control loss.
+    // Decal hits: STAGGER — control lockout + bigger knockback + i-frames.
+
+    [Header("Hit Reactions")]
+    [Tooltip("Knockback force from a basic enemy hit (no control loss).")]
+    public float basicHitKnockbackForce = 4f;
+
+    [Tooltip("I-frame duration after a basic hit.")]
+    public float basicHitInvulnDuration = 0.3f;
+
+    [Tooltip("Control lockout duration when STAGGERED by a decal hit.")]
+    public float staggerLockoutDuration = 0.5f;
+
+    [Tooltip("Knockback force when staggered by a decal hit.")]
+    public float staggerKnockbackForce = 8f;
+
+    [Tooltip("I-frame duration after being staggered.")]
+    public float staggerInvulnDuration = 0.5f;
+
+    private float _staggerUntil = -999f;
+
+    /// <summary>True while staggered — movement, roll, jump, and attacks blocked.</summary>
+    public bool IsStaggered => Time.time < _staggerUntil;
+
+    /// <summary>
+    /// Called by enemy attacks after damage lands.
+    /// stagger = true for DECAL hits (control loss), false for basic hits.
+    /// </summary>
+    public void ApplyHitReaction(Vector3 sourcePosition, bool stagger)
+    {
+        Vector3 away = transform.position - sourcePosition;
+        away.y = 0f;
+        if (away.sqrMagnitude < 0.0001f) away = -transform.forward;
+
+        if (stagger)
+        {
+            _staggerUntil = Time.time + staggerLockoutDuration;
+            TakeKnockback(away, staggerKnockbackForce, 0.25f);
+            _stats?.GrantInvulnerability(staggerInvulnDuration);
+            SetTriggerIfPresent("Stagger");
+        }
+        else
+        {
+            TakeKnockback(away, basicHitKnockbackForce, 0.15f);
+            _stats?.GrantInvulnerability(basicHitInvulnDuration);
+            SetTriggerIfPresent("HitReact");
+        }
+    }
+
+    /// <summary>Stagger without knockback (boss code applies its own push).</summary>
+    public void ApplyStagger()
+    {
+        _staggerUntil = Time.time + staggerLockoutDuration;
+        _stats?.GrantInvulnerability(staggerInvulnDuration);
+        SetTriggerIfPresent("Stagger");
+    }
+
+    private void SetTriggerIfPresent(string trigger)
+    {
+        if (_primaryAnimator == null || string.IsNullOrEmpty(trigger)) return;
+        foreach (var p in _primaryAnimator.parameters)
+        {
+            if (p.type == AnimatorControllerParameterType.Trigger && p.name == trigger)
+            {
+                _primaryAnimator.SetTrigger(trigger);
+                return;
+            }
+        }
     }
 
     /// <summary>
@@ -282,7 +353,7 @@ public class PlayerMovement : MonoBehaviour
         SetBool("Contact", false);
         if (landedThisFrame) SetBool("Contact", true);
 
-        if (_jumpPressed && _isGrounded)
+        if (_jumpPressed && _isGrounded && !IsStaggered)
         {
             // Jumping is FREE — no stamina cost (playtest feedback: stamina-gated
             // jumps made platforming feel unfair). jumpStaminaCost on the stat
@@ -300,8 +371,9 @@ public class PlayerMovement : MonoBehaviour
 
     private void TryRoll()
     {
-        if (_isRolling) return;
-        if (_isAiming)  return;
+        if (_isRolling)   return;
+        if (_isAiming)    return;
+        if (IsStaggered)  return;   // no dodging out of a stagger — that's the punish
         if (Time.time < _lastRollTime + rollCooldown) return;
 
         // Roll works with ANY stamina left — even 1 point — draining whatever

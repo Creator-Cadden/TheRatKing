@@ -58,8 +58,8 @@ public class BladeCombat : MonoBehaviour
     [Tooltip("Layer mask used by hit detection.")]
     public LayerMask enemyLayer;
 
-    [Tooltip("Stagger force passed to EnemyAI.TakeKnockback. 0 = never interrupt " +
-             "(blade is a damage weapon, you must dodge enemy windups).")]
+    [Tooltip("UNUSED — replaced by the Impact system (PlayerStatBlock's " +
+             "bladeImpactBasic/Special). Kept so prefab data isn't lost.")]
     public int staggerForce = 0;
 
     [Header("Visual Ripple")]
@@ -193,7 +193,8 @@ public class BladeCombat : MonoBehaviour
         if (attackOrigin == null) return;
 
         int damage = _stats?.CalculateWeaponDamage() ?? 10;
-        int tough  = _stats?.Toughness ?? 0;
+        // 360° swing = the jump attack → special Impact tier (+1 over basic).
+        int impact = _stats?.GetWeaponImpact(special: angle >= 360f) ?? 1;
 
         Collider[] hits = Physics.OverlapSphere(attackOrigin.position, radius, enemyLayer);
         foreach (Collider hit in hits)
@@ -208,7 +209,7 @@ public class BladeCombat : MonoBehaviour
             }
 
             hit.GetComponent<EntityStats>()?.TakeDamage(damage);
-            hit.GetComponent<EnemyAI>()?.TakeKnockback(attackOrigin.position, staggerForce, tough);
+            hit.GetComponent<EnemyAI>()?.ApplyHitReaction(attackOrigin.position, impact);
         }
     }
 

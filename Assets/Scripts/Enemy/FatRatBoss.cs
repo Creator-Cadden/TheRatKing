@@ -597,6 +597,7 @@ public class FatRatBoss : MonoBehaviour
     private void DamagePlayer(int amount, string sourceTag)
     {
         if (_playerStats == null) return;
+        if (_playerStats.IsInvulnerable) return;   // hit-reaction i-frames
 
         // Scale damage by Strength like EnemyCombat does, if a stat block exists.
         int finalDamage = amount;
@@ -604,6 +605,10 @@ public class FatRatBoss : MonoBehaviour
             finalDamage += _stats.Strength * _stats.enemyStatBlock.attackStrengthBonus;
 
         _playerStats.TakeDamage(finalDamage);
+
+        // Every boss attack is decal-tier → STAGGER the player (Impact overhaul).
+        // Knockback stays with the boss's own tuned KnockbackPlayer calls.
+        _playerMovement?.ApplyStagger();
 
         if (verbose)
             Debug.Log($"[FatRatBoss] {gameObject.name} {sourceTag} hit player for {finalDamage}");
