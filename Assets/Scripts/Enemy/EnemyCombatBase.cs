@@ -232,10 +232,11 @@ public abstract class EnemyCombatBase : MonoBehaviour
     private PlayerMovement _playerMovement;
 
     /// <summary>Deal damage to the player + apply the matching hit reaction.
-    /// decalHit = true → player STAGGER (action cancel + control lockout + knockback).
-    /// decalHit = false → basic hit reaction (anim + small knockback + brief i-frames,
-    /// no control loss). Per the Impact overhaul design.</summary>
-    protected void DamagePlayer(int amount, bool decalHit)
+    /// decalHit = true → player STAGGER (big shove + recovery lockout).
+    /// decalHit = false → basic hit reaction (small push + brief i-frames, no
+    /// control loss). pushDir (optional) = attacker-chosen shove direction —
+    /// e.g. the tough's dash shoves ALONG the charge; default = away from us.</summary>
+    protected void DamagePlayer(int amount, bool decalHit, Vector3 pushDir = default)
     {
         if (_playerStats == null) return;
         if (_playerStats.IsInvulnerable) return;   // don't stack reactions during i-frames
@@ -244,7 +245,7 @@ public abstract class EnemyCombatBase : MonoBehaviour
 
         if (_playerMovement == null && _playerStats != null)
             _playerMovement = _playerStats.GetComponent<PlayerMovement>();
-        _playerMovement?.ApplyHitReaction(transform.position, decalHit);
+        _playerMovement?.ApplyHitReaction(transform.position, decalHit, pushDir);
 
         if (verboseAttackLog)
             Debug.Log($"[{GetType().Name}] {gameObject.name} hit player for {amount} " +

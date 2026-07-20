@@ -202,9 +202,43 @@ public class EnemyAI : MonoBehaviour
 
         // No attack started — keep chasing until inside stopRange.
         if (dist > walkThreshold)
+        {
             _agent.SetDestination(_player.position);
+        }
         else
+        {
+            // ── Engaged idle: face + space naturally instead of freezing ──
             _agent.ResetPath();
+            SmoothFacePlayer();
+
+            // Personal space: if the player is basically inside it, back up.
+            if (dist < personalSpace)
+            {
+                Vector3 awayDir = (transform.position - _player.position);
+                awayDir.y = 0f;
+                if (awayDir.sqrMagnitude > 0.0001f)
+                    _agent.Move(awayDir.normalized * backpedalSpeed * Time.deltaTime);
+            }
+            else if (orbitSpeed > 0f)
+            {
+                // Gentle sideways drift while waiting on cooldown — reads as
+                // circling prey rather than statue-standing.
+                Vector3 toPlayer = (_player.position - transform.position);
+                toPlayer.y = 0f;
+                Vector3 side = Vector3.Cross(Vector3.up, toPlayer.normalized) * _orbitDir;
+                _agent.Move(side * orbitSpeed * Time.deltaTime);
+            }
+        }
+    }
+
+    private void SmoothFacePlayer()
+    {
+        Vector3 look = _player.position - transform.position;
+        look.y = 0f;
+        if (look.sqrMagnitude < 0.0001f) return;
+        Quaternion target = Quaternion.LookRotation(look);
+        transform.rotation = Quaternion.RotateTowards(
+            transform.rotation, target, turnSpeedDegrees * Time.deltaTime);
     }
 
     public void OnAttackHitFrame() => _combat?.OnAttackHitFrame();
@@ -217,12 +251,73 @@ public class EnemyAI : MonoBehaviour
         return Mathf.Sqrt(dx * dx + dz * dz);
     }
 
+    // ── Ballistic knockback (launch + arc + bounces) ──
+
+    [Header("Stagger Launch")]
+    [Tooltip("Fraction of the knockback force converted to UPWARD velocity. " +
+             "0 = flat shove · 0.5–0.7 = proper cartoon launch.")]
+    public float launchUpFactor = 0.55f;
+
+    [Tooltip("Extra launch multiplier per point of Impact ABOVE the stagger " +
+             "threshold — overkill hits fling harder. Hammer (4) vs Grunt (0) " +
+             "= margin 4 → ×" + "1.6 with the default 0.2.")]
+    public float launchPerMargin = 0.2f;
+
+    [Tooltip("How much vertical speed survives each ground bounce. 0.45 = " +
+             "satisfying thump-thump settle.")]
+    public float bounciness = 0.45f;
+
+    [Tooltip("Max ground bounces before it just slides to a stop.")]
+    public int maxBounces = 2;
+
+    [Tooltip("Horizontal speed kept after each bounce.")]
+    public float bounceHorizontalKeep = 0.6f;
+
+    private const float KnockbackGravity   = -30f;
+    private const float MinBounceSpeed     = 3f;    // below this, no more bouncing
+    private const float KnockbackSafetyCap = 3f;    // absolute max airtime
+
+    private float _knockbackGroundY;
+    private int   _bouncesLeft;
+
     private void HandleKnockback()
     {
         _agent.enabled = false;
-        transform.position += _knockbackVelocity * Time.deltaTime;
-        _knockbackVelocity = Vector3.Lerp(_knockbackVelocity, Vector3.zero, 10f * Time.deltaTime);
 
+        // Ballistic step.
+        _knockbackVelocity.y += KnockbackGravity * Time.deltaTime;
+        transform.position   += _knockbackVelocity * Time.deltaTime;
+
+        // Ground contact → bounce or settle.
+        if (transform.position.y <= _knockbackGroundY && _knockbackVelocity.y < 0f)
+        {
+            Vector3 p = transform.position;
+            p.y = _knockbackGroundY;
+            transform.position = p;
+
+            if (_bouncesLeft > 0 && -_knockbackVelocity.y > MinBounceSpeed)
+            {
+                _bouncesLeft--;
+                _knockbackVelocity.y  = -_knockbackVelocity.y * bounciness;
+                _knockbackVelocity.x *= bounceHorizontalKeep;
+                _knockbackVelocity.z *= bounceHorizontalKeep;
+            }
+            else
+            {
+                // Grounded slide-out.
+                _knockbackVelocity.y = 0f;
+                _knockbackVelocity   = Vector3.Lerp(_knockbackVelocity, Vector3.zero,
+                                                    12f * Time.deltaTime);
+                if (_knockbackVelocity.sqrMagnitude < 0.25f)
+                {
+                    _isKnockedBack = false;
+                    _agent.enabled = true;   // agent snaps back onto the NavMesh
+                    return;
+                }
+            }
+        }
+
+        // Safety cap — never stuck airborne (e.g. launched onto a ledge).
         _knockbackTimer -= Time.deltaTime;
         if (_knockbackTimer <= 0f)
         {
@@ -249,6 +344,17 @@ public class EnemyAI : MonoBehaviour
     [Tooltip("Seconds the enemy is locked out of acting after a stagger.")]
     public float staggerDuration = 0.7f;
 
+    [Tooltip("Small positional shove on FLINCH-tier hits (no launch, no cancel) — " +
+             "keeps combo targets drifting backward each hit so they can't sit " +
+             "inside the player. Shrug-tier hits still don't move (powers through), " +
+             "and decal windups are never displaced (armor holds position).")]
+    public float flinchNudgeForce = 2.5f;
+
+    [Tooltip("DEBUG — floats the reaction result above the enemy on every player " +
+             "hit: SHRUG (gray) / FLINCH (yellow) / STAGGER (red) / DELAYED " +
+             "(orange, decal hyper-armor). Turn OFF for builds.")]
+    public bool showReactionDebug = true;
+
     private float _staggerUntil = -999f;
 
     /// <summary>True while stumbling from a stagger — can't move or attack.</summary>
@@ -263,22 +369,44 @@ public class EnemyAI : MonoBehaviour
         if (_sb == null || _stats == null || _stats.IsDead) return;
 
         int margin = impact - _stats.Toughness;
-        if (margin < 0) return;   // shrug — powers through
+        if (margin < 0)
+        {
+            SpawnReactionText("SHRUG", new Color(0.7f, 0.7f, 0.7f));
+            return;   // powers through
+        }
 
         // Decal hyper armor: never cancelled, only delayed during its windup.
         if (_combat != null && _combat.IsInDecalAction)
         {
             _combat.DelayCurrentWindup(decalWindupDelay);
             _combat.FireAnimTrigger("Flinch");
+            SpawnReactionText("DELAYED", new Color(1f, 0.6f, 0.1f));
             return;
         }
 
         if (margin == 0)
         {
             // Flinch: feedback + tax. Basic windup gets pushed back; no cancel,
-            // no knockback, no lockout.
+            // no lockout — but a small NUDGE so repeated combo hits walk the
+            // target backwards instead of letting it sit inside the player.
             _combat?.DelayCurrentWindup(flinchWindupDelay);
             _combat?.FireAnimTrigger("Flinch");
+
+            if (flinchNudgeForce > 0f)
+            {
+                Vector3 flat = transform.position - sourcePosition;
+                flat.y = 0f;
+                flat = flat.sqrMagnitude > 0.0001f ? flat.normalized : -transform.forward;
+
+                _knockbackVelocity   = flat * flinchNudgeForce;
+                _knockbackVelocity.y = flinchNudgeForce * 0.15f;   // tiny impact hop
+                _knockbackGroundY    = transform.position.y;
+                _bouncesLeft         = 0;
+                _knockbackTimer      = 0.5f;
+                _isKnockedBack       = true;
+            }
+
+            SpawnReactionText("FLINCH", Color.yellow);
             return;
         }
 
@@ -295,16 +423,55 @@ public class EnemyAI : MonoBehaviour
         float finalForce = baseForce - (_stats.Toughness * _sb.toughnessReductionPerPoint);
         if (finalForce > 0f)
         {
-            Vector3 direction = (transform.position - sourcePosition).normalized;
-            direction.y = 0.3f;
-            _knockbackVelocity = direction * finalForce;
-            _knockbackTimer    = _sb.knockbackDuration;
-            _isKnockedBack     = true;
+            // Overkill scaling: the harder Impact beats Toughness, the harder
+            // they fly. Margin 1 = baseline shove, margin 4 (hammer slam vs
+            // grunt) = full cartoon launch.
+            float overkill = 1f + launchPerMargin * (margin - 1);
+
+            Vector3 flat = transform.position - sourcePosition;
+            flat.y = 0f;
+            flat = flat.sqrMagnitude > 0.0001f ? flat.normalized : -transform.forward;
+
+            _knockbackVelocity   = flat * finalForce * overkill;
+            _knockbackVelocity.y = finalForce * launchUpFactor * overkill;
+
+            _knockbackGroundY = transform.position.y;
+            _bouncesLeft      = maxBounces;
+            _knockbackTimer   = KnockbackSafetyCap;
+            _isKnockedBack    = true;
         }
 
         // "Stun" is the existing animator trigger name; "Stagger" for new setups.
         _animator.SetTrigger("Stun");
         _combat?.FireAnimTrigger("Stagger");
+        SpawnReactionText("STAGGER", new Color(1f, 0.2f, 0.15f));
+    }
+
+    /// <summary>DEBUG — floating reaction label (SHRUG/FLINCH/STAGGER/DELAYED)
+    /// above the enemy so the Impact system is visible while tuning.</summary>
+    private void SpawnReactionText(string text, Color color)
+    {
+        if (!showReactionDebug) return;
+
+        var go = new GameObject("ReactionDebugText");
+        go.transform.position = transform.position
+                              + Vector3.up * 2.6f
+                              + Random.insideUnitSphere * 0.2f;
+
+        var tmp = go.AddComponent<TMPro.TextMeshPro>();
+        tmp.text      = text;
+        tmp.fontSize  = 3.5f;
+        tmp.color     = color;
+        tmp.alignment = TMPro.TextAlignmentOptions.Center;
+        tmp.fontStyle = TMPro.FontStyles.Bold;
+
+        // Billboard toward the camera at spawn (debug — no per-frame tracking).
+        Camera cam = Camera.main;
+        if (cam != null)
+            go.transform.rotation =
+                Quaternion.LookRotation(go.transform.position - cam.transform.position);
+
+        Destroy(go, 0.8f);
     }
 
     // ── Legacy adapters (old staggerForce-based callers) ────────────────

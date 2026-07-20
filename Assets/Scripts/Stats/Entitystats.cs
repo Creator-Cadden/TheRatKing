@@ -109,8 +109,9 @@ public class EntityStats : MonoBehaviour
         // ── Per-floor enemy scaling ───────────────────────────────────
         // Enemies get harder the deeper the player is.
         // Floor 1 = baseline, Floor 2 = ×multiplier, Floor 3 = ×multiplier²
-        // Player stats are never scaled this way.
-        if (!isPlayer && enemyStatBlock != null)
+        // Player stats are never scaled this way. BOSSES never scale either
+        // (ignoreFloorScaling) — their stats are hand-tuned exact numbers.
+        if (!isPlayer && enemyStatBlock != null && !enemyStatBlock.ignoreFloorScaling)
         {
             int floor = (GameManager.Instance != null && GameManager.Instance.ActiveSave != null)
                 ? GameManager.Instance.ActiveSave.currentFloor
@@ -173,8 +174,8 @@ public class EntityStats : MonoBehaviour
                 Strength += playerStatBlock.strengthPerPoint;
                 break;
             case "stamina":
-                MaxStamina     += 10;
-                CurrentStamina += 10;
+                MaxStamina     += playerStatBlock.staminaPerPoint;
+                CurrentStamina += playerStatBlock.staminaPerPoint;
                 break;
             case "speed":
                 Speed += playerStatBlock.speedPerPoint;

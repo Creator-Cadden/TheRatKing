@@ -16,8 +16,38 @@ public class PlayerCombat : MonoBehaviour
     [Tooltip("Fastest possible cooldown regardless of Speed.")]
     public float basicAttackCooldownMin  = 0.3f;
 
-    [Tooltip("Seconds shaved off the cooldown per Speed point above base.")]
+    [Tooltip("UNUSED — replaced by the percentage version below (design doc: " +
+             "−4% per Speed point). Kept so prefab data isn't lost.")]
     public float attackCooldownPerSpeed  = 0.1f;
+
+    [Tooltip("Fractional cooldown reduction per Speed point above base — " +
+             "0.04 = −4% per point (design doc). Multiplicative: cooldown = " +
+             "base × (1 − this × points), clamped at the minimum.")]
+    public float attackCooldownPercentPerSpeed = 0.04f;
+
+    /// <summary>Current Speed-driven cooldown multiplier (1 = base Speed).
+    /// Weapon controllers and the bow's draw time read this.</summary>
+    public float SpeedCooldownMultiplier { get; private set; } = 1f;
+
+    /// <summary>
+    /// The ONE source of truth for attack cooldowns: per-weapon base from the
+    /// stat block × the Speed multiplier, never below the per-weapon floor.
+    /// </summary>
+    public float GetAttackCooldown(EntityStats.WeaponType weapon)
+    {
+        var sb = _stats != null ? _stats.playerStatBlock : null;
+        if (sb == null) return basicAttackCooldownBase;   // legacy fallback
+
+        return weapon switch
+        {
+            EntityStats.WeaponType.Blade  => Mathf.Max(sb.bladeCooldownFloor,
+                                                       sb.bladeAttackCooldown  * SpeedCooldownMultiplier),
+            EntityStats.WeaponType.Hammer => Mathf.Max(sb.hammerCooldownFloor,
+                                                       sb.hammerAttackCooldown * SpeedCooldownMultiplier),
+            _                             => Mathf.Max(sb.bowCooldownFloor,
+                                                       sb.bowAttackCooldown    * SpeedCooldownMultiplier),
+        };
+    }
 
     [Header("Jump Attack Cooldown (used when bow is equipped — blade/hammer have their own)")]
     public float jumpAttackCooldown = 1.2f;
@@ -125,9 +155,9 @@ public class PlayerCombat : MonoBehaviour
         {
             int   baseSpd    = _stats.playerStatBlock != null ? _stats.playerStatBlock.baseSpeed : 5;
             int   speedBonus = Mathf.Max(0, _stats.Speed - baseSpd);
-            float reduction  = speedBonus * attackCooldownPerSpeed;
-            _currentAttackCooldown = Mathf.Max(basicAttackCooldownMin,
-                                               basicAttackCooldownBase - reduction);
+            // Design doc: −4% cooldown per Speed point, multiplicative, floored.
+            SpeedCooldownMultiplier = Mathf.Max(0.1f, 1f - speedBonus * attackCooldownPercentPerSpeed);
+            _currentAttackCooldown  = GetAttackCooldown(EntityStats.WeaponType.Bow);
         }
 
         // Forward to BladeCombat AND HammerCombat — both have their own
@@ -188,7 +218,10 @@ public class PlayerCombat : MonoBehaviour
             }
 
             if (isGrounded && _hammer.TryBasicSwing())
+            {
+                PushComboStepAnim(_hammer.LastComboStep);
                 FireAttackAnims("Attk");
+            }
 
             return;
         }
@@ -210,7 +243,10 @@ public class PlayerCombat : MonoBehaviour
             }
 
             if (isGrounded && _blade.TryBasicAttack())
+            {
+                PushComboStepAnim(_blade.LastComboStep);
                 FireAttackAnims("Attk");
+            }
         }
     }
 
@@ -237,6 +273,29 @@ public class PlayerCombat : MonoBehaviour
         {
             _primaryAnimator?.SetTrigger(secondTrigger);
             _swapper?.ActiveWeaponAnimator?.SetTrigger(secondTrigger);
+        }
+    }
+
+    /// <summary>Pushes the combo step (0-based) to the "ComboStep" int on both
+    /// animators BEFORE the Attk trigger fires — the animator branches to
+    /// combo1/combo2/finisher clips on it. Silently skipped until the
+    /// parameter exists (same pattern as every other optional anim hook).</summary>
+    private void PushComboStepAnim(int step)
+    {
+        SetIntIfPresent(_primaryAnimator, "ComboStep", step);
+        SetIntIfPresent(_swapper?.ActiveWeaponAnimator, "ComboStep", step);
+    }
+
+    private static void SetIntIfPresent(Animator anim, string param, int value)
+    {
+        if (anim == null) return;
+        foreach (var p in anim.parameters)
+        {
+            if (p.type == AnimatorControllerParameterType.Int && p.name == param)
+            {
+                anim.SetInteger(param, value);
+                return;
+            }
         }
     }
 

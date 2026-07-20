@@ -216,7 +216,12 @@ public class ToughCombat : EnemyCombatBase
                     PlayerOverlapsSphere(transform.position + Vector3.up * 0.6f, dashHitRadius))
                 {
                     _dashHitResolved = true;
-                    DamagePlayer(RollDamage(Dash.damageMin, Dash.damageMax), decalHit: true);
+                    // Shove the player ALONG the charge direction (plus a hint
+                    // of sideways-away) — hit by a truck, not tapped by one.
+                    Vector3 push = transform.forward
+                                 + (_player.position - transform.position).normalized * 0.4f;
+                    DamagePlayer(RollDamage(Dash.damageMin, Dash.damageMax),
+                                 decalHit: true, pushDir: push);
                 }
 
                 if (Vector3.SqrMagnitude(transform.position - _dashEnd) < 0.01f)

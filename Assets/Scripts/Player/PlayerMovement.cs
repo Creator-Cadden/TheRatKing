@@ -198,34 +198,80 @@ public class PlayerMovement : MonoBehaviour
     [Tooltip("I-frame duration after a basic hit.")]
     public float basicHitInvulnDuration = 0.3f;
 
-    [Tooltip("Control lockout duration when STAGGERED by a decal hit.")]
-    public float staggerLockoutDuration = 0.5f;
+    [Tooltip("Horizontal launch SPEED (units/sec) when STAGGERED by a decal hit. " +
+             "Constant while airborne — momentum carries THROUGH the bounces, " +
+             "losing energy only at each bump. ~9 = thrown well clear of the attack.")]
+    public float staggerKnockbackForce = 9f;
 
-    [Tooltip("Knockback force when staggered by a decal hit.")]
-    public float staggerKnockbackForce = 8f;
+    [Tooltip("Seconds of skid after the FINAL landing — the leftover momentum " +
+             "sliding out before recovery.")]
+    public float staggerKnockbackDuration = 0.3f;
 
-    [Tooltip("I-frame duration after being staggered.")]
-    public float staggerInvulnDuration = 0.5f;
+    [Tooltip("UPWARD velocity injected on a decal hit — the vertical half of the " +
+             "launch. ~ jump strength at 9-10; 12+ = sent flying. Uses the normal " +
+             "gravity arc, so you fly up-and-back and come down for real.")]
+    public float staggerLaunchVertical = 11f;
 
-    private float _staggerUntil = -999f;
+    [Tooltip("Seconds of recovery lockout AFTER the FINAL landing — reads as " +
+             "picking yourself up once the bouncing stops.")]
+    public float staggerRecoverDuration = 0.4f;
 
-    /// <summary>True while staggered — movement, roll, jump, and attacks blocked.</summary>
-    public bool IsStaggered => Time.time < _staggerUntil;
+    [Tooltip("I-frame duration after being staggered — covers the whole flight + " +
+             "bounces + getting up, so you can't be juggled mid-air.")]
+    public float staggerInvulnDuration = 1.6f;
+
+    [Header("Stagger Bounces (hit → land bump → land bump → stop)")]
+    [Tooltip("How much fall speed survives each ground bounce.")]
+    public float staggerBounciness = 0.45f;
+
+    [Tooltip("Number of bumps after the first landing before you settle.")]
+    public int staggerMaxBounces = 2;
+
+    [Tooltip("Minimum fall speed for a bounce — slower than this just lands.")]
+    public float staggerBounceMinFallSpeed = 4f;
+
+    [Tooltip("Horizontal push kept after each bounce (the slide shortens per bump).")]
+    public float staggerBounceHorizontalKeep = 0.55f;
+
+    private float   _staggerUntil = -999f;
+    private bool    _inStaggerFlight;
+    private int     _staggerBouncesLeft;
+    private float   _staggerFlightSafetyEnd;
+    private Vector3 _staggerHorizVelocity;   // constant ballistic momentum during flight
+
+    /// <summary>True while staggered — the ENTIRE hit → fly → bounce → bounce →
+    /// settle → recover sequence. Movement, roll, jump, and attacks all blocked
+    /// until it fully completes.</summary>
+    public bool IsStaggered => _inStaggerFlight || Time.time < _staggerUntil;
 
     /// <summary>
     /// Called by enemy attacks after damage lands.
-    /// stagger = true for DECAL hits (control loss), false for basic hits.
+    /// stagger = true for DECAL hits: a big shove away from the attack, then a
+    /// recovery lockout while you pick yourself up. false = basic hit (small
+    /// push, no control loss).
+    /// pushDirOverride: attacker-supplied shove direction (e.g. the tough's
+    /// dash pushes ALONG the charge). Zero = default "away from attacker".
     /// </summary>
-    public void ApplyHitReaction(Vector3 sourcePosition, bool stagger)
+    public void ApplyHitReaction(Vector3 sourcePosition, bool stagger,
+                                 Vector3 pushDirOverride = default)
     {
-        Vector3 away = transform.position - sourcePosition;
+        Vector3 away = pushDirOverride.sqrMagnitude > 0.0001f
+            ? pushDirOverride
+            : transform.position - sourcePosition;
         away.y = 0f;
         if (away.sqrMagnitude < 0.0001f) away = -transform.forward;
 
         if (stagger)
         {
-            _staggerUntil = Time.time + staggerLockoutDuration;
-            TakeKnockback(away, staggerKnockbackForce, 0.25f);
+            // LAUNCH: horizontal push + vertical velocity = real up-and-back arc
+            // (Elden Ring boulder-hit treatment), then land-bump-land-bump-stop.
+            // The lockout is STATE-driven: it holds through the entire flight +
+            // bounces, then the recovery timer starts at the FINAL landing.
+            BeginStaggerFlight();
+            // Constant horizontal momentum — carries through the bounces,
+            // losing energy only at each bump (no mid-air decay).
+            _staggerHorizVelocity = away.normalized * staggerKnockbackForce;
+            _velocity.y = staggerLaunchVertical;   // up we go — gravity brings us down
             _stats?.GrantInvulnerability(staggerInvulnDuration);
             SetTriggerIfPresent("Stagger");
         }
@@ -237,12 +283,37 @@ public class PlayerMovement : MonoBehaviour
         }
     }
 
-    /// <summary>Stagger without knockback (boss code applies its own push).</summary>
+    /// <summary>Stagger without the horizontal shove (boss code applies its own
+    /// tuned knockback) — but the vertical LAUNCH + bounce sequence still fires,
+    /// plus i-frames. Boss hits send you flying too.</summary>
     public void ApplyStagger()
     {
-        _staggerUntil = Time.time + staggerLockoutDuration;
+        BeginStaggerFlight();
+        _velocity.y = staggerLaunchVertical;
         _stats?.GrantInvulnerability(staggerInvulnDuration);
         SetTriggerIfPresent("Stagger");
+    }
+
+    private void BeginStaggerFlight()
+    {
+        _inStaggerFlight        = true;
+        _staggerBouncesLeft     = staggerMaxBounces;
+        _staggerFlightSafetyEnd = Time.time + 3f;   // never stuck airborne forever
+        _staggerUntil           = Time.time;        // recovery timer starts at settle
+    }
+
+    private void EndStaggerFlight()
+    {
+        if (!_inStaggerFlight) return;
+        _inStaggerFlight = false;
+        _staggerUntil    = Time.time + staggerRecoverDuration;   // pick yourself up
+
+        // Convert leftover momentum into a short decaying skid, then stop.
+        if (_staggerHorizVelocity.sqrMagnitude > 0.01f)
+            TakeKnockback(_staggerHorizVelocity.normalized,
+                          _staggerHorizVelocity.magnitude,
+                          staggerKnockbackDuration);
+        _staggerHorizVelocity = Vector3.zero;
     }
 
     private void SetTriggerIfPresent(string trigger)
@@ -338,8 +409,36 @@ public class PlayerMovement : MonoBehaviour
 
     private void HandleJumpAndGravity()
     {
+        // Stagger flight safety: force-settle if somehow airborne too long
+        // (launched onto a ledge lip, physics weirdness...).
+        if (_inStaggerFlight && Time.time > _staggerFlightSafetyEnd)
+            EndStaggerFlight();
+
         if (_isGrounded && _velocity.y < 0f)
-            _velocity.y = -2f;
+        {
+            if (_inStaggerFlight)
+            {
+                // Landing during a stagger: BUMP if there's fall speed left,
+                // otherwise this is the final landing → recovery begins.
+                float fallSpeed = -_velocity.y;
+                if (_staggerBouncesLeft > 0 && fallSpeed > staggerBounceMinFallSpeed)
+                {
+                    _staggerBouncesLeft--;
+                    _velocity.y            = fallSpeed * staggerBounciness;        // bump!
+                    _staggerHorizVelocity *= staggerBounceHorizontalKeep;          // lose energy per bump
+                    SetTriggerIfPresent("Bounce");   // squash anim hook (optional clip)
+                }
+                else
+                {
+                    EndStaggerFlight();
+                    _velocity.y = -2f;
+                }
+            }
+            else
+            {
+                _velocity.y = -2f;
+            }
+        }
 
         bool landedThisFrame = !ground && _velocity.y == -2f;
         bool falling         = !ground && _velocity.y < -0.1f;
@@ -364,7 +463,11 @@ public class PlayerMovement : MonoBehaviour
         }
 
         _velocity.y += gravity * Time.deltaTime;
-        _controller.Move(_velocity * Time.deltaTime);
+
+        // During stagger flight, the constant ballistic momentum rides along
+        // with gravity in the same Move — full arc, no mid-air decay.
+        Vector3 flightVelocity = _inStaggerFlight ? _staggerHorizVelocity : Vector3.zero;
+        _controller.Move((_velocity + flightVelocity) * Time.deltaTime);
     }
 
     // ── Roll ──

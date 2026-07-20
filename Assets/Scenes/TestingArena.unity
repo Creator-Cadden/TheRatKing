@@ -418,6 +418,10 @@ PrefabInstance:
       value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 4227019236673389219, guid: a12230b9074c5f24081cc304a5f3e59d, type: 3}
+      propertyPath: FollowOffset.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4227019236673389219, guid: a12230b9074c5f24081cc304a5f3e59d, type: 3}
       propertyPath: FollowOffset.z
       value: 0
       objectReference: {fileID: 0}
@@ -1004,6 +1008,7 @@ MonoBehaviour:
     serializedVersion: 2
     m_Bits: 4294967295
   verboseAttackLog: 1
+  maxWindupDelay: 1
   attackPoint: {fileID: 933075733}
   hitRadius: 1.1
   fallbackHitDelay: 0.2
@@ -3649,6 +3654,15 @@ MonoBehaviour:
   verboseAttackLog: 0
   permanentlyAggroed: 0
   speedMultiplier: 1
+  launchUpFactor: 0.55
+  launchPerMargin: 0.2
+  bounciness: 0.45
+  maxBounces: 2
+  bounceHorizontalKeep: 0.6
+  flinchWindupDelay: 0.3
+  decalWindupDelay: 0.35
+  staggerDuration: 0.7
+  showReactionDebug: 1
 --- !u!137 &3444866806482741227
 SkinnedMeshRenderer:
   m_ObjectHideFlags: 0
@@ -4947,6 +4961,7 @@ MonoBehaviour:
     serializedVersion: 2
     m_Bits: 4294967295
   verboseAttackLog: 1
+  maxWindupDelay: 1
   attackPoint: {fileID: 1826956913}
   hitRadius: 1
   fallbackHitDelay: 0.2

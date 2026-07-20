@@ -199,6 +199,12 @@ public class EnemyStatBlock : BaseStatBlock
     // ── FLOOR SCALING ──
 
     [Header("Floor Scaling")]
+    [Tooltip("BOSSES: tick this ON. Bosses are hand-tuned per floor and must " +
+             "never scale — their HP/Strength are exactly what you type. " +
+             "(This is why General Chonk was spawning with 1562 HP instead of " +
+             "1000 — the grunt-oriented floor multiplier was hitting him too.)")]
+    public bool ignoreFloorScaling = false;
+
     [Tooltip("Multiplier compounded onto baseHealth per floor above 1. " +
              "1.0 = none. 1.25 = +25%/floor.")]
     [Range(0.5f, 3f)]

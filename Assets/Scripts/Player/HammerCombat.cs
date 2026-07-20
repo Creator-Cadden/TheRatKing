@@ -135,17 +135,28 @@ public class HammerCombat : MonoBehaviour
     /// </summary>
     public void RecalculateCooldown()
     {
-        if (_stats == null) { _currentSwingCooldown = swingCooldown; return; }
-
-        int   baseSpd    = _stats.playerStatBlock != null ? _stats.playerStatBlock.baseSpeed : 5;
-        int   speedBonus = Mathf.Max(0, _stats.Speed - baseSpd);
-        float reduction  = speedBonus * swingCooldownPerSpeed;
-
-        _currentSwingCooldown = Mathf.Max(swingCooldownMin, swingCooldown - reduction);
+        // Centralized: PlayerCombat.GetAttackCooldown = stat block base (0.80s)
+        // × Speed multiplier (−4%/pt), floored per weapon. Local fields below
+        // are only the fallback if PlayerCombat is missing.
+        var pc = GetComponent<PlayerCombat>();
+        if (pc != null)
+        {
+            _currentSwingCooldown = pc.GetAttackCooldown(EntityStats.WeaponType.Hammer);
+        }
+        else if (_stats == null)
+        {
+            _currentSwingCooldown = swingCooldown;
+        }
+        else
+        {
+            int   baseSpd    = _stats.playerStatBlock != null ? _stats.playerStatBlock.baseSpeed : 5;
+            int   speedBonus = Mathf.Max(0, _stats.Speed - baseSpd);
+            _currentSwingCooldown = Mathf.Max(swingCooldownMin,
+                                              swingCooldown - speedBonus * swingCooldownPerSpeed);
+        }
 
         if (verbose)
-            Debug.Log($"[HammerCombat] Cooldown → {_currentSwingCooldown:F2}s " +
-                      $"(Speed {_stats.Speed}, base {baseSpd})");
+            Debug.Log($"[HammerCombat] Cooldown → {_currentSwingCooldown:F2}s");
     }
 
     // ── Public API — called by PlayerCombat.OnAttack when weapon = Hammer ──
@@ -154,17 +165,46 @@ public class HammerCombat : MonoBehaviour
     /// Player pressed LMB while grounded with the hammer equipped.
     /// Returns true if the swing actually fired (false on cooldown).
     /// </summary>
+    [Header("Combo (2-hit chain)")]
+    [Tooltip("Hits in the chain. The LAST hit is the overhead finisher: bonus " +
+             "damage + special-tier Impact 4 (staggers up to Elite, flinches " +
+             "the Captain — same tier as the jump slam).")]
+    public int comboLength = 2;
+
+    [Tooltip("Seconds AFTER the cooldown ends during which the next press " +
+             "continues the chain. Waiting longer resets to swing 1.")]
+    public float comboWindow = 1.1f;
+
+    [Tooltip("Damage multiplier on the finisher swing.")]
+    public float finisherDamageMultiplier = 1.3f;
+
+    private int  _comboStep;
+    private bool _pendingFinisher;   // captured at swing start, used at resolve
+
+    /// <summary>The combo step that JUST fired (0-based) — PlayerCombat pushes
+    /// this to the animator's ComboStep int.</summary>
+    public int LastComboStep { get; private set; }
+
     public bool TryBasicSwing()
     {
         if (!IsSwingReady) return false;
-        _lastSwingTime = Time.time;
+
+        // Chain bookkeeping: waiting past cooldown + window breaks the combo.
+        if (Time.time > _lastSwingTime + _currentSwingCooldown + comboWindow)
+            _comboStep = 0;
+
+        _lastSwingTime   = Time.time;
+        _pendingFinisher = _comboStep >= comboLength - 1;
+        LastComboStep    = _comboStep;
+        _comboStep       = (_comboStep + 1) % Mathf.Max(1, comboLength);
 
         if (swingWindup > 0.0001f)
             Invoke(nameof(ResolveSwing), swingWindup);
         else
             ResolveSwing();
 
-        if (verbose) Debug.Log("[HammerCombat] Basic swing started.");
+        if (verbose) Debug.Log($"[HammerCombat] Combo swing {LastComboStep + 1}/{comboLength}" +
+                               (_pendingFinisher ? " (FINISHER)" : ""));
         return true;
     }
 
@@ -192,8 +232,10 @@ public class HammerCombat : MonoBehaviour
     {
         if (attackOrigin == null) return;
 
-        int damage    = _stats?.CalculateWeaponDamage() ?? 10;
-        int impact    = _stats?.GetWeaponImpact(special: false) ?? 3;
+        float dmgMult = _pendingFinisher ? finisherDamageMultiplier : 1f;
+        int damage    = Mathf.RoundToInt((_stats?.CalculateWeaponDamage() ?? 10) * dmgMult);
+        // Finisher = special Impact tier (4) — the overhead that ends the chain.
+        int impact    = _stats?.GetWeaponImpact(special: _pendingFinisher) ?? 3;
         int hitsLanded = 0;
 
         Collider[] hits = Physics.OverlapSphere(attackOrigin.position, swingRadius, enemyLayer);

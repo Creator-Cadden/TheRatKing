@@ -53,6 +53,21 @@ public class PlayerStatBlock : BaseStatBlock
     public int bowImpactBasic      = 1;
     public int bowImpactSpecial    = 2;
 
+    // ── ATTACK SPEED — per-weapon base cooldown, Speed-scaled ──
+    // Effective cooldown = base × (1 − 4% × Speed points above base), never
+    // below the per-weapon floor. One system for ALL weapons (design doc).
+
+    // Bases start DELIBERATE so investing Speed has real purpose — the floor is
+    // roughly the old "fast" value, i.e. a full Speed build EARNS the fast blade
+    // instead of starting with it. (−4%/pt: floor reached around 11-12 points.)
+    [Header("Attack Speed (base cooldown seconds / floor)")]
+    public float bladeAttackCooldown  = 0.55f;
+    public float bladeCooldownFloor   = 0.30f;
+    public float hammerAttackCooldown = 1.10f;
+    public float hammerCooldownFloor  = 0.65f;
+    public float bowAttackCooldown    = 0.75f;
+    public float bowCooldownFloor     = 0.45f;
+
     // ── WEAPON DAMAGE — Souls-style formula: damage = weaponBase + Strength × multiplier.
     // The flat base makes each Strength point a smooth % gain instead of doubling
     // damage at low Strength (the old no-base formula forced crazy multipliers). ──
@@ -74,7 +89,8 @@ public class PlayerStatBlock : BaseStatBlock
     [Tooltip("Fraction of normal move speed while hammer is equipped. 0.667 = one third reduction.")]
     public float hammerMoveSpeedFraction = 0.667f;
 
-    [Tooltip("Fraction of normal attack speed while hammer is equipped. 0.5 = cooldown doubled.")]
+    [Tooltip("UNUSED — replaced by the per-weapon Attack Speed section above " +
+             "(hammerAttackCooldown 0.80s). Kept so asset data isn't lost.")]
     public float hammerAttackSpeedFraction = 0.5f;
 
     [Header("Bow")]

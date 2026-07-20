@@ -40,6 +40,24 @@ public class BladeCombat : MonoBehaviour
     [Tooltip("Cooldown between jump attacks.")]
     public float jumpAttackCooldown = 1.2f;
 
+    [Header("Combo (3-hit chain)")]
+    [Tooltip("Hits in the chain. The LAST hit is the finisher: bonus damage + " +
+             "special-tier Impact (staggers a Soldier, flinches a Strong).")]
+    public int comboLength = 3;
+
+    [Tooltip("Seconds AFTER the cooldown ends during which the next press " +
+             "continues the chain. Waiting longer resets to hit 1.")]
+    public float comboWindow = 0.9f;
+
+    [Tooltip("Damage multiplier on the finisher hit.")]
+    public float finisherDamageMultiplier = 1.5f;
+
+    private int _comboStep;
+
+    /// <summary>The combo step that JUST fired (0-based) — PlayerCombat pushes
+    /// this to the animator's ComboStep int so clips can branch per hit.</summary>
+    public int LastComboStep { get; private set; }
+
     [Tooltip("Duration of the visual spin (seconds).")]
     public float jumpSpinDuration   = 0.35f;
 
@@ -132,17 +150,27 @@ public class BladeCombat : MonoBehaviour
     /// </summary>
     public void RecalculateCooldown()
     {
-        if (_stats == null) { _currentCooldown = cooldownBase; return; }
-
-        int baseSpd    = _stats.playerStatBlock != null ? _stats.playerStatBlock.baseSpeed : 5;
-        int speedBonus = Mathf.Max(0, _stats.Speed - baseSpd);
-        float reduction = speedBonus * cooldownPerSpeed;
-
-        _currentCooldown = Mathf.Max(cooldownMin, cooldownBase - reduction);
+        // Centralized: PlayerCombat.GetAttackCooldown = stat block base (0.30s)
+        // × Speed multiplier (−4%/pt), floored per weapon. Local fields below
+        // are only the fallback if PlayerCombat is missing.
+        var pc = GetComponent<PlayerCombat>();
+        if (pc != null)
+        {
+            _currentCooldown = pc.GetAttackCooldown(EntityStats.WeaponType.Blade);
+        }
+        else if (_stats == null)
+        {
+            _currentCooldown = cooldownBase;
+        }
+        else
+        {
+            int baseSpd    = _stats.playerStatBlock != null ? _stats.playerStatBlock.baseSpeed : 5;
+            int speedBonus = Mathf.Max(0, _stats.Speed - baseSpd);
+            _currentCooldown = Mathf.Max(cooldownMin, cooldownBase - speedBonus * cooldownPerSpeed);
+        }
 
         if (verbose)
-            Debug.Log($"[BladeCombat] Cooldown → {_currentCooldown:F2}s " +
-                      $"(Speed {_stats.Speed}, base {baseSpd})");
+            Debug.Log($"[BladeCombat] Cooldown → {_currentCooldown:F2}s");
     }
 
     // ── Public API — called by PlayerCombat.OnAttack when weapon = Blade ──
@@ -153,8 +181,23 @@ public class BladeCombat : MonoBehaviour
     public bool TryBasicAttack()
     {
         if (!IsSwingReady) return false;
+
+        // Chain bookkeeping: waiting past cooldown + window breaks the combo.
+        if (Time.time > _lastSwingTime + _currentCooldown + comboWindow)
+            _comboStep = 0;
+
         _lastSwingTime = Time.time;
-        HitScan(swingRadius, swingAngle);
+
+        bool isFinisher = _comboStep >= comboLength - 1;
+        LastComboStep   = _comboStep;
+
+        // Finisher: bonus damage + special-tier Impact (completing the full
+        // sequence is what earns the stagger — design doc).
+        HitScan(swingRadius, swingAngle,
+                isFinisher ? finisherDamageMultiplier : 1f,
+                forceSpecialImpact: isFinisher);
+
+        _comboStep = (_comboStep + 1) % Mathf.Max(1, comboLength);
 
         // Visual: arc ripple along the swing cone
         if (attackOrigin != null)
@@ -162,7 +205,8 @@ public class BladeCombat : MonoBehaviour
                                   swingRadius, swingAngle,
                                   swingRippleColor, rippleLifetime);
 
-        if (verbose) Debug.Log("[BladeCombat] Basic swing fired.");
+        if (verbose) Debug.Log($"[BladeCombat] Combo hit {LastComboStep + 1}/{comboLength}" +
+                               (isFinisher ? " (FINISHER)" : ""));
         return true;
     }
 
@@ -188,13 +232,15 @@ public class BladeCombat : MonoBehaviour
 
     // ── Hit resolution ──
 
-    private void HitScan(float radius, float angle)
+    private void HitScan(float radius, float angle,
+                         float damageMultiplier = 1f, bool forceSpecialImpact = false)
     {
         if (attackOrigin == null) return;
 
-        int damage = _stats?.CalculateWeaponDamage() ?? 10;
-        // 360° swing = the jump attack → special Impact tier (+1 over basic).
-        int impact = _stats?.GetWeaponImpact(special: angle >= 360f) ?? 1;
+        int damage = Mathf.RoundToInt((_stats?.CalculateWeaponDamage() ?? 10) * damageMultiplier);
+        // Special Impact tier: 360° swing (jump attack) or a combo finisher.
+        bool special = angle >= 360f || forceSpecialImpact;
+        int  impact  = _stats?.GetWeaponImpact(special) ?? 1;
 
         Collider[] hits = Physics.OverlapSphere(attackOrigin.position, radius, enemyLayer);
         foreach (Collider hit in hits)

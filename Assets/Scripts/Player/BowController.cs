@@ -170,8 +170,12 @@ public class BowController : MonoBehaviour
         if (_isCharging)
         {
             // Build charge while LMB is held.
+            // Bow DRAW is Speed-scaled too (design doc) — higher Speed reaches
+            // full charge faster via PlayerCombat's cooldown multiplier.
+            var   pcDraw       = GetComponent<PlayerCombat>();
+            float effectiveMax = maxChargeTime * (pcDraw != null ? pcDraw.SpeedCooldownMultiplier : 1f);
             CurrentChargeFraction = Mathf.Clamp01(
-                (Time.time - _chargeStartTime) / Mathf.Max(0.0001f, maxChargeTime));
+                (Time.time - _chargeStartTime) / Mathf.Max(0.0001f, effectiveMax));
 
             // Detect release.
             bool released = _attackAction != null

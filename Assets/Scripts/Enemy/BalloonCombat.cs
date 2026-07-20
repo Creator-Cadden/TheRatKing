@@ -225,7 +225,16 @@ public class BalloonCombat : EnemyCombatBase
         // Same anchor as the decal visual — what you see is what hits.
         Vector3 center = GroundCenter() + Vector3.up * (Decal.height * 0.5f);
         if (PlayerOverlapsSphere(center, Decal.circleRadius))
-            DamagePlayer(RollDamage(Decal.damageMin, Decal.damageMax), decalHit: true);
+        {
+            // Shove radially OUT of the AoE circle (explicit — the balloon sits
+            // directly above the player at impact, so "away from attacker"
+            // would degenerate to nothing).
+            Vector3 push = _player != null
+                ? _player.position - GroundCenter()
+                : Vector3.zero;
+            DamagePlayer(RollDamage(Decal.damageMin, Decal.damageMax),
+                         decalHit: true, pushDir: push);
+        }
 
         // Indicator's job is done the moment the hit lands.
         ShowIndicator(false);

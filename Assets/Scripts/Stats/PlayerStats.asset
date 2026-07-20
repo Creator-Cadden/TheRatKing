@@ -18,7 +18,7 @@ MonoBehaviour:
   baseSpeed: 5
   baseToughness: 3
   healthPerPoint: 10
-  strengthPerPoint: 2
+  strengthPerPoint: 1
   staminaPerPoint: 10
   speedPerPoint: 1
   floorOneCap: 5
