@@ -17,7 +17,7 @@ MonoBehaviour:
   baseToughness: 0
   displayName: Balloon Rat
   xpReward: 5
-  moveSpeed: 3
+  moveSpeed: 2
   aggroRange: 10
   stopRange: 0.5
   damagedAggroDuration: 60

@@ -23,8 +23,17 @@ public class BossMinionSpawner : MonoBehaviour
     [Range(0f, 1f)]
     public float[] hpThresholds = { 0.75f, 0.5f, 0.25f };
 
-    [Tooltip("Minions per HP-threshold wave.")]
+    [Tooltip("Minions per HP-threshold wave (legacy fallback — the per-threshold " +
+             "array below wins when filled).")]
     public int hpThresholdWaveCount = 2;
+
+    [Tooltip("Per-threshold spawn counts, parallel to HP Thresholds. " +
+             "Design doc: 75% → 2, 50% → 3, 25% → 4.")]
+    public int[] hpThresholdWaveCounts = { 2, 3, 4 };
+
+    [Tooltip("Chasers spawned the FIRST time the boss takes any damage " +
+             "(design doc: 1). 0 = off.")]
+    public int firstHitSpawnCount = 1;
 
     [Header("Interval Spawning")]
     [Tooltip("If on, spawns a wave every spawnInterval seconds while the boss is alive.")]
@@ -129,24 +138,41 @@ public class BossMinionSpawner : MonoBehaviour
 
     private void OnBossDamaged(int _)
     {
-        _damageTaken = true;
+        // First hit taken → the opening chaser (design doc: 1).
+        if (!_damageTaken)
+        {
+            _damageTaken = true;
+            if (firstHitSpawnCount > 0)
+            {
+                if (verbose)
+                    Debug.Log($"[BossMinionSpawner] First hit — spawning {firstHitSpawnCount} chaser(s).");
+                SpawnWave(firstHitSpawnCount);
+            }
+        }
 
         if (_stats.MaxHealth <= 0) return;
         float hpFraction = (float)_stats.CurrentHealth / _stats.MaxHealth;
 
         // Check each threshold — fire the wave if we just crossed below it.
-        foreach (float threshold in hpThresholds)
+        // Per-threshold counts (doc: 75% → 2, 50% → 3, 25% → 4) come from
+        // hpThresholdWaveCounts; falls back to the single legacy count.
+        for (int i = 0; i < hpThresholds.Length; i++)
         {
+            float threshold = hpThresholds[i];
             if (_thresholdsTriggered.Contains(threshold)) continue;
             if (hpFraction <= threshold)
             {
                 _thresholdsTriggered.Add(threshold);
 
+                int count = (hpThresholdWaveCounts != null && i < hpThresholdWaveCounts.Length)
+                    ? hpThresholdWaveCounts[i]
+                    : hpThresholdWaveCount;
+
                 if (verbose)
                     Debug.Log($"[BossMinionSpawner] HP threshold {threshold:P0} " +
-                              $"crossed (now {hpFraction:P0}) — spawning wave.");
+                              $"crossed (now {hpFraction:P0}) — spawning {count}.");
 
-                SpawnWave(hpThresholdWaveCount);
+                SpawnWave(count);
             }
         }
     }

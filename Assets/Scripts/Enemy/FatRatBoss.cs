@@ -12,7 +12,9 @@ public class FatRatBoss : MonoBehaviour
         Idle, Chase, PauseBefore,
         RollWindup, Rolling, RollRecover,
         JumpWindup, InAir, Slamming, SlamRecover,
-        Stunned, Dead
+        Stunned, Dead,
+        StompWindup, StompRecover,   // Ground Stomp basic (hit anim only, no decal)
+        RollPairGap                  // brief re-aim between the two rolls of a pair
     }
 
     public enum AttackKind { Roll, Slam }
@@ -34,8 +36,67 @@ public class FatRatBoss : MonoBehaviour
     public float pauseDuration = 2f;
 
     [Header("Attack Pattern")]
-    [Tooltip("Order of attacks. Loops forever. Default: Roll, Roll, Slam.")]
-    public AttackKind[] attackPattern = { AttackKind.Roll, AttackKind.Roll, AttackKind.Slam };
+    [Tooltip("Order of attacks. Loops forever. Roll = the DOUBLE roll pair. " +
+             "Design doc pattern: Roll (pair), Slam.")]
+    public AttackKind[] attackPattern = { AttackKind.Roll, AttackKind.Slam };
+
+    // ── Ground Stomp — the BASIC attack (hit anim only, no decal) ──
+    // Fires opportunistically whenever the player hugs the boss, independent
+    // of the Roll/Slam pattern — melee range is never free.
+
+    [Header("Ground Stomp (basic attack — no decal)")]
+    [Tooltip("Player closer than this (and stomp off cooldown) → stomp.")]
+    public float stompRange = 3.5f;
+
+    [Tooltip("Hit check: sphere radius in front of the boss.")]
+    public float stompRadius = 2.6f;
+
+    [Tooltip("How far in front of the boss the stomp sphere sits.")]
+    public float stompForwardOffset = 1.2f;
+
+    public int   stompDamage          = 30;
+    public float stompWindupDuration  = 0.8f;
+    public float stompRecoverDuration = 0.5f;
+    public float stompCooldown        = 2.0f;
+
+    // ── Double Roll pairing + per-attack cooldowns (design doc) ──
+
+    [Header("Double Roll & Cooldowns")]
+    [Tooltip("Rolls per pattern entry (doc: rolls twice in a row).")]
+    public int rollsInPair = 2;
+
+    [Tooltip("Seconds between the two rolls. First part re-aims at the player, " +
+             "the rest is LOCKED — that locked window is the dodge for roll two.")]
+    public float rollPairGap = 0.7f;
+
+    [Range(0f, 1f)]
+    [Tooltip("Fraction of the gap spent re-aiming. After this the corridor " +
+             "LOCKS (indicator flips to the committed color) — sidestep now.")]
+    public float pairGapLockFraction = 0.5f;
+
+    [Tooltip("Cooldown after the full pair before the next pattern attack.")]
+    public float rollPairCooldown = 4f;
+
+    [Tooltip("Cooldown after the Jump & Slam before the next pattern attack.")]
+    public float slamCooldown = 6f;
+
+    // ── Berserk (design doc: ≤25% HP → everything faster) ──
+
+    [Header("Berserk")]
+    [Tooltip("HP fraction at which the boss enrages.")]
+    public float berserkHealthFraction = 0.25f;
+
+    [Tooltip("Multiplier on ALL windups, recoveries, gaps, and cooldowns while " +
+             "berserk. 0.6 = 40% faster everything.")]
+    public float berserkTimeScale = 0.6f;
+
+    private bool  _isBerserk;
+    private int   _rollsDoneInPair;
+    private float _attackReadyAt;   // gate for the next Roll/Slam pattern attack
+    private float _stompReadyAt;    // independent stomp cooldown
+
+    /// <summary>All boss timings route through this — berserk shrinks them.</summary>
+    private float T(float seconds) => _isBerserk ? seconds * berserkTimeScale : seconds;
 
     [Header("Roll Attack")]
     [Tooltip("Seconds the boss spends balling up and aiming before launching the roll.")]
@@ -189,6 +250,7 @@ public class FatRatBoss : MonoBehaviour
         }
 
         if (_stats != null) _stats.onDeath.AddListener(OnDeath);
+        if (_stats != null) _stats.onDamageTaken.AddListener(OnDamagedBerserkCheck);
 
         SetState(BossState.Idle);
     }
@@ -214,6 +276,10 @@ public class FatRatBoss : MonoBehaviour
             case BossState.RollWindup:  TickRollWindup();  break;
             case BossState.Rolling:     TickRolling();     break;
             case BossState.RollRecover: TickRollRecover(); break;
+
+            case BossState.StompWindup:  TickStompWindup();  break;
+            case BossState.StompRecover: TickStompRecover(); break;
+            case BossState.RollPairGap:  TickRollPairGap();  break;
 
             case BossState.JumpWindup:  TickJumpWindup();  break;
             case BossState.InAir:       TickInAir();       break;
@@ -280,6 +346,30 @@ public class FatRatBoss : MonoBehaviour
         return Mathf.Sqrt(dx * dx + dz * dz);
     }
 
+    private void OnDamagedBerserkCheck(int _)
+    {
+        if (_isBerserk || _stats == null || _stats.MaxHealth <= 0) return;
+        if ((float)_stats.CurrentHealth / _stats.MaxHealth <= berserkHealthFraction)
+        {
+            _isBerserk = true;
+            FireTriggerIfPresent("Berserk");   // enrage anim/roar hook (optional)
+            if (verbose) Debug.Log("[FatRatBoss] BERSERK — all timings ×" + berserkTimeScale);
+        }
+    }
+
+    private void FireTriggerIfPresent(string trigger)
+    {
+        if (_animator == null || string.IsNullOrEmpty(trigger)) return;
+        foreach (var p in _animator.parameters)
+        {
+            if (p.type == AnimatorControllerParameterType.Trigger && p.name == trigger)
+            {
+                _animator.SetTrigger(trigger);
+                return;
+            }
+        }
+    }
+
     private void FacePlayer()
     {
         Vector3 dir = _player.position - transform.position;
@@ -312,11 +402,19 @@ public class FatRatBoss : MonoBehaviour
             return;
         }
 
+        // Ground Stomp — the hug punisher. Fires whenever the player is in the
+        // boss's face and the stomp is off cooldown, independent of the pattern.
+        if (dist <= stompRange && Time.time >= _stompReadyAt)
+        {
+            BeginStomp();
+            return;
+        }
+
         if (dist <= stopRange)
         {
             if (_agent != null && _agent.enabled) _agent.ResetPath();
             if (_animator != null) _animator.SetFloat("Running", 0f);
-            _stateUntil = Time.time + pauseDuration;
+            _stateUntil = Time.time + T(pauseDuration);
             SetState(BossState.PauseBefore);
             return;
         }
@@ -328,7 +426,16 @@ public class FatRatBoss : MonoBehaviour
     private void TickPauseBefore()
     {
         FacePlayer();
-        if (Time.time < _stateUntil) return;
+
+        // Stomp stays available while waiting out pattern cooldowns.
+        if (FlatDistToPlayer() <= stompRange && Time.time >= _stompReadyAt)
+        {
+            BeginStomp();
+            return;
+        }
+
+        if (Time.time < _stateUntil)  return;
+        if (Time.time < _attackReadyAt) return;   // per-attack cooldown gate (4s pair / 6s slam)
 
         AttackKind next = attackPattern[_patternIndex % attackPattern.Length];
         _patternIndex   = (_patternIndex + 1) % Mathf.Max(1, attackPattern.Length);
@@ -338,6 +445,73 @@ public class FatRatBoss : MonoBehaviour
             case AttackKind.Roll: BeginRollWindup(); break;
             case AttackKind.Slam: BeginSlam();       break;
         }
+    }
+
+    // ── Ground Stomp (basic — hit anim only, no decal, no player stagger) ──
+
+    private void BeginStomp()
+    {
+        if (_agent != null && _agent.enabled) _agent.ResetPath();
+        if (_animator != null) _animator.SetFloat("Running", 0f);
+        FireTriggerIfPresent("StompWindup");
+        _stateUntil = Time.time + T(stompWindupDuration);
+        SetState(BossState.StompWindup);
+    }
+
+    private void TickStompWindup()
+    {
+        FacePlayer();   // basics track — the dodge answer is spacing, not angle
+
+        if (Time.time < _stateUntil) return;
+
+        FireTriggerIfPresent("Stomp");
+        ResolveStompHit();
+
+        _stompReadyAt = Time.time + T(stompCooldown);
+        _stateUntil   = Time.time + T(stompRecoverDuration);
+        SetState(BossState.StompRecover);
+    }
+
+    private void ResolveStompHit()
+    {
+        Vector3 center = HitOrigin() + transform.forward * stompForwardOffset;
+        Collider[] hits = Physics.OverlapSphere(center, stompRadius, playerLayer);
+        if (hits != null && hits.Length > 0)
+            DamagePlayer(stompDamage, "Stomp", staggerHit: false);   // basic = hit reaction only
+    }
+
+    private void TickStompRecover()
+    {
+        if (Time.time < _stateUntil) return;
+        SetState(BossState.Chase);
+    }
+
+    // ── Double-roll pair gap (quick re-aim between the two rolls) ──
+
+    private void TickRollPairGap()
+    {
+        float dur = Mathf.Max(0.0001f, T(rollPairGap));
+        float t   = 1f - Mathf.Clamp01((_stateUntil - Time.time) / dur);
+
+        if (t < pairGapLockFraction)
+        {
+            // Re-aim phase: corridor swings with the player — stay moving!
+            FacePlayer();
+            _rollDir   = transform.forward;
+            _rollDir.y = 0f;
+            if (_rollDir.sqrMagnitude > 0.001f) _rollDir.Normalize();
+            UpdateRectIndicatorPose();
+            SetRectColor(windupColor);      // still aiming — not committed yet
+        }
+        else
+        {
+            // LOCKED: corridor frozen, committed color — this is the dodge
+            // window for roll two. Sidestep NOW.
+            SetRectColor(committedColor);
+        }
+
+        if (Time.time >= _stateUntil)
+            CommitRoll();                   // roll two — re-caps to the NavMesh edge
     }
 
     // ── Roll attack ──
@@ -361,7 +535,8 @@ public class FatRatBoss : MonoBehaviour
 
         if (_animator != null) _animator.SetBool("Roll", true);
 
-        _stateUntil = Time.time + rollWindupDuration;
+        _rollsDoneInPair = 0;   // fresh pair
+        _stateUntil = Time.time + T(rollWindupDuration);
         SetState(BossState.RollWindup);
     }
 
@@ -437,11 +612,22 @@ public class FatRatBoss : MonoBehaviour
 
     private void EndRoll()
     {
-        if (_rectIndicator != null) _rectIndicator.SetActive(false);
-
         if (_animator != null) _animator.SetBool("Roll", false);
 
-        _stateUntil = Time.time + rollRecoverDuration;
+        _rollsDoneInPair++;
+
+        if (_rollsDoneInPair < rollsInPair)
+        {
+            // Roll one of the pair done — quick re-aim gap, indicator stays up.
+            _stateUntil = Time.time + T(rollPairGap);
+            SetState(BossState.RollPairGap);
+            return;
+        }
+
+        // Full pair complete — short exhale, then the 4s pattern cooldown.
+        if (_rectIndicator != null) _rectIndicator.SetActive(false);
+        _attackReadyAt = Time.time + T(rollPairCooldown);
+        _stateUntil    = Time.time + T(rollRecoverDuration);
         SetState(BossState.RollRecover);
     }
 
@@ -476,7 +662,7 @@ public class FatRatBoss : MonoBehaviour
 
         if (_animator != null) _animator.SetTrigger("Jump");
 
-        _stateUntil = Time.time + jumpWindupDuration;
+        _stateUntil = Time.time + T(jumpWindupDuration);
         SetState(BossState.JumpWindup);
     }
 
@@ -502,7 +688,7 @@ public class FatRatBoss : MonoBehaviour
 
  
 
-        _stateUntil = Time.time + airDuration;
+        _stateUntil = Time.time + T(airDuration);
         SetState(BossState.InAir);
     }
 
@@ -552,7 +738,10 @@ public class FatRatBoss : MonoBehaviour
             KnockbackPlayer(away, slamKnockbackForce, slamKnockbackDuration);
         }
 
-        _stateUntil = Time.time + slamRecoverDuration;
+        // Slam's LONG recovery = the main punish window; 6s cooldown gates the
+        // next pattern attack after it.
+        _attackReadyAt = Time.time + T(slamCooldown);
+        _stateUntil    = Time.time + T(slamRecoverDuration);
         SetState(BossState.Slamming);
     }
 
@@ -594,7 +783,7 @@ public class FatRatBoss : MonoBehaviour
 
     // ── Damage / death ──
 
-    private void DamagePlayer(int amount, string sourceTag)
+    private void DamagePlayer(int amount, string sourceTag, bool staggerHit = true)
     {
         if (_playerStats == null) return;
         if (_playerStats.IsInvulnerable) return;   // hit-reaction i-frames
@@ -606,9 +795,18 @@ public class FatRatBoss : MonoBehaviour
 
         _playerStats.TakeDamage(finalDamage);
 
-        // Every boss attack is decal-tier → STAGGER the player (Impact overhaul).
-        // Knockback stays with the boss's own tuned KnockbackPlayer calls.
-        _playerMovement?.ApplyStagger();
+        if (staggerHit)
+        {
+            // Roll / Slam are decal-tier → STAGGER + launch (Impact overhaul).
+            // Knockback stays with the boss's own tuned KnockbackPlayer calls.
+            _playerMovement?.ApplyStagger();
+        }
+        else
+        {
+            // Ground Stomp is the BASIC — hit reaction + small push, no
+            // control loss. Melee range is taxed, not denied.
+            _playerMovement?.ApplyHitReaction(transform.position, false);
+        }
 
         if (verbose)
             Debug.Log($"[FatRatBoss] {gameObject.name} {sourceTag} hit player for {finalDamage}");

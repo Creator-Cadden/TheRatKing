@@ -463,7 +463,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 4855896882769279151, guid: a12230b9074c5f24081cc304a5f3e59d, type: 3}
       propertyPath: m_LocalPosition.x
-      value: -320.36002
+      value: -167.76
       objectReference: {fileID: 0}
     - target: {fileID: 4855896882769279151, guid: a12230b9074c5f24081cc304a5f3e59d, type: 3}
       propertyPath: m_LocalPosition.y
@@ -475,7 +475,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 6199130361271467518, guid: a12230b9074c5f24081cc304a5f3e59d, type: 3}
       propertyPath: m_LocalPosition.x
-      value: -321.6
+      value: -169
       objectReference: {fileID: 0}
     - target: {fileID: 6199130361271467518, guid: a12230b9074c5f24081cc304a5f3e59d, type: 3}
       propertyPath: m_LocalPosition.y
@@ -503,7 +503,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 6387084497354497135, guid: a12230b9074c5f24081cc304a5f3e59d, type: 3}
       propertyPath: m_LocalPosition.x
-      value: -321.6
+      value: -169
       objectReference: {fileID: 0}
     - target: {fileID: 6387084497354497135, guid: a12230b9074c5f24081cc304a5f3e59d, type: 3}
       propertyPath: m_LocalPosition.y
@@ -709,7 +709,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 5678574542009669243, guid: 914f7101e2e3ab940ac23fba30adf473, type: 3}
       propertyPath: m_LocalPosition.x
-      value: -321.6
+      value: -169
       objectReference: {fileID: 0}
     - target: {fileID: 5678574542009669243, guid: 914f7101e2e3ab940ac23fba30adf473, type: 3}
       propertyPath: m_LocalPosition.y
@@ -4704,6 +4704,10 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 5628833637259073386, guid: dbe6c9a97659c354e9a017ecb12a7ef3, type: 3}
+      propertyPath: m_Center.y
+      value: 5.68
+      objectReference: {fileID: 0}
     - target: {fileID: 5671990976410231374, guid: dbe6c9a97659c354e9a017ecb12a7ef3, type: 3}
       propertyPath: m_Size.x
       value: 14.790382
@@ -4750,31 +4754,43 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 6572627168002237541, guid: dbe6c9a97659c354e9a017ecb12a7ef3, type: 3}
       propertyPath: m_Name
-      value: FatRatBoss
+      value: GeneralChonk
       objectReference: {fileID: 0}
     - target: {fileID: 8854923487989096421, guid: dbe6c9a97659c354e9a017ecb12a7ef3, type: 3}
       propertyPath: rollSpeed
-      value: 100.4
+      value: 100
       objectReference: {fileID: 0}
     - target: {fileID: 8854923487989096421, guid: dbe6c9a97659c354e9a017ecb12a7ef3, type: 3}
       propertyPath: jumpHeight
-      value: 44.78
+      value: 45
       objectReference: {fileID: 0}
     - target: {fileID: 8854923487989096421, guid: dbe6c9a97659c354e9a017ecb12a7ef3, type: 3}
       propertyPath: slamRadius
-      value: 18.67
+      value: 15
       objectReference: {fileID: 0}
     - target: {fileID: 8854923487989096421, guid: dbe6c9a97659c354e9a017ecb12a7ef3, type: 3}
       propertyPath: airDuration
-      value: 2.06
+      value: 2
+      objectReference: {fileID: 0}
+    - target: {fileID: 8854923487989096421, guid: dbe6c9a97659c354e9a017ecb12a7ef3, type: 3}
+      propertyPath: rollPairGap
+      value: 2.5
       objectReference: {fileID: 0}
     - target: {fileID: 8854923487989096421, guid: dbe6c9a97659c354e9a017ecb12a7ef3, type: 3}
       propertyPath: jumpWindupDuration
       value: 2.25
       objectReference: {fileID: 0}
     - target: {fileID: 8854923487989096421, guid: dbe6c9a97659c354e9a017ecb12a7ef3, type: 3}
+      propertyPath: rollWindupDuration
+      value: 2
+      objectReference: {fileID: 0}
+    - target: {fileID: 8854923487989096421, guid: dbe6c9a97659c354e9a017ecb12a7ef3, type: 3}
       propertyPath: slamKnockbackForce
       value: 50
+      objectReference: {fileID: 0}
+    - target: {fileID: 8854923487989096421, guid: dbe6c9a97659c354e9a017ecb12a7ef3, type: 3}
+      propertyPath: rollRecoverDuration
+      value: 1.2
       objectReference: {fileID: 0}
     - target: {fileID: 8854923487989096421, guid: dbe6c9a97659c354e9a017ecb12a7ef3, type: 3}
       propertyPath: slamKnockbackDuration
@@ -4791,6 +4807,7 @@ PrefabInstance:
     m_RemovedComponents: []
     m_RemovedGameObjects:
     - {fileID: 7470683602608952451, guid: dbe6c9a97659c354e9a017ecb12a7ef3, type: 3}
+    - {fileID: 5628679454863436206, guid: dbe6c9a97659c354e9a017ecb12a7ef3, type: 3}
     m_AddedGameObjects: []
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: dbe6c9a97659c354e9a017ecb12a7ef3, type: 3}

@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: FatRatBoss
   m_EditorClassIdentifier: Assembly-CSharp::EnemyStatBlock
   baseHealth: 1000
-  baseStrength: 15
+  baseStrength: 40
   baseToughness: 5
   displayName: General Chonk
   xpReward: 500
@@ -21,7 +21,7 @@ MonoBehaviour:
   aggroRange: 100
   stopRange: 1.87
   damagedAggroDuration: 120
-  hasBasicAttack: 1
+  hasBasicAttack: 0
   basicAttack:
     damageMin: 5
     damageMax: 5
@@ -32,8 +32,8 @@ MonoBehaviour:
   decalCycleMode: 0
   decalAttacks: []
   basicAttacksBetweenDecals: 0
-  attackStrengthBonus: 2
-  ignoreFloorScaling: 0
+  attackStrengthBonus: 0
+  ignoreFloorScaling: 1
   healthScalePerFloor: 1.25
   strengthScalePerFloor: 1.2
   staminaScalePerFloor: 1

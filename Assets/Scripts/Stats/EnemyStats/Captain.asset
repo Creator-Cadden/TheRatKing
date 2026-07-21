@@ -12,12 +12,12 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: cddbe9ff30055fe44ac23a486a3194ae, type: 3}
   m_Name: Captain
   m_EditorClassIdentifier: Assembly-CSharp::EnemyStatBlock
-  baseHealth: 250
-  baseStrength: 15
+  baseHealth: 300
+  baseStrength: 25
   baseToughness: 4
   displayName: Captain Rat
-  xpReward: 50
-  moveSpeed: 4
+  xpReward: 100
+  moveSpeed: 3
   aggroRange: 10
   stopRange: 2.4
   damagedAggroDuration: 60
@@ -33,8 +33,8 @@ MonoBehaviour:
   decalAttacks:
   - name: Cone Sweep
     shape: 0
-    damageMin: 15
-    damageMax: 15
+    damageMin: 0
+    damageMax: 0
     coneRadius: 4.5
     coneAngle: 90
     circleRadius: 0

@@ -1501,20 +1501,20 @@ MonoBehaviour:
   aggroRange: 50
   moveSpeed: 1.8
   stopRange: 15
-  pauseDuration: 2
-  attackPattern: 000000000000000001000000
-  rollWindupDuration: 2
+  pauseDuration: 0.5
+  attackPattern: 0000000001000000
+  rollWindupDuration: 0.5
   rollSpeed: 14
   rollDistance: 30
   rollWidth: 8
-  rollDamage: 35
-  rollRecoverDuration: 2
-  jumpWindupDuration: 2
+  rollDamage: 25
+  rollRecoverDuration: 0.4
+  jumpWindupDuration: 1.2
   jumpHeight: 10
   airDuration: 1.2
   slamRadius: 5
   slamDamage: 50
-  slamRecoverDuration: 3
+  slamRecoverDuration: 1.8
   enableContactDamage: 1
   contactDamageRadius: 2.8
   contactDamage: 8

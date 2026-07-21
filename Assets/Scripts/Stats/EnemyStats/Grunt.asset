@@ -13,11 +13,11 @@ MonoBehaviour:
   m_Name: Grunt
   m_EditorClassIdentifier: Assembly-CSharp::EnemyStatBlock
   baseHealth: 50
-  baseStrength: 5
+  baseStrength: 8
   baseToughness: 0
   displayName: Grunt Rat
   xpReward: 5
-  moveSpeed: 3.5
+  moveSpeed: 4
   aggroRange: 8
   stopRange: 2
   damagedAggroDuration: 60
@@ -26,8 +26,8 @@ MonoBehaviour:
     damageMin: 0
     damageMax: 0
     reach: 2.2
-    windupTime: 1
-    cooldown: 2
+    windupTime: 0.5
+    cooldown: 1.8
   hasDecalAttack: 0
   decalCycleMode: 0
   decalAttacks: []
