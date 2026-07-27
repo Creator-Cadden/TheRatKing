@@ -60,12 +60,21 @@ public class Arrow : MonoBehaviour
              "0 = stop exactly at hit point. 0.15 = arrow tip ~0.15 units inside.")]
     public float stickInsertionOffset = 0.15f;
 
+    [Header("Trail (visible flight path)")]
+    [Tooltip("Adds a TrailRenderer so you can SEE the arc the arrow flies and " +
+             "compensate your aim. Created at runtime if the prefab has none.")]
+    public bool  addTrail        = true;
+    public float trailTime       = 0.45f;
+    public float trailStartWidth = 0.12f;
+    public Color trailColor      = new Color(1f, 0.92f, 0.55f, 0.9f);
+
     [Header("Debug")]
     public bool verbose = false;
 
-    private Vector3 _velocity;
-    private float   _aliveTime;
-    private bool    _spent;       // prevents double-hit on same frame
+    private Vector3       _velocity;
+    private float         _aliveTime;
+    private bool          _spent;       // prevents double-hit on same frame
+    private TrailRenderer _trail;
 
 
     /// <summary>
@@ -91,6 +100,8 @@ public class Arrow : MonoBehaviour
 
         if (faceVelocity && _velocity.sqrMagnitude > 0.0001f)
             transform.rotation = Quaternion.LookRotation(_velocity);
+
+        EnsureTrail();
     }
 
     // Backwards-compatible overload (in case anything else calls Launch without gravity).
@@ -99,6 +110,35 @@ public class Arrow : MonoBehaviour
     {
         Launch(direction, speedOverride, damageOverride, staggerOverride,
                layerMask, lifetimeOverride, gravity);
+    }
+
+    private void EnsureTrail()
+    {
+        if (!addTrail) return;
+
+        _trail = GetComponent<TrailRenderer>();
+        if (_trail == null) _trail = gameObject.AddComponent<TrailRenderer>();
+
+        _trail.time              = trailTime;
+        _trail.startWidth        = trailStartWidth;
+        _trail.endWidth          = 0f;
+        _trail.minVertexDistance = 0.04f;
+        _trail.autodestruct      = false;
+        _trail.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+        _trail.receiveShadows    = false;
+
+        if (_trail.sharedMaterial == null)
+        {
+            Shader shader = Shader.Find("Sprites/Default")
+                         ?? Shader.Find("Universal Render Pipeline/Unlit")
+                         ?? Shader.Find("Unlit/Color");
+            _trail.material = new Material(shader) { renderQueue = 3000 };
+        }
+
+        _trail.startColor = trailColor;
+        _trail.endColor   = new Color(trailColor.r, trailColor.g, trailColor.b, 0f);
+        _trail.emitting   = true;
+        _trail.Clear();
     }
 
     void Update()
@@ -173,6 +213,7 @@ public class Arrow : MonoBehaviour
     private void StickTo(Collider enemyCollider)
     {
         _velocity = Vector3.zero;
+        if (_trail != null) _trail.emitting = false;   // stop the trail once it lands
 
         // Nudge the arrow forward a touch so its visible shaft pokes into the
         // enemy rather than sitting flush at the collider surface.

@@ -114,9 +114,67 @@ public class PlayerMovement : MonoBehaviour
         }
     }
 
+    /// <summary>
+    /// freeLookCamera / aimCamera live in the SEPARATE CamRig prefab, so they can't
+    /// be stored in the Player prefab asset (a prefab can't reference a scene object)
+    /// — they only ever exist as per-scene instance overrides. If those overrides are
+    /// missing or were reverted, find the cameras from the scene's CamRig so the Player
+    /// works in ANY scene with no manual wiring and no null-camera crash.
+    /// FreeLook = the Cinemachine camera that has an Orbital Follow; Aim = the other.
+    /// </summary>
+    private void ResolveCamerasIfNeeded()
+    {
+        // 1. Find the CamRig vcams if the cross-prefab refs are missing (reverted/unset).
+        if (freeLookCamera == null || aimCamera == null)
+        {
+            var cams = FindObjectsByType<CinemachineCamera>(FindObjectsSortMode.None);
+
+            // FreeLook = the vcam with an Orbital Follow component.
+            if (freeLookCamera == null)
+            {
+                foreach (var cam in cams)
+                    if (cam.GetComponent<CinemachineOrbitalFollow>() != null) { freeLookCamera = cam; break; }
+            }
+
+            // Aim = the OTHER vcam under the same CamRig (freeLook's sibling). Scoping
+            // to the same parent avoids grabbing unrelated vcams (e.g. a boss cutscene cam).
+            if (aimCamera == null && freeLookCamera != null)
+            {
+                Transform rig = freeLookCamera.transform.parent;
+                foreach (var cam in cams)
+                    if (cam != freeLookCamera && (rig == null || cam.transform.parent == rig)) { aimCamera = cam; break; }
+            }
+        }
+
+        // 2. Always point the vcams at THIS player's camera rig so they follow the right
+        //    target in any scene with no manual wiring:
+        //    FreeLook follows CameraPitch; Aim follows CameraShoulder (both under the player).
+        if (freeLookCamera != null && cameraPitch != null)
+        {
+            freeLookCamera.Follow = cameraPitch;
+            if (freeLookCamera.LookAt == null) freeLookCamera.LookAt = cameraPitch;
+        }
+        if (aimCamera != null && shoulderPos != null)
+        {
+            aimCamera.Follow = shoulderPos;
+            if (aimCamera.LookAt == null) aimCamera.LookAt = shoulderPos;
+        }
+
+        if (freeLookCamera == null || aimCamera == null)
+            Debug.LogWarning("[PlayerMovement] Could not auto-resolve Cinemachine cameras from the " +
+                             "scene. Make sure a CamRig (FreeLook + Aim vcams) is present in the scene.");
+        else
+            Debug.Log("[PlayerMovement] Auto-resolved & targeted FreeLook/Aim cameras from the scene CamRig.");
+    }
+
     void Start()
     {
         _controller    = GetComponent<CharacterController>();
+
+        // Heal the cross-prefab camera refs (see ResolveCamerasIfNeeded) BEFORE we
+        // touch them below — this is what makes a reverted Player instance still work.
+        ResolveCamerasIfNeeded();
+
         _freeLookInput = freeLookCamera.GetComponent<CinemachineInputAxisController>();
         _stats         = GetComponent<EntityStats>();
         _swapper       = GetComponent<WeaponModelSwapper>();
@@ -145,11 +203,16 @@ public class PlayerMovement : MonoBehaviour
         _isGrounded = _controller.isGrounded;
 
         CheckEnemyHeadSlide();   // no camping on enemy backs
+        RecordSafeGround();      // fall-recovery memory
 
-        if (!_isRolling && !IsStaggered)
+        if (!_isRolling && !IsStaggered && !IsRooted)
         {
             HandleMovement();
             HandleRotation();
+        }
+        else if (IsRooted && !_isRolling && !IsStaggered)
+        {
+            HandleRotation();   // rooted = planted feet, but you can still turn
         }
 
         HandleJumpAndGravity();
@@ -199,6 +262,55 @@ public class PlayerMovement : MonoBehaviour
     // ── Hit reactions (Impact overhaul) ──
     // Basic enemy hits: small knockback + brief i-frames, NO control loss.
     // Decal hits: STAGGER — control lockout + bigger knockback + i-frames.
+
+    // ── Safe-ground memory (death plane fall recovery) ──
+    // Remembers where the player last stood on REAL ground. The death plane
+    // teleports them back to the OLDER of two remembered spots (~0.8s before
+    // the fall), so they return safely behind the cliff lip, not on it.
+
+    [Header("Fall Recovery")]
+    [Tooltip("Seconds between safe-ground snapshots. Respawn uses the older of " +
+             "two snapshots — bigger interval = further back from the ledge.")]
+    public float safeGroundInterval = 0.4f;
+
+    private readonly Vector3[] _safeSpots = new Vector3[2];
+    private int   _safeCount;
+    private float _nextSafeRecord;
+
+    private void RecordSafeGround()
+    {
+        if (!_isGrounded || _standingOnEnemy || IsStaggered || _isRolling) return;
+        if (Time.time < _nextSafeRecord) return;
+
+        _nextSafeRecord = Time.time + safeGroundInterval;
+        _safeSpots[1]   = _safeSpots[0];
+        _safeSpots[0]   = transform.position;
+        _safeCount      = Mathf.Min(2, _safeCount + 1);
+    }
+
+    /// <summary>Last known safe standing spot (older snapshot preferred).</summary>
+    public bool TryGetSafeRespawn(out Vector3 pos)
+    {
+        pos = Vector3.zero;
+        if (_safeCount == 0) return false;
+        pos = (_safeCount > 1 ? _safeSpots[1] : _safeSpots[0]) + Vector3.up * 0.3f;
+        return true;
+    }
+
+    /// <summary>Hard teleport that also clears all motion state (velocity,
+    /// knockback, stagger flight, head-slide) — used by the death plane.</summary>
+    public void TeleportTo(Vector3 pos)
+    {
+        _controller.enabled = false;
+        transform.position  = pos;
+        _controller.enabled = true;
+
+        _velocity             = Vector3.zero;
+        _knockbackTimer       = 0f;
+        _staggerHorizVelocity = Vector3.zero;
+        _inStaggerFlight      = false;
+        _enemyHeadSlide       = Vector3.zero;
+    }
 
     [Header("Enemy Head Slide (no camping on enemies)")]
     [Tooltip("Layers counted as enemies. Leave empty to auto-resolve the " +
@@ -303,6 +415,18 @@ public class PlayerMovement : MonoBehaviour
     private float   _staggerFlightSafetyEnd;
     private Vector3 _staggerHorizVelocity;   // constant ballistic momentum during flight
 
+    // ── Root (hammer slam landing) — movement/roll/jump locked, attacks allowed ──
+    private float _rootedUntil = -999f;
+
+    public bool IsRooted => Time.time < _rootedUntil;
+
+    /// <summary>Plant the player in place for a moment (hammer slam commitment).</summary>
+    public void RootFor(float seconds)
+    {
+        if (seconds <= 0f) return;
+        _rootedUntil = Mathf.Max(_rootedUntil, Time.time + seconds);
+    }
+
     /// <summary>True while staggered — the ENTIRE hit → fly → bounce → bounce →
     /// settle → recover sequence. Movement, roll, jump, and attacks all blocked
     /// until it fully completes.</summary>
@@ -324,6 +448,16 @@ public class PlayerMovement : MonoBehaviour
             : transform.position - sourcePosition;
         away.y = 0f;
         if (away.sqrMagnitude < 0.0001f) away = -transform.forward;
+
+        // HAMMER HYPER ARMOR: mid-swing, decal hits can't stagger — the swing
+        // powers through (damage already applied; reaction downgrades to basic).
+        if (stagger)
+        {
+            var hammer = GetComponent<HammerCombat>();
+            if (hammer != null && hammer.SwingArmorActive &&
+                _stats != null && _stats.EquippedWeapon == EntityStats.WeaponType.Hammer)
+                stagger = false;
+        }
 
         if (stagger)
         {
@@ -516,7 +650,7 @@ public class PlayerMovement : MonoBehaviour
         SetBool("Contact", false);
         if (landedThisFrame) SetBool("Contact", true);
 
-        if (_jumpPressed && _isGrounded && !IsStaggered && !_standingOnEnemy)
+        if (_jumpPressed && _isGrounded && !IsStaggered && !_standingOnEnemy && !IsRooted)
         {
             // Jumping is FREE — no stamina cost (playtest feedback: stamina-gated
             // jumps made platforming feel unfair). jumpStaminaCost on the stat
@@ -551,6 +685,7 @@ public class PlayerMovement : MonoBehaviour
         if (_isRolling)   return;
         if (_isAiming)    return;
         if (IsStaggered)  return;   // no dodging out of a stagger — that's the punish
+        if (IsRooted)     return;   // planted by the slam — commit means commit
         if (Time.time < _lastRollTime + rollCooldown) return;
 
         // Roll works with ANY stamina left — even 1 point — draining whatever

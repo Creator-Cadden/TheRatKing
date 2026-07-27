@@ -1247,7 +1247,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::GameManager
   mainMenuScene: MainMenu
   weaponSelectScene: PlayerCustom
-  firstGameScene: lvl1
+  firstGameScene: 1_1 Engagement
   testWorldScene: TestingArena
   deathScreen: {fileID: 0}
   pauseMenu: {fileID: 0}

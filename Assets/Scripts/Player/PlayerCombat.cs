@@ -191,13 +191,11 @@ public class PlayerCombat : MonoBehaviour
                 return;
             }
 
+            // HOLD-TO-DRAW everywhere (design doc): every grounded press starts
+            // a draw — aimed or free-look — and the shot fires on RELEASE
+            // (handled inside BowController, which calls NotifyBowShotFired).
             if (Time.time < _lastAttackTime + _currentAttackCooldown) return;
-            _lastAttackTime = Time.time;
-            _swapper?.ActiveWeaponAnimator?.ResetTrigger("BowAttk");
-            FireAttackAnims("Attk", "BowAttk");
-
-            if (_isAiming) _bow.BeginAimedShot();
-            else           _bow.FreeLookShot();
+            _bow.BeginCharge();
             return;
         }
 
@@ -255,6 +253,19 @@ public class PlayerCombat : MonoBehaviour
     /// is our copy so we can route bow press -> BeginAimedShot vs FreeLookShot.
     /// </summary>
     public void OnAim(InputValue value) => _isAiming = value.isPressed;
+
+    /// <summary>Current aim state — BowController reads this at release to pick
+    /// camera-aimed vs free-look firing.</summary>
+    public bool IsAiming => _isAiming;
+
+    /// <summary>Called by BowController the moment an arrow actually fires —
+    /// starts the rate-of-fire cooldown and plays the shot animations.</summary>
+    public void NotifyBowShotFired()
+    {
+        _lastAttackTime = Time.time;
+        _swapper?.ActiveWeaponAnimator?.ResetTrigger("BowAttk");
+        FireAttackAnims("Attk", "BowAttk");
+    }
 
     // ── Weapon swap shortcut helpers (still useful for menus / pickups) ──
 

@@ -189,15 +189,31 @@ public class HammerCombat : MonoBehaviour
     /// this to the animator's ComboStep int.</summary>
     public int LastComboStep { get; private set; }
 
+    // Hyper armor: while mid-swing the player can't be STAGGERED by decal hits
+    // (damage still applies, reaction downgrades to a basic hit) — the hammer's
+    // tanky identity per the design doc. PlayerMovement reads this.
+    public bool SwingArmorActive => Time.time < _swingArmorUntil;
+    private float _swingArmorUntil = -999f;
+
     public bool TryBasicSwing()
     {
         if (!IsSwingReady) return false;
+
+        // Every heavy swing costs stamina (empty bar blocks it entirely).
+        int swingCost = _stats?.playerStatBlock != null
+            ? _stats.playerStatBlock.hammerSwingStaminaCost : 10;
+        if (_stats != null && !_stats.UseStaminaPartial(swingCost))
+        {
+            if (verbose) Debug.Log("[HammerCombat] Out of stamina — no swing.");
+            return false;
+        }
 
         // Chain bookkeeping: waiting past cooldown + window breaks the combo.
         if (Time.time > _lastSwingTime + _currentSwingCooldown + comboWindow)
             _comboStep = 0;
 
         _lastSwingTime   = Time.time;
+        _swingArmorUntil = Time.time + swingWindup + 0.35f;   // armor covers the swing
         _pendingFinisher = _comboStep >= comboLength - 1;
         LastComboStep    = _comboStep;
         _comboStep       = (_comboStep + 1) % Mathf.Max(1, comboLength);
@@ -216,10 +232,25 @@ public class HammerCombat : MonoBehaviour
     /// Player pressed LMB mid-air with the hammer equipped.
     /// Returns true if the slam actually fired (false on cooldown).
     /// </summary>
+    [Tooltip("Seconds the player is ROOTED (no move/roll/jump) after the slam " +
+             "lands — the commitment cost. Attacks still allowed.")]
+    public float slamRootDuration = 0.5f;
+
     public bool TryJumpSlam()
     {
         if (!IsSlamReady) return false;
-        _lastSlamTime = Time.time;
+
+        // The slam is the expensive one (doc ~20 stamina).
+        int slamCost = _stats?.playerStatBlock != null
+            ? _stats.playerStatBlock.hammerSlamStaminaCost : 20;
+        if (_stats != null && !_stats.UseStaminaPartial(slamCost))
+        {
+            if (verbose) Debug.Log("[HammerCombat] Out of stamina — no slam.");
+            return false;
+        }
+
+        _lastSlamTime    = Time.time;
+        _swingArmorUntil = Time.time + slamWindup + 0.35f;   // armor through the slam
 
         if (slamWindup > 0.0001f)
             Invoke(nameof(ResolveSlam), slamWindup);
@@ -232,6 +263,12 @@ public class HammerCombat : MonoBehaviour
 
     // ── Hit resolution ──
 
+    [Tooltip("CLEAVE FALLOFF: only the NEAREST enemy in the arc takes full " +
+             "damage; everyone else takes this fraction. The hammer scatters " +
+             "packs (full knockback on all) but doesn't mass-execute them.")]
+    [Range(0f, 1f)]
+    public float cleaveFalloff = 0.6f;
+
     private void ResolveSwing()
     {
         if (attackOrigin == null) return;
@@ -242,20 +279,34 @@ public class HammerCombat : MonoBehaviour
         int impact    = _stats?.GetWeaponImpact(special: _pendingFinisher) ?? 3;
         int hitsLanded = 0;
 
+        // Pass 1: collect valid targets + find the nearest one.
         Collider[] hits = Physics.OverlapSphere(attackOrigin.position, swingRadius, enemyLayer);
+        EntityStats nearest = null;
+        float nearestSqr = float.MaxValue;
         foreach (Collider hit in hits)
         {
             Vector3 toTarget = (hit.transform.position - attackOrigin.position).normalized;
             float   angle    = Vector3.Angle(transform.forward, toTarget);
             if (angle > swingAngle * 0.5f) continue;
 
-            // Parent search — colliders may live on bones/children of the enemy.
             var es = hit.GetComponentInParent<EntityStats>();
-            if (es == null || _hitThisAttack.Contains(es)) continue;   // one hit per enemy
+            if (es == null || _hitThisAttack.Contains(es)) continue;
             _hitThisAttack.Add(es);
 
-            es.TakeDamage(damage);
-            hit.GetComponentInParent<EnemyAI>()?.ApplyHitReaction(attackOrigin.position, impact);
+            float d = (es.transform.position - attackOrigin.position).sqrMagnitude;
+            if (d < nearestSqr) { nearestSqr = d; nearest = es; }
+        }
+
+        // Pass 2: nearest takes full damage, the rest take the cleave fraction.
+        // Everyone gets the full Impact reaction (knockback/stagger unchanged —
+        // the hammer still SCATTERS the pack).
+        foreach (EntityStats es in _hitThisAttack)
+        {
+            int final = es == nearest
+                ? damage
+                : Mathf.Max(1, Mathf.RoundToInt(damage * cleaveFalloff));
+            es.TakeDamage(final);
+            es.GetComponentInParent<EnemyAI>()?.ApplyHitReaction(attackOrigin.position, impact);
             hitsLanded++;
         }
         _hitThisAttack.Clear();
@@ -271,6 +322,10 @@ public class HammerCombat : MonoBehaviour
     private void ResolveSlam()
     {
         if (attackOrigin == null) return;
+
+        // Landing ROOT — the slam's commitment cost. Movement/roll/jump locked
+        // briefly; attacking still allowed.
+        GetComponent<PlayerMovement>()?.RootFor(slamRootDuration);
 
         int baseDmg = _stats?.CalculateWeaponDamage() ?? 10;
         int damage  = Mathf.RoundToInt(baseDmg * slamDamageMultiplier);

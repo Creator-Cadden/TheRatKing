@@ -12,7 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: cddbe9ff30055fe44ac23a486a3194ae, type: 3}
   m_Name: Captain
   m_EditorClassIdentifier: Assembly-CSharp::EnemyStatBlock
-  baseHealth: 300
+  baseHealth: 400
   baseStrength: 25
   baseToughness: 4
   displayName: Captain Rat
@@ -35,7 +35,7 @@ MonoBehaviour:
     shape: 0
     damageMin: 0
     damageMax: 0
-    coneRadius: 4.5
+    coneRadius: 8
     coneAngle: 90
     circleRadius: 0
     rectWidth: 0
@@ -50,7 +50,7 @@ MonoBehaviour:
     damageMax: 15
     coneRadius: 0
     coneAngle: 10
-    circleRadius: 3
+    circleRadius: 8
     rectWidth: 0
     rectLength: 0
     height: 0

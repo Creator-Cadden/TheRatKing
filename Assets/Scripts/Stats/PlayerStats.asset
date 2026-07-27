@@ -30,12 +30,12 @@ MonoBehaviour:
   hammerBaseDamage: 25
   hammerStrengthMultiplier: 2
   hammerToughnessBonus: 6
-  hammerMoveSpeedFraction: 1
+  hammerMoveSpeedFraction: 0.8
   hammerAttackSpeedFraction: 0.5
-  bowBaseDamage: 0
+  bowBaseDamage: 6
   bowStrengthMultiplier: 1
   bowToughnessBonus: 0
-  bowChargedMultiplier: 3
+  bowChargedMultiplier: 1.6
   bowAimMoveSpeedFraction: 0.667
   sprintStaminaPerSecond: 5
   rollStaminaCost: 15

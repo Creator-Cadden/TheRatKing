@@ -216,6 +216,16 @@ public class BladeCombat : MonoBehaviour
     public bool TryJumpAttack()
     {
         if (!IsJumpReady) return false;
+
+        // Jump attack costs stamina (doc ~10); basic slashes stay free.
+        int cost = _stats?.playerStatBlock != null
+            ? _stats.playerStatBlock.bladeJumpStaminaCost : 10;
+        if (_stats != null && !_stats.UseStaminaPartial(cost))
+        {
+            if (verbose) Debug.Log("[BladeCombat] Out of stamina — no jump attack.");
+            return false;
+        }
+
         _lastJumpTime = Time.time;
 
         StartJumpSpin();

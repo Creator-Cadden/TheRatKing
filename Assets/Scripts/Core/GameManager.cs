@@ -14,7 +14,7 @@ public class GameManager : MonoBehaviour
     [Header("Scene Names")]
     public string mainMenuScene     = "MainMenu";
     public string weaponSelectScene = "PlayerCustom";
-    public string firstGameScene    = "lvl1";
+    public string firstGameScene    = "1_1 Engagement";
     [Tooltip("Scene loaded when the player enters the enemy test arena. " +
              "Goes through WeaponSelect first. Never writes to a save slot.")]
     public string testWorldScene    = "TestingArena";
@@ -51,6 +51,7 @@ public class GameManager : MonoBehaviour
 
     private Vector3    _spawnPosition;
     private Quaternion _spawnRotation;
+    private bool       _spawnPointFound;
 
     private bool _isDead;
 
@@ -96,6 +97,10 @@ public class GameManager : MonoBehaviour
         // Re-find player references in the new scene
         CachePlayerReferences();
         CacheSpawnPoint();
+
+        // Always start the player AT the spawn point, not wherever the prefab
+        // happened to be placed in the scene.
+        MovePlayerToSpawn();
 
         if (_playerStats != null)
         {
@@ -418,6 +423,19 @@ public class GameManager : MonoBehaviour
     private void LoadScene(string sceneName)
     {
         Time.timeScale = 1f;
+
+        // Scene-rename safety: old saves may point at scenes that no longer
+        // exist (e.g. "lvl2 New" after the 1_x restructure). Fall back to the
+        // first game scene, then the main menu, instead of crashing.
+        if (!Application.CanStreamedLevelBeLoaded(sceneName))
+        {
+            Debug.LogWarning($"[GameManager] Scene '{sceneName}' isn't in the build " +
+                             "(renamed/removed?) — falling back.");
+            sceneName = Application.CanStreamedLevelBeLoaded(firstGameScene)
+                ? firstGameScene
+                : mainMenuScene;
+        }
+
         SceneManager.LoadScene(sceneName);
     }
 
@@ -444,6 +462,7 @@ public class GameManager : MonoBehaviour
         if (spawnObj == null)
         {
             Debug.LogWarning("[GameManager] No 'SpawnPoint' tagged object — using player position.");
+            _spawnPointFound = false;
             if (_playerTransform != null)
             {
                 _spawnPosition = _playerTransform.position;
@@ -452,8 +471,26 @@ public class GameManager : MonoBehaviour
             return;
         }
 
+        _spawnPointFound = true;
         _spawnPosition = spawnObj.transform.position;
         _spawnRotation = spawnObj.transform.rotation;
         Debug.Log($"[GameManager] Spawn point → {_spawnPosition}");
+    }
+
+    /// <summary>
+    /// Teleports the player to the cached spawn point on scene load. No-op if no
+    /// SpawnPoint-tagged object exists (so a scene without one keeps the player
+    /// wherever it was placed). Disables the CharacterController around the move —
+    /// it otherwise overrides direct transform writes.
+    /// </summary>
+    private void MovePlayerToSpawn()
+    {
+        if (!_spawnPointFound || _playerTransform == null) return;
+
+        if (_playerController != null) _playerController.enabled = false;
+        _playerTransform.SetPositionAndRotation(_spawnPosition, _spawnRotation);
+        if (_playerController != null) _playerController.enabled = true;
+
+        Debug.Log("[GameManager] Player moved to spawn point on load.");
     }
 }

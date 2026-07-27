@@ -121,6 +121,21 @@ public class PlayerStatBlock : BaseStatBlock
              "Kept so existing stat block assets don't lose serialized data.")]
     public int jumpStaminaCost = 5;
 
+    // Attack stamina costs (design doc). All consumed via UseStaminaPartial —
+    // any stamina lets the attack fire (drains to 0), only an empty bar blocks.
+    [Header("Attack Stamina Costs")]
+    [Tooltip("Blade jump attack cost (basic slashes are free).")]
+    public int bladeJumpStaminaCost = 10;
+
+    [Tooltip("Hammer basic swing cost — every heavy swing costs.")]
+    public int hammerSwingStaminaCost = 10;
+
+    [Tooltip("Hammer jump slam cost.")]
+    public int hammerSlamStaminaCost = 20;
+
+    [Tooltip("Bow charged shot cost (≥60% draw; quick releases are free).")]
+    public int bowChargedStaminaCost = 10;
+
     // ── STAMINA REGEN ──
 
     [Header("Stamina Regen")]

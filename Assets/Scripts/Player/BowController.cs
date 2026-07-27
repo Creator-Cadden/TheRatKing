@@ -18,8 +18,9 @@ public class BowController : MonoBehaviour
     public Transform arrowSpawnPoint;
 
     [Tooltip("Arrows travel at this many units/sec.\n" +
-             "30 = floaty, drops fast. 50 = solid baseline. 80+ = sniper-feel.")]
-    public float arrowSpeed = 50f;
+             "~28 = slow & readable, you can watch the arc and compensate (current). " +
+             "50 = solid baseline. 80+ = sniper-feel.")]
+    public float arrowSpeed = 28f;
 
     [Tooltip("Arrows self-destroy after this many seconds (failsafe). At default " +
              "speed, 4s covers ~200 units of range — well past visible draw distance.")]
@@ -31,7 +32,7 @@ public class BowController : MonoBehaviour
     [Tooltip("Downward acceleration applied to arrows in flight, units/sec².\n" +
              "0 = perfectly straight. 3 = subtle arc, long range stays usable. " +
              "6 = clear arc, mid-range only. 9.81 = real-world drop.")]
-    public float arrowGravity = 3f;
+    public float arrowGravity = 5f;
 
     [Header("Aim Direction (for aim-mode shots)")]
     [Tooltip("OPTIONAL — drag a transform whose forward direction is the aim " +
@@ -177,6 +178,9 @@ public class BowController : MonoBehaviour
             CurrentChargeFraction = Mathf.Clamp01(
                 (Time.time - _chargeStartTime) / Mathf.Max(0.0001f, effectiveMax));
 
+            // Live trajectory arc while drawing.
+            UpdateTrajectory();
+
             // Detect release.
             bool released = _attackAction != null
                 ? _attackAction.WasReleasedThisFrame()
@@ -184,9 +188,20 @@ public class BowController : MonoBehaviour
 
             if (released)
             {
-                FireChargedAimedShot(CurrentChargeFraction);
+                var  pc     = GetComponent<PlayerCombat>();
+                bool aiming = pc != null && pc.IsAiming;
+
+                if (aiming) FireChargedAimedShot(CurrentChargeFraction);
+                else        FireFreeLookRelease(CurrentChargeFraction);
+
+                pc?.NotifyBowShotFired();
                 StopCharging();
+                HideTrajectory();
             }
+        }
+        else
+        {
+            HideTrajectory();
         }
 
         // Push Hold / Moving bools to the bow's own Animator every frame.
@@ -204,13 +219,165 @@ public class BowController : MonoBehaviour
     /// Called by PlayerCombat when LMB is pressed while aiming (RMB held).
     /// Starts charging until LMB release.
     /// </summary>
-    public void BeginAimedShot()
+    /// <summary>
+    /// HOLD-TO-DRAW (design doc): every shot is a draw — press starts the
+    /// charge (aimed OR free-look), release fires. Called by PlayerCombat.
+    /// </summary>
+    public void BeginCharge()
     {
         if (_isCharging) return;
         _isCharging           = true;
         _chargeStartTime      = Time.time;
         CurrentChargeFraction = 0f;
         // Animator bools are driven each frame in Update via PushAnimatorBools().
+    }
+
+    /// <summary>Legacy alias — same as BeginCharge.</summary>
+    public void BeginAimedShot() => BeginCharge();
+
+    /// <summary>
+    /// Release while NOT aiming: fires along the rat's facing with the
+    /// auto-target nudge, damage/speed scaled by how long you drew.
+    /// </summary>
+    private void FireFreeLookRelease(float chargeFraction)
+    {
+        Vector3 dir = GetFreeLookDirection();
+
+        int   dmg       = ChargedDamage(chargeFraction);
+        float speedMult = Mathf.Lerp(1f, maxChargedSpeedMultiplier, chargeFraction);
+
+        // Charged draw costs a little stamina (doc ~10); drains partial like the roll.
+        if (chargeFraction >= 0.6f)
+            _stats?.UseStaminaPartial(_stats.playerStatBlock != null
+                ? _stats.playerStatBlock.bowChargedStaminaCost : 10);
+
+        SpawnArrow(dir, dmg, arrowSpeed * speedMult, charged: chargeFraction >= 0.6f);
+
+        if (verbose)
+            Debug.Log($"[BowController] Free-look release — charge {chargeFraction:F2}, {dmg} dmg.");
+    }
+
+    /// <summary>Free-look firing direction: rat's forward + auto-target nudge.</summary>
+    private Vector3 GetFreeLookDirection()
+    {
+        Vector3 dir = transform.forward;
+
+        if (autoTargetStrength > 0f)
+        {
+            EntityStats target = FindAutoTarget();
+            if (target != null)
+            {
+                Vector3 toTarget = target.transform.position - arrowSpawnPoint.position;
+                toTarget.y = 0f;
+                if (toTarget.sqrMagnitude > 0.0001f)
+                    dir = Vector3.Slerp(transform.forward, toTarget.normalized,
+                                        autoTargetStrength).normalized;
+            }
+        }
+        return dir;
+    }
+
+    /// <summary>
+    /// Unified draw damage: quick release = normal weapon damage, full draw =
+    /// the stat block's charged damage. ONE source of truth (PlayerStatBlock:
+    /// bowBaseDamage / bowStrengthMultiplier / bowChargedMultiplier) — the old
+    /// per-component min/max charge multipliers are no longer used.
+    /// </summary>
+    private int ChargedDamage(float chargeFraction)
+    {
+        int quick   = _stats != null ? _stats.CalculateWeaponDamage()    : 5;
+        int charged = _stats != null ? _stats.CalculateChargedBowDamage() : quick * 2;
+        return Mathf.RoundToInt(Mathf.Lerp(quick, charged, chargeFraction));
+    }
+
+    // ── Trajectory arc (shown while drawing) ──
+
+    [Header("Trajectory Arc")]
+    [Tooltip("Show the predicted arrow arc while drawing the bow. OFF by default now " +
+             "— the slower arrow + its TrailRenderer show the real arc instead.")]
+    public bool showTrajectory = false;
+
+    [Tooltip("Seconds of flight simulated per arc point.")]
+    public float trajectoryStep = 0.05f;
+
+    [Tooltip("Max points in the arc line.")]
+    public int trajectoryMaxPoints = 40;
+
+    public Color trajectoryColor = new Color(1f, 1f, 1f, 0.55f);
+    public float trajectoryWidth = 0.06f;
+
+    private LineRenderer _trajectory;
+    private static readonly Vector3[] _arcBuffer = new Vector3[64];
+
+    private void UpdateTrajectory()
+    {
+        if (!showTrajectory || arrowSpawnPoint == null) { HideTrajectory(); return; }
+        EnsureTrajectoryLine();
+
+        // Same math the arrow flies with: direction by aim state, speed by
+        // charge, gravity from the arrow settings.
+        var  pc     = GetComponent<PlayerCombat>();
+        bool aiming = pc != null && pc.IsAiming;
+
+        Vector3 dir   = aiming ? GetAimDirection() : GetFreeLookDirection();
+        float   speed = arrowSpeed * Mathf.Lerp(1f, maxChargedSpeedMultiplier, CurrentChargeFraction);
+
+        Vector3 pos = arrowSpawnPoint.position;
+        Vector3 vel = dir.normalized * speed;
+        int count = 0;
+        int max   = Mathf.Min(trajectoryMaxPoints, _arcBuffer.Length);
+
+        _arcBuffer[count++] = pos;
+        for (int i = 1; i < max; i++)
+        {
+            vel.y -= arrowGravity * trajectoryStep;          // matches Arrow.Update
+            Vector3 next = pos + vel * trajectoryStep;
+
+            // Stop the line at the first surface it would hit (ignore the player).
+            Vector3 seg = next - pos;
+            if (Physics.Raycast(pos, seg.normalized, out RaycastHit hit,
+                                seg.magnitude, ~(1 << gameObject.layer),
+                                QueryTriggerInteraction.Ignore))
+            {
+                _arcBuffer[count++] = hit.point;
+                break;
+            }
+
+            pos = next;
+            _arcBuffer[count++] = pos;
+        }
+
+        _trajectory.positionCount = count;
+        for (int i = 0; i < count; i++) _trajectory.SetPosition(i, _arcBuffer[i]);
+        _trajectory.enabled = true;
+    }
+
+    private void HideTrajectory()
+    {
+        if (_trajectory != null) _trajectory.enabled = false;
+    }
+
+    private void EnsureTrajectoryLine()
+    {
+        if (_trajectory != null) return;
+
+        var go = new GameObject("BowTrajectory");
+        go.transform.SetParent(transform, worldPositionStays: false);
+        _trajectory = go.AddComponent<LineRenderer>();
+        _trajectory.widthMultiplier   = trajectoryWidth;
+        _trajectory.useWorldSpace     = true;
+        _trajectory.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+        _trajectory.receiveShadows    = false;
+
+        Shader shader = Shader.Find("Sprites/Default")
+                     ?? Shader.Find("Universal Render Pipeline/Unlit")
+                     ?? Shader.Find("Unlit/Color");
+        var mat = new Material(shader) { renderQueue = 3000 };
+        mat.color = trajectoryColor;
+        _trajectory.material   = mat;
+        _trajectory.startColor = trajectoryColor;
+        _trajectory.endColor   = new Color(trajectoryColor.r, trajectoryColor.g,
+                                           trajectoryColor.b, 0.1f);
     }
 
     /// <summary>
@@ -310,25 +477,28 @@ public class BowController : MonoBehaviour
 
     private void FireChargedAimedShot(float chargeFraction)
     {
-        // Damage scales 1x -> maxChargeMultiplier with charge fraction.
-        float dmgMult = Mathf.Lerp(minChargeMultiplier, maxChargeMultiplier, chargeFraction);
-        int   baseDmg = _stats?.CalculateWeaponDamage() ?? 5;
-        int   dmg     = Mathf.RoundToInt(baseDmg * dmgMult);
+        // Unified stat-block damage (quick → charged by draw fraction).
+        int dmg = ChargedDamage(chargeFraction);
 
         // Speed scales 1x -> maxChargedSpeedMultiplier with charge fraction,
         // so a full-charge shot flies further AND hits harder.
         float speedMult = Mathf.Lerp(1f, maxChargedSpeedMultiplier, chargeFraction);
         float spd       = arrowSpeed * speedMult;
 
+        // Charged draw costs a little stamina (doc ~10).
+        if (chargeFraction >= 0.6f)
+            _stats?.UseStaminaPartial(_stats.playerStatBlock != null
+                ? _stats.playerStatBlock.bowChargedStaminaCost : 10);
+
         // Aimed shots use the camera's full 3D look direction (yaw + pitch)
         // so the player can aim up at flying enemies. No auto-target assist
         // while aiming — the player chose to aim manually.
         Vector3 dir = GetAimDirection();
-        SpawnArrow(dir, dmg, spd, charged: true);
+        SpawnArrow(dir, dmg, spd, charged: chargeFraction >= 0.6f);
 
         if (verbose)
             Debug.Log($"[BowController] Aimed shot — charge {chargeFraction:F2}, " +
-                      $"dmg x{dmgMult:F2} ({dmg}), speed x{speedMult:F2} ({spd:F0}), dir {dir}.");
+                      $"{dmg} dmg, speed x{speedMult:F2} ({spd:F0}), dir {dir}.");
     }
 
     /// <summary>

@@ -374,6 +374,21 @@ public class EntityStats : MonoBehaviour
         if (CurrentHealth <= 0) Die();
     }
 
+    /// <summary>
+    /// Fall/hazard damage that can NEVER kill — clamps so the player is left
+    /// at 1 HP minimum. Bypasses i-frames (falling always costs). Fires
+    /// onDamageTaken so the health bar and damage numbers react normally.
+    /// </summary>
+    public void TakeFallDamage(int damage)
+    {
+        if (IsDead) return;
+        int final = Mathf.Min(Mathf.Max(1, damage), Mathf.Max(0, CurrentHealth - 1));
+        if (final <= 0) return;   // already at 1 HP — the void can't finish you
+
+        CurrentHealth -= final;
+        onDamageTaken?.Invoke(final);
+    }
+
     public void Heal(int amount)
     {
         if (IsDead) return;

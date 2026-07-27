@@ -21,9 +21,16 @@ public class PauseMenu : MonoBehaviour
     public Button settingsButton;
     public Button mainMenuButton;
 
+    [Header("Input (optional)")]
+    [Tooltip("Optional pause action. If left empty, the menu falls back to the Escape " +
+             "key and the gamepad Start button — so it works with ZERO wiring when " +
+             "dropped into a scene as its own prefab (no PlayerInput needed).")]
+    [SerializeField] private InputActionReference pauseAction;
+
     public bool IsPaused { get; private set; }
 
     private const string CURSOR_OWNER = "pause";
+    private int _lastToggleFrame = -1;
 
 
     void Start()
@@ -68,6 +75,48 @@ public class PauseMenu : MonoBehaviour
     public void OnPause(InputValue value)
     {
         if (!value.isPressed) return;
+        Toggle();
+    }
+
+    void OnEnable()
+    {
+        if (pauseAction != null && pauseAction.action != null)
+            pauseAction.action.Enable();
+    }
+
+    void OnDisable()
+    {
+        if (pauseAction != null && pauseAction.action != null)
+            pauseAction.action.Disable();
+    }
+
+    // Self-contained input: the menu drives itself, so it no longer needs to live
+    // on the player's PlayerInput. Runs on unscaled Update, so it still works while
+    // paused (Time.timeScale = 0).
+    void Update()
+    {
+        bool pressed = false;
+
+        if (pauseAction != null && pauseAction.action != null)
+            pressed = pauseAction.action.WasPressedThisFrame();
+
+        if (!pressed && Keyboard.current != null)
+            pressed = Keyboard.current.escapeKey.wasPressedThisFrame;
+
+        if (!pressed && Gamepad.current != null)
+            pressed = Gamepad.current.startButton.wasPressedThisFrame;
+
+        if (pressed) Toggle();
+    }
+
+    private void Toggle()
+    {
+        // Guard against a double-toggle if BOTH the old PlayerInput 'Send Messages'
+        // OnPause AND the direct poll fire on the same frame (can happen while the
+        // menu is still parented to the player mid-transition).
+        if (Time.frameCount == _lastToggleFrame) return;
+        _lastToggleFrame = Time.frameCount;
+
         if (IsPaused) Resume();
         else          Pause();
     }
