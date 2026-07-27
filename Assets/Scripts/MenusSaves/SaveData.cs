@@ -20,6 +20,8 @@ public class SaveData
     public int currentXP      = 0;
     public int unspentPoints  = 0;
 
+    public int currency       = 0;
+
     public int maxHealth      = 100;
     public int currentHealth  = 100;
     public int strength       = 5;

@@ -96,6 +96,7 @@ public static class SaveSystem
             currentStamina   = stats.CurrentStamina,
             speed            = stats.Speed,
             equippedWeapon   = (int)stats.EquippedWeapon,
+            currency         = stats.GetComponent<CurrencySystem>()?.CurrentCurrency ?? 0,
             totalPlayTime    = playTime
         };
         return data;
@@ -112,5 +113,6 @@ public static class SaveSystem
         // then patch the runtime values to match the save.
         stats.ApplySaveData(data);
         xp.ApplySaveData(data);
+        stats.GetComponent<CurrencySystem>()?.ApplySaveData(data);
     }
 }

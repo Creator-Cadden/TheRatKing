@@ -137,6 +137,9 @@ public class EnemyStatBlock : BaseStatBlock
     [Tooltip("XP granted when this enemy dies. EnemyXPDrop reads this.")]
     public int xpReward = 10;
 
+    [Tooltip("Currency granted when this enemy dies. EnemyCurrencyDrop reads this.")]
+    public int currencyReward = 5;
+
     // ── MOVEMENT & AGGRO ──
 
     [Header("Movement & Aggro")]

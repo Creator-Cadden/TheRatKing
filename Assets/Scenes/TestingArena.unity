@@ -1650,6 +1650,63 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: f4688fdb7df04437aeb418b961361dc5, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Unity.TextMeshPro::TMPro.TextMeshProUGUI
+--- !u!1001 &1692204585
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 0}
+    m_Modifications:
+    - target: {fileID: 4178919419001685010, guid: 4161a7819dc7b894cb511f0e99d353bd, type: 3}
+      propertyPath: m_Name
+      value: Chaser
+      objectReference: {fileID: 0}
+    - target: {fileID: 7402546581324877050, guid: 4161a7819dc7b894cb511f0e99d353bd, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: -193.6
+      objectReference: {fileID: 0}
+    - target: {fileID: 7402546581324877050, guid: 4161a7819dc7b894cb511f0e99d353bd, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 7402546581324877050, guid: 4161a7819dc7b894cb511f0e99d353bd, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 62.315643
+      objectReference: {fileID: 0}
+    - target: {fileID: 7402546581324877050, guid: 4161a7819dc7b894cb511f0e99d353bd, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 7402546581324877050, guid: 4161a7819dc7b894cb511f0e99d353bd, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: -0
+      objectReference: {fileID: 0}
+    - target: {fileID: 7402546581324877050, guid: 4161a7819dc7b894cb511f0e99d353bd, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 7402546581324877050, guid: 4161a7819dc7b894cb511f0e99d353bd, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: -0
+      objectReference: {fileID: 0}
+    - target: {fileID: 7402546581324877050, guid: 4161a7819dc7b894cb511f0e99d353bd, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 7402546581324877050, guid: 4161a7819dc7b894cb511f0e99d353bd, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 180
+      objectReference: {fileID: 0}
+    - target: {fileID: 7402546581324877050, guid: 4161a7819dc7b894cb511f0e99d353bd, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: 4161a7819dc7b894cb511f0e99d353bd, type: 3}
 --- !u!1 &1763524501
 GameObject:
   m_ObjectHideFlags: 0
@@ -5298,3 +5355,4 @@ SceneRoots:
   - {fileID: 358002654}
   - {fileID: 1271860233}
   - {fileID: 910744631}
+  - {fileID: 1692204585}

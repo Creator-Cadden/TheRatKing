@@ -389,6 +389,9 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::EnemyHealthBar
   fillImage: {fileID: 4341589076672484785}
   hpLabel: {fileID: 7913195243224120327}
+  followTarget: {fileID: 0}
+  followOffset: {x: 0, y: 0.8, z: 0}
+  followHeightOnly: 1
   heightOffset: 2.2
   lerpSpeed: 8
   hideWhenFull: 1
@@ -1381,6 +1384,7 @@ GameObject:
   - component: {fileID: 3162676220563091540}
   - component: {fileID: 4174929922021999056}
   - component: {fileID: -3257384754334992854}
+  - component: {fileID: 7179808529541717626}
   m_Layer: 6
   m_Name: FatRatBoss
   m_TagString: Untagged
@@ -1503,6 +1507,20 @@ MonoBehaviour:
   stopRange: 15
   pauseDuration: 0.5
   attackPattern: 0000000001000000
+  stompRange: 3.5
+  stompRadius: 2.6
+  stompForwardOffset: 1.2
+  stompDamage: 30
+  stompWindupDuration: 0.8
+  stompRecoverDuration: 0.5
+  stompCooldown: 2
+  rollsInPair: 2
+  rollPairGap: 0.7
+  pairGapLockFraction: 0.5
+  rollPairCooldown: 4
+  slamCooldown: 6
+  berserkHealthFraction: 0.25
+  berserkTimeScale: 0.6
   rollWindupDuration: 0.5
   rollSpeed: 14
   rollDistance: 30
@@ -1640,6 +1658,40 @@ MonoBehaviour:
   highDamage: 40
   billboardToCamera: 1
   verbose: 0
+--- !u!114 &7179808529541717626
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6572627168002237541}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d0ae51e31b0cf5a4f8f1722184929731, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::BossMinionSpawner
+  minionPrefabs:
+  - {fileID: 4178919419001685010, guid: 4161a7819dc7b894cb511f0e99d353bd, type: 3}
+  hpThresholds:
+  - 0.75
+  - 0.5
+  - 0.25
+  hpThresholdWaveCount: 2
+  hpThresholdWaveCounts: 020000000300000004000000
+  firstHitSpawnCount: 1
+  enableIntervalSpawn: 1
+  spawnInterval: 60
+  requireDamageToStart: 1
+  intervalWaveCount: 1
+  minSpawnDistance: 4
+  maxSpawnDistance: 10
+  navmeshSampleRadius: 2
+  spawnAttempts: 6
+  maxAliveMinions: 10
+  forceMinionAggro: 1
+  minionSpeedMultiplier: 1.5
+  verbose: 0
+  showGizmos: 1
 --- !u!1 &6639699926440915512
 GameObject:
   m_ObjectHideFlags: 0

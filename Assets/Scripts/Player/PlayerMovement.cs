@@ -19,6 +19,9 @@ public class PlayerMovement : MonoBehaviour
     public float deceleration  = 25f;
     public float gravity       = -9.81f;
     public float jumpForce     = 1.5f;
+    [Tooltip("Grace period (seconds) after walking off a ledge during which a jump " +
+             "still registers — makes platforming forgiving. 0.1–0.15 feels good.")]
+    public float coyoteTime    = 0.12f;
     public float rotationSpeed = 10f;
 
     [Header("Roll")]
@@ -69,6 +72,7 @@ public class PlayerMovement : MonoBehaviour
     private Vector3 _currentMoveVelocity;
     private bool    _jumpPressed;
     private bool    _isGrounded;
+    private float   _lastGroundedTime = -999f;   // for coyote-time jumping
     private bool    _sprintHeld;
     private bool    _isAiming;
     private float   _aimYaw;
@@ -201,6 +205,7 @@ public class PlayerMovement : MonoBehaviour
     void Update()
     {
         _isGrounded = _controller.isGrounded;
+        if (_isGrounded) _lastGroundedTime = Time.time;
 
         CheckEnemyHeadSlide();   // no camping on enemy backs
         RecordSafeGround();      // fall-recovery memory
@@ -650,13 +655,17 @@ public class PlayerMovement : MonoBehaviour
         SetBool("Contact", false);
         if (landedThisFrame) SetBool("Contact", true);
 
-        if (_jumpPressed && _isGrounded && !IsStaggered && !_standingOnEnemy && !IsRooted)
+        // Coyote time: allow a jump for a short grace window after leaving the
+        // ground so stepping off a ledge and pressing jump still works.
+        bool withinCoyote = Time.time - _lastGroundedTime <= coyoteTime;
+        if (_jumpPressed && (_isGrounded || withinCoyote) && !IsStaggered && !_standingOnEnemy && !IsRooted)
         {
             // Jumping is FREE — no stamina cost (playtest feedback: stamina-gated
             // jumps made platforming feel unfair). jumpStaminaCost on the stat
             // block is now unused.
-            _velocity.y  = Mathf.Sqrt(jumpForce * -2f * gravity);
-            _jumpPressed = false;
+            _velocity.y       = Mathf.Sqrt(jumpForce * -2f * gravity);
+            _jumpPressed      = false;
+            _lastGroundedTime = -999f;   // consume coyote so you can't re-jump mid-air
             SetBool("Jump", true);
         }
 

@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::EnemyStatBlock
   baseHealth: 200
   baseStrength: 15
-  baseToughness: 2
+  baseToughness: 3
   displayName: Tough Rat
   xpReward: 20
   moveSpeed: 3.5
