@@ -29,6 +29,10 @@ public class PlayerMovement : MonoBehaviour
     public float rollDuration = 0.35f;
     public float rollCooldown = 0.8f;
 
+    [Header("Melee Feel")]
+    [Tooltip("How snappy the soft lock-on turn is when you attack near an enemy.")]
+    public float faceLockTurnSpeed = 18f;
+
     [Header("Cinemachine Cameras")]
     public CinemachineCamera freeLookCamera;
     public CinemachineCamera aimCamera;
@@ -83,6 +87,12 @@ public class PlayerMovement : MonoBehaviour
     private bool    _isRolling;
     private float   _lastRollTime = -999f;
     private Vector3 _rollDirection;
+
+    // Attack lunge + soft lock-on facing
+    private Vector3 _lungeVelocity;
+    private float   _lungeTimer;
+    private Vector3 _faceLockDir;
+    private float   _faceLockUntil;
 
     // Knockback (from boss attacks, contact damage, etc.)
     private Vector3 _knockbackDir;         // unit-length push direction
@@ -227,6 +237,14 @@ public class PlayerMovement : MonoBehaviour
             DriveAimLook();
 
         SetFloat("Running", _currentMoveVelocity == Vector3.zero ? 0f : 1f);
+
+        // Locomotion cadence: scale the walk/run animation speed by how fast the
+        // rat is ACTUALLY moving, so walk→sprint and Speed-stat gains quicken the
+        // steps. In the Animator, set the walk/run state's Speed → Multiplier →
+        // the "LocoSpeed" parameter for this to drive the animation.
+        float horizSpeed = new Vector3(_currentMoveVelocity.x, 0f, _currentMoveVelocity.z).magnitude;
+        float loco       = _baseWalkSpeed > 0.01f ? horizSpeed / _baseWalkSpeed : 1f;
+        SetFloat("LocoSpeed", Mathf.Clamp(loco, 0.5f, 3f));
     }
 
     // ── Speed stat integration ──
@@ -592,11 +610,47 @@ public class PlayerMovement : MonoBehaviour
 
         _currentMoveVelocity = Vector3.Lerp(_currentMoveVelocity, targetVelocity, lerpRate * Time.deltaTime);
         _controller.Move(_currentMoveVelocity * Time.deltaTime);
+
+        // Attack lunge — a brief forward scoot from a melee attack so the rat
+        // carries into the enemy instead of stopping dead against it.
+        if (_lungeTimer > 0f)
+        {
+            _controller.Move(_lungeVelocity * Time.deltaTime);
+            _lungeVelocity = Vector3.Lerp(_lungeVelocity, Vector3.zero, 10f * Time.deltaTime);
+            _lungeTimer   -= Time.deltaTime;
+        }
+    }
+
+    /// <summary>
+    /// Melee-attack feel: briefly face a target direction (soft lock-on) and scoot
+    /// forward toward it. Called by PlayerCombat when a blade/hammer swing lands.
+    /// Pass lungeSpeed 0 for face-only (no scoot).
+    /// </summary>
+    public void AttackLunge(Vector3 dir, float lungeSpeed, float lungeDuration, float faceLockTime)
+    {
+        dir.y = 0f;
+        if (dir.sqrMagnitude < 0.0001f) dir = transform.forward;
+        dir.Normalize();
+
+        _faceLockDir   = dir;
+        _faceLockUntil = Time.time + faceLockTime;
+
+        _lungeVelocity = dir * lungeSpeed;
+        _lungeTimer    = lungeDuration;
     }
 
     private void HandleRotation()
     {
         if (_isAiming) return;
+
+        // Soft lock-on: right after a melee attack, briefly face the target enemy.
+        if (Time.time < _faceLockUntil && _faceLockDir.sqrMagnitude > 0.001f)
+        {
+            Quaternion lockRot = Quaternion.LookRotation(_faceLockDir);
+            transform.rotation = Quaternion.Slerp(transform.rotation, lockRot,
+                                                  faceLockTurnSpeed * Time.deltaTime);
+            return;
+        }
 
         Vector3 camForward = Vector3.ProjectOnPlane(freeLookCamera.transform.forward, Vector3.up).normalized;
         Vector3 camRight   = Vector3.ProjectOnPlane(freeLookCamera.transform.right,   Vector3.up).normalized;

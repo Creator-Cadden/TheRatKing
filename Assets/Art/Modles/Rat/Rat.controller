@@ -657,16 +657,16 @@ AnimatorStateMachine:
     m_Position: {x: 390, y: 70, z: 0}
   - serializedVersion: 1
     m_State: {fileID: -7060526657002435059}
-    m_Position: {x: 110, y: 400, z: 0}
+    m_Position: {x: 120, y: 440, z: 0}
   - serializedVersion: 1
     m_State: {fileID: 3263151143233552335}
-    m_Position: {x: 370, y: 420, z: 0}
+    m_Position: {x: 390, y: 440, z: 0}
   - serializedVersion: 1
     m_State: {fileID: 6056741400868086371}
-    m_Position: {x: 610, y: 420, z: 0}
+    m_Position: {x: 630, y: 440, z: 0}
   - serializedVersion: 1
     m_State: {fileID: 5819703358471661425}
-    m_Position: {x: -200, y: 250, z: 0}
+    m_Position: {x: -200, y: 170, z: 0}
   - serializedVersion: 1
     m_State: {fileID: -5768241959347902238}
     m_Position: {x: -200, y: 320, z: 0}
@@ -883,6 +883,12 @@ AnimatorController:
     m_Controller: {fileID: 9100000}
   - m_Name: BowMove
     m_Type: 4
+    m_DefaultFloat: 0
+    m_DefaultInt: 0
+    m_DefaultBool: 0
+    m_Controller: {fileID: 9100000}
+  - m_Name: LocoSpeed
+    m_Type: 1
     m_DefaultFloat: 0
     m_DefaultInt: 0
     m_DefaultBool: 0
@@ -1184,13 +1190,13 @@ AnimatorState:
   m_IKOnFeet: 0
   m_WriteDefaultValues: 1
   m_Mirror: 0
-  m_SpeedParameterActive: 0
+  m_SpeedParameterActive: 1
   m_MirrorParameterActive: 0
   m_CycleOffsetParameterActive: 0
   m_TimeParameterActive: 0
   m_Motion: {fileID: -2771801356102753808}
   m_Tag: 
-  m_SpeedParameter: 
+  m_SpeedParameter: LocoSpeed
   m_MirrorParameter: 
   m_CycleOffsetParameter: 
   m_TimeParameter: 

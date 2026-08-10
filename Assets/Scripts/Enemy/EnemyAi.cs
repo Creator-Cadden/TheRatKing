@@ -140,7 +140,13 @@ public class EnemyAI : MonoBehaviour
     void Update()
     {
         if (_player == null || _sb == null) return;
-        if (_stats.IsDead) return;
+        if (_stats.IsDead)
+        {
+            // Corpse launch — if the killing blow applied knockback, let the body
+            // keep flying even though the enemy is now dead.
+            if (_isKnockedBack) HandleKnockback();
+            return;
+        }
 
         if (_isKnockedBack)
         {
@@ -294,6 +300,17 @@ public class EnemyAI : MonoBehaviour
     [Tooltip("Horizontal speed kept after each bounce.")]
     public float bounceHorizontalKeep = 0.6f;
 
+    [Header("Hitstop (impact freeze — scales with the reaction)")]
+    [Tooltip("Freeze seconds when the hit does nothing (powers through). Keep tiny.")]
+    public float shrugHitStop = 0.02f;
+    [Tooltip("Freeze seconds on a flinch.")]
+    public float flinchHitStop = 0.05f;
+    [Tooltip("Freeze seconds on a stagger (baseline, margin 1).")]
+    public float staggerHitStop = 0.10f;
+    [Tooltip("Extra freeze seconds per point of overkill margin above 1 — bigger, " +
+             "more decisive hits freeze longer.")]
+    public float hitStopPerMargin = 0.03f;
+
     private const float KnockbackGravity   = -30f;
     private const float MinBounceSpeed     = 3f;    // below this, no more bouncing
     private const float KnockbackSafetyCap = 3f;    // absolute max airtime
@@ -332,7 +349,7 @@ public class EnemyAI : MonoBehaviour
                 if (_knockbackVelocity.sqrMagnitude < 0.25f)
                 {
                     _isKnockedBack = false;
-                    _agent.enabled = true;   // agent snaps back onto the NavMesh
+                    if (!_stats.IsDead) _agent.enabled = true;   // don't revive a corpse's agent
                     return;
                 }
             }
@@ -343,7 +360,7 @@ public class EnemyAI : MonoBehaviour
         if (_knockbackTimer <= 0f)
         {
             _isKnockedBack = false;
-            _agent.enabled = true;
+            if (!_stats.IsDead) _agent.enabled = true;
         }
     }
 
@@ -392,6 +409,7 @@ public class EnemyAI : MonoBehaviour
         int margin = impact - _stats.Toughness;
         if (margin < 0)
         {
+            HitStop.Freeze(shrugHitStop);
             SpawnReactionText("SHRUG", new Color(0.7f, 0.7f, 0.7f));
             return;   // powers through
         }
@@ -401,6 +419,7 @@ public class EnemyAI : MonoBehaviour
         {
             _combat.DelayCurrentWindup(decalWindupDelay);
             _combat.FireAnimTrigger("Flinch");
+            HitStop.Freeze(flinchHitStop);
             SpawnReactionText("DELAYED", new Color(1f, 0.6f, 0.1f));
             return;
         }
@@ -427,11 +446,13 @@ public class EnemyAI : MonoBehaviour
                 _isKnockedBack       = true;
             }
 
+            HitStop.Freeze(flinchHitStop);
             SpawnReactionText("FLINCH", Color.yellow);
             return;
         }
 
         // ── Stagger: cancel + lockout + knockback ──
+        HitStop.Freeze(staggerHitStop + Mathf.Max(0, margin - 1) * hitStopPerMargin);
         _combat?.CancelAttackState();
         _staggerUntil = Time.time + staggerDuration;
 

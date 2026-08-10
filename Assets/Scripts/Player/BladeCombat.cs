@@ -199,11 +199,7 @@ public class BladeCombat : MonoBehaviour
 
         _comboStep = (_comboStep + 1) % Mathf.Max(1, comboLength);
 
-        // Visual: arc ripple along the swing cone
-        if (attackOrigin != null)
-            AttackRipple.SpawnArc(attackOrigin.position, transform.forward,
-                                  swingRadius, swingAngle,
-                                  swingRippleColor, rippleLifetime);
+        // TODO: weapon-specific hit VFX here (old AttackRipple removed).
 
         if (verbose) Debug.Log($"[BladeCombat] Combo hit {LastComboStep + 1}/{comboLength}" +
                                (isFinisher ? " (FINISHER)" : ""));
@@ -231,10 +227,7 @@ public class BladeCombat : MonoBehaviour
         StartJumpSpin();
         HitScan(jumpAttackRadius, 360f);   // 360 = no angle filter — hits all around
 
-        // Visual: 360 ring ripple at the spin radius
-        if (attackOrigin != null)
-            AttackRipple.SpawnRing(attackOrigin.position, jumpAttackRadius,
-                                   jumpRippleColor, rippleLifetime);
+        // TODO: weapon-specific hit VFX here (old AttackRipple removed).
 
         if (verbose) Debug.Log("[BladeCombat] Jump attack fired.");
         return true;
@@ -269,8 +262,10 @@ public class BladeCombat : MonoBehaviour
             if (es == null || _hitThisSwing.Contains(es)) continue;   // one hit per enemy per swing
             _hitThisSwing.Add(es);
 
+            // Reaction BEFORE damage so a KILLING blow still applies its knockback
+            // — the corpse gets launched instead of dying in place.
+            es.GetComponentInParent<EnemyAI>()?.ApplyHitReaction(attackOrigin.position, impact);
             es.TakeDamage(damage);
-            hit.GetComponentInParent<EnemyAI>()?.ApplyHitReaction(attackOrigin.position, impact);
         }
         _hitThisSwing.Clear();
     }

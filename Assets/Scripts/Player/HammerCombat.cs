@@ -199,14 +199,7 @@ public class HammerCombat : MonoBehaviour
     {
         if (!IsSwingReady) return false;
 
-        // Every heavy swing costs stamina (empty bar blocks it entirely).
-        int swingCost = _stats?.playerStatBlock != null
-            ? _stats.playerStatBlock.hammerSwingStaminaCost : 10;
-        if (_stats != null && !_stats.UseStaminaPartial(swingCost))
-        {
-            if (verbose) Debug.Log("[HammerCombat] Out of stamina — no swing.");
-            return false;
-        }
+        // Basic swing is FREE now — stamina cost removed (playtest feedback).
 
         // Chain bookkeeping: waiting past cooldown + window breaks the combo.
         if (Time.time > _lastSwingTime + _currentSwingCooldown + comboWindow)
@@ -305,16 +298,13 @@ public class HammerCombat : MonoBehaviour
             int final = es == nearest
                 ? damage
                 : Mathf.Max(1, Mathf.RoundToInt(damage * cleaveFalloff));
-            es.TakeDamage(final);
             es.GetComponentInParent<EnemyAI>()?.ApplyHitReaction(attackOrigin.position, impact);
+            es.TakeDamage(final);   // reaction first → killing blows still launch the corpse
             hitsLanded++;
         }
         _hitThisAttack.Clear();
 
-        // Visual: arc ripple along the swing cone
-        AttackRipple.SpawnArc(attackOrigin.position, transform.forward,
-                              swingRadius, swingAngle,
-                              swingRippleColor, rippleLifetime);
+        // TODO: weapon-specific hit VFX here (old AttackRipple removed).
 
         if (verbose) Debug.Log($"[HammerCombat] Swing landed on {hitsLanded} target(s), {damage} dmg each.");
     }
@@ -341,15 +331,13 @@ public class HammerCombat : MonoBehaviour
             if (es == null || _hitThisAttack.Contains(es)) continue;   // one hit per enemy
             _hitThisAttack.Add(es);
 
-            es.TakeDamage(damage);
-            hit.GetComponentInParent<EnemyAI>()?.ApplyHitReaction(attackOrigin.position, impact);
+            es.GetComponentInParent<EnemyAI>()?.ApplyHitReaction(attackOrigin.position, impact);
+            es.TakeDamage(damage);   // reaction first → killing blows still launch the corpse
             hitsLanded++;
         }
         _hitThisAttack.Clear();
 
-        // Visual: 360 ring ripple at the slam radius
-        AttackRipple.SpawnRing(attackOrigin.position, slamRadius,
-                               slamRippleColor, rippleLifetime);
+        // TODO: weapon-specific hit VFX here (old AttackRipple removed).
 
         if (verbose) Debug.Log($"[HammerCombat] Slam landed on {hitsLanded} target(s), {damage} dmg each.");
     }

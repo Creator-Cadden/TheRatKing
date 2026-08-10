@@ -16,7 +16,6 @@ MonoBehaviour:
   baseStrength: 10
   baseStamina: 50
   baseSpeed: 5
-  baseToughness: 3
   healthPerPoint: 10
   strengthPerPoint: 1
   staminaPerPoint: 10
@@ -24,21 +23,34 @@ MonoBehaviour:
   floorOneCap: 5
   floorTwoCap: 10
   floorThreeCap: 15
+  bladeImpactBasic: 1
+  bladeImpactSpecial: 2
+  hammerImpactBasic: 3
+  hammerImpactSpecial: 4
+  bowImpactBasic: 1
+  bowImpactSpecial: 2
+  bladeAttackCooldown: 0.55
+  bladeCooldownFloor: 0.3
+  hammerAttackCooldown: 1.1
+  hammerCooldownFloor: 0.65
+  bowAttackCooldown: 0.75
+  bowCooldownFloor: 0.45
   bladeBaseDamage: 5
   bladeStrengthMultiplier: 1
-  bladeToughnessBonus: 1
   hammerBaseDamage: 25
   hammerStrengthMultiplier: 2
-  hammerToughnessBonus: 6
   hammerMoveSpeedFraction: 0.8
   hammerAttackSpeedFraction: 0.5
   bowBaseDamage: 6
   bowStrengthMultiplier: 1
-  bowToughnessBonus: 0
   bowChargedMultiplier: 1.6
   bowAimMoveSpeedFraction: 0.667
   sprintStaminaPerSecond: 5
   rollStaminaCost: 15
   jumpStaminaCost: 5
+  bladeJumpStaminaCost: 10
+  hammerSwingStaminaCost: 10
+  hammerSlamStaminaCost: 20
+  bowChargedStaminaCost: 10
   staminaRegenRate: 15
   staminaRegenDelay: 1

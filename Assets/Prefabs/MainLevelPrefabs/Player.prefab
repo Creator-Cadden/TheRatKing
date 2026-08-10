@@ -338,6 +338,7 @@ GameObject:
   - component: {fileID: 2083038227591294027}
   - component: {fileID: 8473197194234044476}
   - component: {fileID: 1412472041087739303}
+  - component: {fileID: 8069409828454816147}
   m_Layer: 3
   m_Name: Player
   m_TagString: Player
@@ -562,6 +563,7 @@ MonoBehaviour:
   deceleration: 10
   gravity: -35
   jumpForce: 3
+  coyoteTime: 0.12
   rotationSpeed: 10
   rollSpeed: 30
   rollDuration: 0.35
@@ -795,6 +797,36 @@ MonoBehaviour:
   bowKey: 43
   testModeOnly: 0
   verbose: 1
+--- !u!114 &8069409828454816147
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 360696225992726641}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e7689cc5bc0088d438111638c08a7095, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::FootstepSystem
+  surfaceSets:
+  - surface: 0
+    clips:
+    - {fileID: 8300000, guid: e60119b225597c449ac64110389ce2f4, type: 3}
+  defaultSurface: 0
+  strideLength: 3
+  frontThenBack: 1
+  backFootDelayFraction: 0.172
+  rayDistance: 1.5
+  groundMask:
+    serializedVersion: 2
+    m_Bits: 4294967295
+  pitchJitter: 0.08
+  volume: 0.12
+  spatialBlend: 0
+  outputGroup: {fileID: 0}
+  minSpeed: 0.3
+  minStepInterval: 0.18
 --- !u!1 &371287099995731602
 GameObject:
   m_ObjectHideFlags: 0

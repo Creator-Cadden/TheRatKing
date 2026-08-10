@@ -172,18 +172,16 @@ public class Arrow : MonoBehaviour
             var stats = other.GetComponentInParent<EntityStats>();
             if (stats != null && !stats.IsDead)
             {
-                stats.TakeDamage(damage);
+                // Reaction first so a killing shot still launches the corpse.
                 other.GetComponentInParent<EnemyAI>()
                     ?.ApplyHitReaction(transform.position, staggerForce);   // staggerForce = the arrow's Impact value
+                stats.TakeDamage(damage);
 
                 if (verbose)
                     Debug.Log($"[Arrow] Hit {other.name} for {damage} dmg.");
             }
 
-            // Visual: quick flash at the impact point so the player sees the hit
-            if (spawnHitFlash)
-                AttackRipple.SpawnFlash(transform.position, hitFlashRadius,
-                                        hitFlashColor, hitFlashLifetime);
+            // TODO: weapon-specific hit VFX here (old AttackRipple removed).
 
             _spent = true;
 

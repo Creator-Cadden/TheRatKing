@@ -1515,7 +1515,7 @@ MonoBehaviour:
   stompRecoverDuration: 0.5
   stompCooldown: 2
   rollsInPair: 2
-  rollPairGap: 0.7
+  rollPairGap: 1.3
   pairGapLockFraction: 0.5
   rollPairCooldown: 4
   slamCooldown: 6

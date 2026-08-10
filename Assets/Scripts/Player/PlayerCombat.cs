@@ -60,6 +60,18 @@ public class PlayerCombat : MonoBehaviour
              "this if their own enemyLayer is empty. BowController has its own.")]
     public LayerMask enemyLayer;
 
+    [Header("Melee Feel (lunge + soft lock-on)")]
+    [Tooltip("Forward scoot speed applied when a blade swing lands.")]
+    public float bladeLungeSpeed = 4f;
+    [Tooltip("How long the lunge scoot lasts (seconds).")]
+    public float bladeLungeDuration = 0.12f;
+    [Tooltip("Range to search for an enemy to soft-lock-face when attacking.")]
+    public float meleeLockRange = 4f;
+    [Tooltip("Half-angle (degrees) of the forward cone searched for a lock target.")]
+    public float meleeLockHalfAngle = 60f;
+    [Tooltip("Seconds the rat stays faced at the target after a swing.")]
+    public float meleeFaceLockTime = 0.22f;
+
     [Header("Animators")]
     [Tooltip("The rat body animator — drives running, jumping, attack pose.")]
     [SerializeField] private Animator _primaryAnimator;
@@ -219,6 +231,7 @@ public class PlayerCombat : MonoBehaviour
             {
                 PushComboStepAnim(_hammer.LastComboStep);
                 FireAttackAnims("Attk");
+                DoMeleeLungeAndFace(lunge: false);   // hammer: face-lock only, no scoot
             }
 
             return;
@@ -244,6 +257,7 @@ public class PlayerCombat : MonoBehaviour
             {
                 PushComboStepAnim(_blade.LastComboStep);
                 FireAttackAnims("Attk");
+                DoMeleeLungeAndFace(lunge: true);
             }
         }
     }
@@ -308,6 +322,51 @@ public class PlayerCombat : MonoBehaviour
                 return;
             }
         }
+    }
+
+    // ── Melee lunge + soft lock-on ──
+
+    private void DoMeleeLungeAndFace(bool lunge)
+    {
+        if (_movement == null || _movement.IsStaggered) return;
+        if (IsAiming) return;   // soft lock-on is a free-look feel
+
+        Transform target = FindMeleeTarget();
+        Vector3 dir = target != null
+            ? (target.position - transform.position)
+            : transform.forward;
+
+        _movement.AttackLunge(dir,
+            lunge ? bladeLungeSpeed    : 0f,
+            lunge ? bladeLungeDuration : 0f,
+            meleeFaceLockTime);
+    }
+
+    /// <summary>Enemy most aligned with the rat's forward within meleeLockRange /
+    /// the forward cone — the soft lock-on face + lunge aim. Null if none.</summary>
+    private Transform FindMeleeTarget()
+    {
+        Collider[] hits = Physics.OverlapSphere(transform.position, meleeLockRange, enemyLayer);
+        Transform best    = null;
+        float     bestDot = Mathf.Cos(meleeLockHalfAngle * Mathf.Deg2Rad);
+        Vector3   fwd     = transform.forward;
+
+        foreach (var c in hits)
+        {
+            var es = c.GetComponentInParent<EntityStats>();
+            if (es == null || es.isPlayer || es.IsDead) continue;
+
+            Vector3 to = es.transform.position - transform.position;
+            to.y = 0f;
+            if (to.sqrMagnitude < 0.0001f) continue;
+            to.Normalize();
+
+            float dot = Vector3.Dot(fwd, to);
+            if (dot < bestDot) continue;
+            bestDot = dot;
+            best     = es.transform;
+        }
+        return best;
     }
 
     /// <summary>

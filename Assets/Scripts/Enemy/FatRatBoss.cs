@@ -66,8 +66,9 @@ public class FatRatBoss : MonoBehaviour
     public int rollsInPair = 2;
 
     [Tooltip("Seconds between the two rolls. First part re-aims at the player, " +
-             "the rest is LOCKED — that locked window is the dodge for roll two.")]
-    public float rollPairGap = 0.7f;
+             "the rest is LOCKED — that locked window is the dodge for roll two. " +
+             "Longer = the boss feels less frantic and gives a bigger dodge window.")]
+    public float rollPairGap = 1.3f;
 
     [Range(0f, 1f)]
     [Tooltip("Fraction of the gap spent re-aiming. After this the corridor " +
