@@ -234,6 +234,7 @@ public class PlayerMovement : MonoBehaviour
         {
             float fall = Mathf.Abs(_velocity.y);
             if (fall > 3f) CameraJuice.Shake(Mathf.Clamp(fall * 0.015f, 0.05f, 0.25f));
+            OnLanded?.Invoke(fall);
         }
         _prevGrounded = _isGrounded;
 
@@ -471,6 +472,15 @@ public class PlayerMovement : MonoBehaviour
         if (seconds <= 0f) return;
         _rootedUntil = Mathf.Max(_rootedUntil, Time.time + seconds);
     }
+
+    // ── Movement events + state (for particles / juice) ──
+    public System.Action        OnJumped;
+    public System.Action<float> OnLanded;        // passes fall speed
+    public System.Action        OnRollStarted;
+
+    public bool  IsGrounded      => _isGrounded;
+    public bool  IsRolling       => _isRolling;
+    public float HorizontalSpeed => new Vector3(_currentMoveVelocity.x, 0f, _currentMoveVelocity.z).magnitude;
 
     /// <summary>True while staggered — the ENTIRE hit → fly → bounce → bounce →
     /// settle → recover sequence. Movement, roll, jump, and attacks all blocked
@@ -748,6 +758,7 @@ public class PlayerMovement : MonoBehaviour
             _jumpBufferedUntil = -999f;   // consume the buffered press
             _lastGroundedTime  = -999f;   // consume coyote so you can't re-jump mid-air
             SetBool("Jump", true);
+            OnJumped?.Invoke();
         }
 
         _velocity.y += gravity * Time.deltaTime;
@@ -795,6 +806,7 @@ public class PlayerMovement : MonoBehaviour
         _rollDirection = inputDir.sqrMagnitude > 0.01f ? inputDir.normalized : transform.forward;
         _lastRollTime  = Time.time;
         _rootedUntil   = -999f;   // rolling cancels the slam root — you bailed the recovery
+        OnRollStarted?.Invoke();
         StartCoroutine(RollCoroutine());
     }
 
