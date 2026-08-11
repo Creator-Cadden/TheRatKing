@@ -363,6 +363,7 @@ Transform:
   - {fileID: 8723297459621278017}
   - {fileID: 1119930987667617302}
   - {fileID: 8358553464514679062}
+  - {fileID: 6020625676170045117}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!33 &2763288932345227871
@@ -565,9 +566,14 @@ MonoBehaviour:
   jumpForce: 3
   coyoteTime: 0.12
   rotationSpeed: 10
+  jumpBufferTime: 0.12
+  jumpCutMultiplier: 0.45
+  airControlMultiplier: 1.25
+  rollCancelsRoot: 1
   rollSpeed: 30
   rollDuration: 0.35
   rollCooldown: 0.8
+  faceLockTurnSpeed: 18
   freeLookCamera: {fileID: 0}
   aimCamera: {fileID: 0}
   cameraPitch: {fileID: 6997305913649838908}
@@ -615,6 +621,11 @@ MonoBehaviour:
   enemyLayer:
     serializedVersion: 2
     m_Bits: 64
+  bladeLungeSpeed: 4
+  bladeLungeDuration: 0.12
+  meleeLockRange: 4
+  meleeLockHalfAngle: 60
+  meleeFaceLockTime: 0.22
   _primaryAnimator: {fileID: 7630593226487059013}
   bowMoveAnimParam: BowMove
 --- !u!114 &6411721500401727600
@@ -2967,6 +2978,37 @@ Transform:
   m_Children:
   - {fileID: 4257435703529372113}
   m_Father: {fileID: 6420069424199691832}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &4367504285588957726
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 6020625676170045117}
+  m_Layer: 3
+  m_Name: FeetSpot
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &6020625676170045117
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4367504285588957726}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: -0.238, y: -1.12, z: -0.368}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 6951882914384142022}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &4509203164337402451
 GameObject:

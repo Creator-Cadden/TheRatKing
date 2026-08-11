@@ -3,28 +3,26 @@ using UnityEngine;
 /// <summary>
 /// Emits dust puffs for movement — running, rolling, jumping, and landing —
 /// by reacting to PlayerMovement's events. Assign a dust ParticleSystem to each
-/// slot (see the setup notes in chat); they're triggered via Emit(), so the
-/// systems should have Play On Awake OFF and Looping OFF. Put this on the Player.
+/// slot (a PREFAB is fine — the script instantiates its own runtime copies, so
+/// Emit works). The systems should have Play On Awake OFF and Looping OFF, and
+/// Simulation Space = World. Put this on the Player.
 /// </summary>
 [RequireComponent(typeof(PlayerMovement))]
 public class MovementParticles : MonoBehaviour
 {
-    [Header("Dust systems (assign your puff prefabs / instances)")]
+    [Header("Dust systems (prefab or scene instance)")]
     public ParticleSystem runDust;
     public ParticleSystem rollDust;
     public ParticleSystem jumpPuff;
     public ParticleSystem landPuff;
 
     [Header("Spawn origin")]
-    [Tooltip("Where puffs spawn — an empty at the rat's feet. Falls back to just " +
-             "below the player if left empty.")]
+    [Tooltip("An empty at the rat's feet. Falls back to just below the player if empty.")]
     public Transform feet;
     public float feetDropIfUnset = 0.5f;
 
     [Header("Run dust")]
-    [Tooltip("Min horizontal speed before running kicks up dust.")]
     public float runMinSpeed = 3f;
-    [Tooltip("Seconds between run puffs.")]
     public float runInterval = 0.18f;
     public int   runBurst = 2;
 
@@ -33,17 +31,26 @@ public class MovementParticles : MonoBehaviour
     public int rollBurst = 14;
 
     [Header("Land burst (scales with fall speed)")]
-    [Tooltip("Below this fall speed, no landing dust (a gentle step).")]
     public float minLandSpeed = 3f;
     public int   landBurstMin = 8;
     public int   landBurstMax = 30;
-    [Tooltip("Fall speed that reaches the max burst.")]
     public float landHardSpeed = 18f;
 
     private PlayerMovement _move;
     private float          _lastRunEmit;
 
+    // Runtime instances (so Emit works even when a PREFAB was assigned).
+    private ParticleSystem _runPS, _rollPS, _jumpPS, _landPS;
+
     void Awake() => _move = GetComponent<PlayerMovement>();
+
+    void Start()
+    {
+        _runPS  = SpawnInstance(runDust);
+        _rollPS = SpawnInstance(rollDust);
+        _jumpPS = SpawnInstance(jumpPuff);
+        _landPS = SpawnInstance(landPuff);
+    }
 
     void OnEnable()
     {
@@ -63,26 +70,35 @@ public class MovementParticles : MonoBehaviour
 
     void Update()
     {
-        if (_move == null || runDust == null) return;
+        if (_move == null || _runPS == null) return;
 
-        // Run dust: grounded, not rolling, moving fast enough — on an interval.
         if (_move.IsGrounded && !_move.IsRolling && _move.HorizontalSpeed >= runMinSpeed
             && Time.time >= _lastRunEmit + runInterval)
         {
             _lastRunEmit = Time.time;
-            EmitAt(runDust, runBurst);
+            EmitAt(_runPS, runBurst);
         }
     }
 
-    private void HandleJump() => EmitAt(jumpPuff, jumpBurst);
-    private void HandleRoll() => EmitAt(rollDust, rollBurst);
+    private void HandleJump() => EmitAt(_jumpPS, jumpBurst);
+    private void HandleRoll() => EmitAt(_rollPS, rollBurst);
 
     private void HandleLand(float fallSpeed)
     {
         if (fallSpeed < minLandSpeed) return;
         int count = Mathf.RoundToInt(Mathf.Lerp(landBurstMin, landBurstMax,
                         Mathf.InverseLerp(minLandSpeed, landHardSpeed, fallSpeed)));
-        EmitAt(landPuff, count);
+        EmitAt(_landPS, count);
+    }
+
+    /// <summary>Instantiate a runtime copy so Emit is legal (prefabs can't be emitted).</summary>
+    private ParticleSystem SpawnInstance(ParticleSystem src)
+    {
+        if (src == null) return null;
+        ParticleSystem inst = Instantiate(src, transform);   // parented so it cleans up with the player
+        inst.gameObject.name = src.name + " (runtime)";
+        inst.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
+        return inst;
     }
 
     private void EmitAt(ParticleSystem ps, int count)
