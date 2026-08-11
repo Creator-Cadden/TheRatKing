@@ -2105,7 +2105,6 @@ GameObject:
   - component: {fileID: 702098368271352954}
   - component: {fileID: 9054370893567893547}
   - component: {fileID: 8957907906107227107}
-  - component: {fileID: 6015527843994063247}
   - component: {fileID: 3357798724440066613}
   - component: {fileID: 1944321113366032264}
   - component: {fileID: 2468626106829317605}
@@ -2193,27 +2192,6 @@ MeshRenderer:
   m_SortingOrder: 0
   m_MaskInteraction: 0
   m_AdditionalVertexStreams: {fileID: 0}
---- !u!65 &6015527843994063247
-BoxCollider:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 7551827925079598176}
-  m_Material: {fileID: 0}
-  m_IncludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_ExcludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_LayerOverridePriority: 0
-  m_IsTrigger: 0
-  m_ProvidesContacts: 0
-  m_Enabled: 1
-  serializedVersion: 3
-  m_Size: {x: 1.03, y: 0.79, z: 0.94}
-  m_Center: {x: 0, y: -0.09, z: 0}
 --- !u!114 &3357798724440066613
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -2230,12 +2208,30 @@ MonoBehaviour:
     serializedVersion: 2
     m_Bits: 8
   attackOrigin: {fileID: 3002551657486608964}
+  turnSpeedDegrees: 300
+  personalSpace: 1.2
+  backpedalSpeed: 1.5
+  orbitSpeed: 1.2
   postAttackDelay: 0.4
   showAttackGizmo: 1
   showAggroGizmo: 1
   verboseAttackLog: 0
   permanentlyAggroed: 0
   speedMultiplier: 1
+  launchUpFactor: 0.55
+  launchPerMargin: 0.2
+  bounciness: 0.45
+  maxBounces: 2
+  bounceHorizontalKeep: 0.6
+  shrugHitStop: 0.02
+  flinchHitStop: 0.05
+  staggerHitStop: 0.1
+  hitStopPerMargin: 0.03
+  flinchWindupDelay: 0.3
+  decalWindupDelay: 0.35
+  staggerDuration: 0.7
+  flinchNudgeForce: 2.5
+  showReactionDebug: 1
 --- !u!114 &1944321113366032264
 MonoBehaviour:
   m_ObjectHideFlags: 0

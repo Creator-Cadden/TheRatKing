@@ -169,6 +169,7 @@ public class EntityStats : MonoBehaviour
             case "health":
                 MaxHealth     += playerStatBlock.healthPerPoint;
                 CurrentHealth += playerStatBlock.healthPerPoint;
+                onHeal?.Invoke(playerStatBlock.healthPerPoint);   // heal juice on max-HP upgrade
                 break;
             case "strength":
                 Strength += playerStatBlock.strengthPerPoint;

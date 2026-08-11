@@ -76,6 +76,7 @@ public class PlayerMovement : MonoBehaviour
     private Vector3 _currentMoveVelocity;
     private bool    _jumpPressed;
     private bool    _isGrounded;
+    private bool    _prevGrounded;                // for landing detection (shake)
     private float   _lastGroundedTime = -999f;   // for coyote-time jumping
     private bool    _sprintHeld;
     private bool    _isAiming;
@@ -215,6 +216,16 @@ public class PlayerMovement : MonoBehaviour
     void Update()
     {
         _isGrounded = _controller.isGrounded;
+
+        // Real landing (airborne → grounded THIS frame): shake scaled by fall
+        // speed, ignoring small drops so walking never rattles the camera.
+        if (_isGrounded && !_prevGrounded)
+        {
+            float fall = Mathf.Abs(_velocity.y);
+            if (fall > 3f) CameraJuice.Shake(Mathf.Clamp(fall * 0.015f, 0.05f, 0.25f));
+        }
+        _prevGrounded = _isGrounded;
+
         if (_isGrounded) _lastGroundedTime = Time.time;
 
         CheckEnemyHeadSlide();   // no camping on enemy backs
@@ -591,6 +602,9 @@ public class PlayerMovement : MonoBehaviour
         bool canSprint = _sprintHeld && !_isAiming && _moveInput.sqrMagnitude > 0.01f;
         if (canSprint && _stats != null)
             canSprint = _stats.UseStaminaPerSecond(_stats.playerStatBlock.sprintStaminaPerSecond);
+
+        // Sprint FOV widen — speed sensation + shows a bit more ahead.
+        CameraJuice.SetSprint(canSprint);
 
         // Bow aim penalty — reduce move speed by bowAimMoveSpeedFraction while aiming
         float weaponAimFraction = 1f;

@@ -17,15 +17,16 @@ MonoBehaviour:
   baseToughness: 4
   displayName: Captain Rat
   xpReward: 100
+  currencyReward: 5
   moveSpeed: 3
   aggroRange: 10
-  stopRange: 2.4
+  stopRange: 3
   damagedAggroDuration: 60
   hasBasicAttack: 1
   basicAttack:
     damageMin: 0
     damageMax: 0
-    reach: 2.6
+    reach: 3.5
     windupTime: 0.7
     cooldown: 2
   hasDecalAttack: 1

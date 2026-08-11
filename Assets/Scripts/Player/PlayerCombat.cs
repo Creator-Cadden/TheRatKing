@@ -340,6 +340,10 @@ public class PlayerCombat : MonoBehaviour
             lunge ? bladeLungeSpeed    : 0f,
             lunge ? bladeLungeDuration : 0f,
             meleeFaceLockTime);
+
+        // Attack juice — the heavy hammer (lunge == false) kicks harder than the blade.
+        CameraJuice.Shake(lunge ? 0.06f : 0.14f);
+        CameraJuice.PunchFOV(lunge ? -1.5f : -3f);   // tiny zoom-in kick
     }
 
     /// <summary>Enemy most aligned with the rat's forward within meleeLockRange /

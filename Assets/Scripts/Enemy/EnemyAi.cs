@@ -410,6 +410,7 @@ public class EnemyAI : MonoBehaviour
         if (margin < 0)
         {
             HitStop.Freeze(shrugHitStop);
+            CameraJuice.Shake(0.05f);
             SpawnReactionText("SHRUG", new Color(0.7f, 0.7f, 0.7f));
             return;   // powers through
         }
@@ -420,6 +421,7 @@ public class EnemyAI : MonoBehaviour
             _combat.DelayCurrentWindup(decalWindupDelay);
             _combat.FireAnimTrigger("Flinch");
             HitStop.Freeze(flinchHitStop);
+            CameraJuice.Shake(0.08f);
             SpawnReactionText("DELAYED", new Color(1f, 0.6f, 0.1f));
             return;
         }
@@ -447,12 +449,14 @@ public class EnemyAI : MonoBehaviour
             }
 
             HitStop.Freeze(flinchHitStop);
+            CameraJuice.Shake(0.1f);
             SpawnReactionText("FLINCH", Color.yellow);
             return;
         }
 
         // ── Stagger: cancel + lockout + knockback ──
         HitStop.Freeze(staggerHitStop + Mathf.Max(0, margin - 1) * hitStopPerMargin);
+        CameraJuice.Shake(0.2f + Mathf.Max(0, margin - 1) * 0.06f);
         _combat?.CancelAttackState();
         _staggerUntil = Time.time + staggerDuration;
 
