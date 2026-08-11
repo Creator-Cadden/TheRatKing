@@ -24,6 +24,16 @@ public class PlayerMovement : MonoBehaviour
     public float coyoteTime    = 0.12f;
     public float rotationSpeed = 10f;
 
+    [Header("Platforming Feel")]
+    [Tooltip("Grace window (s) where pressing jump JUST BEFORE landing still fires on touchdown.")]
+    public float jumpBufferTime = 0.12f;
+    [Tooltip("Release jump early to cut the height (variable jump). 0.45 = tap ≈ half height, 1 = off.")]
+    [Range(0.1f, 1f)] public float jumpCutMultiplier = 0.45f;
+    [Tooltip("Mid-air steering responsiveness vs ground. >1 = snappier air control.")]
+    public float airControlMultiplier = 1.25f;
+    [Tooltip("Let a dodge roll cancel the hammer-slam root so you can bail the recovery.")]
+    public bool rollCancelsRoot = true;
+
     [Header("Roll")]
     public float rollSpeed    = 12f;
     public float rollDuration = 0.35f;
@@ -74,7 +84,8 @@ public class PlayerMovement : MonoBehaviour
     private Vector2 _moveInput;
     private Vector3 _velocity;
     private Vector3 _currentMoveVelocity;
-    private bool    _jumpPressed;
+    private float   _jumpBufferedUntil = -999f;   // jump buffer window
+    private bool    _jumpHeld;                     // for variable jump height
     private bool    _isGrounded;
     private bool    _prevGrounded;                // for landing detection (shake)
     private float   _lastGroundedTime = -999f;   // for coyote-time jumping
@@ -619,6 +630,7 @@ public class PlayerMovement : MonoBehaviour
         Vector3 targetVelocity = targetDirection * targetSpeed;
 
         float accelRate        = targetDirection.sqrMagnitude > 0.01f ? acceleration : deceleration;
+        if (!_isGrounded) accelRate *= airControlMultiplier;   // snappier mid-air steering
         float dot              = Vector3.Dot(_currentMoveVelocity.normalized, targetVelocity.normalized);
         float lerpRate         = dot < 0.5f ? 15f : accelRate;
 
@@ -726,14 +738,15 @@ public class PlayerMovement : MonoBehaviour
         // Coyote time: allow a jump for a short grace window after leaving the
         // ground so stepping off a ledge and pressing jump still works.
         bool withinCoyote = Time.time - _lastGroundedTime <= coyoteTime;
-        if (_jumpPressed && (_isGrounded || withinCoyote) && !IsStaggered && !_standingOnEnemy && !IsRooted)
+        bool jumpBuffered = Time.time < _jumpBufferedUntil;   // pressed within the buffer window
+        if (jumpBuffered && (_isGrounded || withinCoyote) && !IsStaggered && !_standingOnEnemy && !IsRooted)
         {
             // Jumping is FREE — no stamina cost (playtest feedback: stamina-gated
             // jumps made platforming feel unfair). jumpStaminaCost on the stat
             // block is now unused.
-            _velocity.y       = Mathf.Sqrt(jumpForce * -2f * gravity);
-            _jumpPressed      = false;
-            _lastGroundedTime = -999f;   // consume coyote so you can't re-jump mid-air
+            _velocity.y        = Mathf.Sqrt(jumpForce * -2f * gravity);
+            _jumpBufferedUntil = -999f;   // consume the buffered press
+            _lastGroundedTime  = -999f;   // consume coyote so you can't re-jump mid-air
             SetBool("Jump", true);
         }
 
@@ -762,7 +775,7 @@ public class PlayerMovement : MonoBehaviour
         if (_isRolling)   return;
         if (_isAiming)    return;
         if (IsStaggered)  return;   // no dodging out of a stagger — that's the punish
-        if (IsRooted)     return;   // planted by the slam — commit means commit
+        if (IsRooted && !rollCancelsRoot) return;   // planted by the slam (unless roll-cancel is on)
         if (Time.time < _lastRollTime + rollCooldown) return;
 
         // Roll works with ANY stamina left — even 1 point — draining whatever
@@ -781,6 +794,7 @@ public class PlayerMovement : MonoBehaviour
 
         _rollDirection = inputDir.sqrMagnitude > 0.01f ? inputDir.normalized : transform.forward;
         _lastRollTime  = Time.time;
+        _rootedUntil   = -999f;   // rolling cancels the slam root — you bailed the recovery
         StartCoroutine(RollCoroutine());
     }
 
@@ -863,7 +877,21 @@ public class PlayerMovement : MonoBehaviour
     // ── Input Callbacks ──
 
     public void OnMove(InputValue value)   => _moveInput  = value.Get<Vector2>();
-    public void OnJump(InputValue value)   { if (value.isPressed) _jumpPressed = true; }
+    public void OnJump(InputValue value)
+    {
+        if (value.isPressed)
+        {
+            _jumpBufferedUntil = Time.time + jumpBufferTime;   // buffer the press
+            _jumpHeld = true;
+        }
+        else
+        {
+            _jumpHeld = false;
+            // Variable jump height: releasing early while still rising cuts it short.
+            if (_velocity.y > 0f && !_inStaggerFlight)
+                _velocity.y *= jumpCutMultiplier;
+        }
+    }
     public void OnLook(InputValue value)   => _lookDelta  = value.Get<Vector2>();
     public void OnSprint(InputValue value) => _sprintHeld = value.isPressed;
 
