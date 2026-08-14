@@ -55,6 +55,11 @@ public class AudioManager : MonoBehaviour
         AirAttk,
         EnemyAttk,
         EnemyDeath,
+        BowDraw,
+        BowShot,
+        BowFullDraw,
+        HammerSwing,
+        BladeSwing,
         // Add more sound types as needed
     }
 
@@ -62,13 +67,31 @@ public class AudioManager : MonoBehaviour
     public class Sound
     {
         public SoundType Type;
+
+        [Tooltip("Single clip. If 'Clips' (variations) below has entries, those are used instead.")]
         public AudioClip Clip;
+
+        [Tooltip("Variations — a random one plays each time. Leave empty to just use Clip. " +
+                 "Drop your 3 bow-shot / 2 bow-draw / 3 hammer clips here.")]
+        public AudioClip[] Clips;
 
         [Range(0f, 1f)]
         public float Volume = 1f;
 
+        [Tooltip("Random pitch range per play (1,1 = none). ~0.95–1.05 adds subtle life " +
+                 "so variations don't sound identical.")]
+        public Vector2 PitchRange = new Vector2(1f, 1f);
+
         [HideInInspector]
         public AudioSource Source;
+    }
+
+    /// <summary>Picks a random variation if any, else the single Clip.</summary>
+    private static AudioClip PickClip(Sound s)
+    {
+        if (s.Clips != null && s.Clips.Length > 0)
+            return s.Clips[Random.Range(0, s.Clips.Length)];
+        return s.Clip;
     }
 
     //Singleton
@@ -105,19 +128,27 @@ public class AudioManager : MonoBehaviour
             return;
         }
 
+        AudioClip clip = PickClip(s);
+        if (clip == null)
+        {
+            Debug.LogWarning($"Sound type {type} has no clip assigned!");
+            return;
+        }
+
         //Creates a new sound object
         var soundObj = new GameObject($"Sound_{type}");
         var audioSrc = soundObj.AddComponent<AudioSource>();
 
-        //Assigns your sound properties
-        audioSrc.clip = s.Clip;
+        //Assigns your sound properties (random variation + pitch)
+        audioSrc.clip = clip;
         audioSrc.volume = s.Volume;
+        audioSrc.pitch = Random.Range(s.PitchRange.x, s.PitchRange.y);
 
         //Play the sound
         audioSrc.Play();
 
-        //Destroy the object
-        Destroy(soundObj, s.Clip.length);
+        //Destroy the object once it's finished (account for pitch changing length)
+        Destroy(soundObj, clip.length / Mathf.Max(0.05f, audioSrc.pitch) + 0.1f);
     }
 
     //Call this method to change music tracks

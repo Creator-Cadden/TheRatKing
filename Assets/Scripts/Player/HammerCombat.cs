@@ -199,6 +199,8 @@ public class HammerCombat : MonoBehaviour
     {
         if (!IsSwingReady) return false;
 
+        AudioManager.Instance?.Play(AudioManager.SoundType.HammerSwing);
+
         // Basic swing is FREE now — stamina cost removed (playtest feedback).
 
         // Chain bookkeeping: waiting past cooldown + window breaks the combo.

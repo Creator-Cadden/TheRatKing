@@ -35,6 +35,8 @@ public class CameraJuice : MonoBehaviour
     private float _fovPunch;          // transient additive FOV
     private float _sprintFovTarget;   // 0 or sprintFovDelta
     private float _sprintFovCurrent;
+    private float _drawZoomTarget;    // sustained (negative = zoom in while drawing bow)
+    private float _drawZoomCurrent;
 
     // ── Public API ──
 
@@ -59,6 +61,13 @@ public class CameraJuice : MonoBehaviour
         _inst._sprintFovTarget = sprinting ? _inst.sprintFovDelta : 0f;
     }
 
+    /// <summary>Sustained FOV offset while drawing the bow (negative = zoom in). Call each frame.</summary>
+    public static void SetDrawZoom(float fovDelta)
+    {
+        Ensure();
+        _inst._drawZoomTarget = fovDelta;
+    }
+
     private static void Ensure()
     {
         if (_inst != null) return;
@@ -76,6 +85,7 @@ public class CameraJuice : MonoBehaviour
 
         _fovPunch         = Mathf.Lerp(_fovPunch, 0f, fovLerp * Time.deltaTime);
         _sprintFovCurrent = Mathf.Lerp(_sprintFovCurrent, _sprintFovTarget, fovLerp * Time.deltaTime);
+        _drawZoomCurrent  = Mathf.Lerp(_drawZoomCurrent,  _drawZoomTarget,  fovLerp * Time.deltaTime);
 
         ApplyFOV();
     }
@@ -123,8 +133,8 @@ public class CameraJuice : MonoBehaviour
         if (!_fovCaptured) return;
 
         if (_freeLook != null)
-            _freeLook.Lens.FieldOfView = _baseFovFree + _fovPunch + _sprintFovCurrent;
+            _freeLook.Lens.FieldOfView = _baseFovFree + _fovPunch + _sprintFovCurrent + _drawZoomCurrent;
         if (_aim != null)
-            _aim.Lens.FieldOfView = _baseFovAim + _fovPunch;   // aim doesn't get the sprint widen
+            _aim.Lens.FieldOfView = _baseFovAim + _fovPunch + _drawZoomCurrent;   // aim gets draw-zoom, not sprint widen
     }
 }

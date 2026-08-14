@@ -52,6 +52,14 @@ public class BowController : MonoBehaviour
     [Tooltip("Time in seconds to reach max charge from press to release.")]
     public float maxChargeTime = 1.4f;
 
+    [Tooltip("Shortest hold (s) before a shot releases — you must pull slightly instead of " +
+             "spam-clicking, and the draw SFX gets time to read. 0 = fire instantly at any draw.")]
+    public float minDrawTime = 0.18f;
+
+    [Tooltip("Camera zoom-in (FOV reduction) at full draw — grows with the pull for an " +
+             "aim-down-sights feel. 0 = no zoom.")]
+    public float maxDrawZoom = 12f;
+
     [Tooltip("Damage multiplier at zero charge (basically a tap-fire). " +
              "Damage scales linearly from this to maxChargeMultiplier.")]
     public float minChargeMultiplier = 1.0f;
@@ -130,6 +138,8 @@ public class BowController : MonoBehaviour
     private InputAction        _attackAction;   // resolved at runtime from PlayerInput
 
     private bool  _isCharging;
+    private bool  _pendingFire;          // release queued, waiting for minDrawTime
+    private bool  _playedFullDrawPing;   // so the max-draw ping only fires once
     private float _chargeStartTime;
 
     // Tracks the last values pushed to the bow animator so we only call
@@ -175,8 +185,20 @@ public class BowController : MonoBehaviour
             // full charge faster via PlayerCombat's cooldown multiplier.
             var   pcDraw       = GetComponent<PlayerCombat>();
             float effectiveMax = maxChargeTime * (pcDraw != null ? pcDraw.SpeedCooldownMultiplier : 1f);
-            CurrentChargeFraction = Mathf.Clamp01(
-                (Time.time - _chargeStartTime) / Mathf.Max(0.0001f, effectiveMax));
+            // Charge (damage + speed) only builds AFTER the minimum-draw delay, so the
+            // mandatory pull window doesn't secretly count toward power.
+            float chargeElapsed   = Mathf.Max(0f, (Time.time - _chargeStartTime) - minDrawTime);
+            CurrentChargeFraction = Mathf.Clamp01(chargeElapsed / Mathf.Max(0.0001f, effectiveMax));
+
+            // Ping ONCE the moment the draw hits max.
+            if (CurrentChargeFraction >= 1f && !_playedFullDrawPing)
+            {
+                _playedFullDrawPing = true;
+                AudioManager.Instance?.Play(AudioManager.SoundType.BowFullDraw);
+            }
+
+            // Gradual zoom-in as you pull (aim-down-sights feel).
+            CameraJuice.SetDrawZoom(-maxDrawZoom * CurrentChargeFraction);
 
             // Live trajectory arc while drawing.
             UpdateTrajectory();
@@ -185,8 +207,13 @@ public class BowController : MonoBehaviour
             bool released = _attackAction != null
                 ? _attackAction.WasReleasedThisFrame()
                 : !Input.GetMouseButton(0); // Legacy fallback
+            if (released) _pendingFire = true;
 
-            if (released)
+            // Minimum draw: the shot only leaves once you've held at least minDrawTime,
+            // so you pull slightly instead of spam-clicking (and the draw SFX has time
+            // to read). A quick tap still fires — just after that minimum pull.
+            float held = Time.time - _chargeStartTime;
+            if (_pendingFire && held >= minDrawTime)
             {
                 var  pc     = GetComponent<PlayerCombat>();
                 bool aiming = pc != null && pc.IsAiming;
@@ -195,12 +222,15 @@ public class BowController : MonoBehaviour
                 else        FireFreeLookRelease(CurrentChargeFraction);
 
                 pc?.NotifyBowShotFired();
+                _pendingFire = false;
                 StopCharging();
                 HideTrajectory();
             }
         }
         else
         {
+            _pendingFire = false;
+            CameraJuice.SetDrawZoom(0f);   // release the aim zoom when not drawing
             HideTrajectory();
         }
 
@@ -227,8 +257,11 @@ public class BowController : MonoBehaviour
     {
         if (_isCharging) return;
         _isCharging           = true;
+        _pendingFire          = false;
+        _playedFullDrawPing   = false;
         _chargeStartTime      = Time.time;
         CurrentChargeFraction = 0f;
+        AudioManager.Instance?.Play(AudioManager.SoundType.BowDraw);
         // Animator bools are driven each frame in Update via PushAnimatorBools().
     }
 
@@ -506,17 +539,41 @@ public class BowController : MonoBehaviour
     /// Priority order:
     /// 1. aimDirectionSource.forward (manual Inspector override)
     /// </summary>
+    [Header("Aim Convergence")]
+    [Tooltip("Aim toward where the SCREEN CENTER points (raycast) instead of straight " +
+             "along the camera — so the arrow hits close enemies right in front of you " +
+             "instead of flying past. Turn off to use the old camera-forward aim.")]
+    public bool aimAtScreenCenter = true;
+    [Tooltip("How far the screen-center ray checks for a target before aiming at a far point.")]
+    public float aimMaxDistance = 60f;
+    [Tooltip("Layers the aim ray can hit. EXCLUDE the Player (and Arrow) layers so it " +
+             "doesn't aim at the rat itself.")]
+    public LayerMask aimMask = ~0;
+
     private Vector3 GetAimDirection()
     {
-        if (aimDirectionSource != null)
-            return aimDirectionSource.forward;
+        Camera cam = Camera.main;
+        Vector3 origin = arrowSpawnPoint != null ? arrowSpawnPoint.position : transform.position;
 
-        if (useMainCameraIfUnset)
+        if (aimAtScreenCenter && cam != null)
         {
-            Camera cam = Camera.main;
-            if (cam != null) return cam.transform.forward;
+            // Fire toward whatever the CENTER of the screen is pointing at. This fixes
+            // the third-person parallax where the bow sits off to the side of the camera
+            // and close shots fly past — now the arrow converges on the reticle point.
+            Ray ray = cam.ViewportPointToRay(new Vector3(0.5f, 0.5f, 0f));
+            Vector3 aimPoint = Physics.Raycast(ray, out RaycastHit hit, aimMaxDistance,
+                                               aimMask, QueryTriggerInteraction.Ignore)
+                ? hit.point
+                : ray.GetPoint(aimMaxDistance);
+
+            Vector3 dir = aimPoint - origin;
+            if (dir.sqrMagnitude > 0.0001f) return dir.normalized;
         }
 
+        if (aimDirectionSource != null)
+            return aimDirectionSource.forward;
+        if (useMainCameraIfUnset && cam != null)
+            return cam.transform.forward;
         return transform.forward;
     }
 
@@ -556,6 +613,8 @@ public class BowController : MonoBehaviour
             Debug.LogWarning("[BowController] Missing arrowPrefab or arrowSpawnPoint — cannot fire.");
             return;
         }
+
+        AudioManager.Instance?.Play(AudioManager.SoundType.BowShot);
 
         Arrow arrow = Instantiate(arrowPrefab,
                                   arrowSpawnPoint.position,

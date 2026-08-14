@@ -339,6 +339,7 @@ GameObject:
   - component: {fileID: 8473197194234044476}
   - component: {fileID: 1412472041087739303}
   - component: {fileID: 8069409828454816147}
+  - component: {fileID: 4316435711585326761}
   m_Layer: 3
   m_Name: Player
   m_TagString: Player
@@ -838,6 +839,33 @@ MonoBehaviour:
   outputGroup: {fileID: 0}
   minSpeed: 0.3
   minStepInterval: 0.18
+--- !u!114 &4316435711585326761
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 360696225992726641}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: fbcf5b58670802b4996e275166a041f9, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::MovementParticles
+  runDust: {fileID: 3735741414730566784, guid: c7425793a7058d84286e30b5c15961e7, type: 3}
+  rollDust: {fileID: 3735741414730566784, guid: c7425793a7058d84286e30b5c15961e7, type: 3}
+  jumpPuff: {fileID: 3735741414730566784, guid: c7425793a7058d84286e30b5c15961e7, type: 3}
+  landPuff: {fileID: 3735741414730566784, guid: c7425793a7058d84286e30b5c15961e7, type: 3}
+  feet: {fileID: 6020625676170045117}
+  feetDropIfUnset: 0.5
+  runMinSpeed: 3
+  runInterval: 0.18
+  runBurst: 2
+  jumpBurst: 10
+  rollBurst: 14
+  minLandSpeed: 3
+  landBurstMin: 8
+  landBurstMax: 30
+  landHardSpeed: 18
 --- !u!1 &371287099995731602
 GameObject:
   m_ObjectHideFlags: 0
