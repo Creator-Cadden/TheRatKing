@@ -319,6 +319,7 @@ public class HammerCombat : MonoBehaviour
         // briefly; attacking still allowed.
         GetComponent<PlayerMovement>()?.RootFor(slamRootDuration);
         CameraJuice.Shake(0.35f);   // big slam impact
+        AudioManager.Instance?.Play(AudioManager.SoundType.HammerSlam);
 
         int baseDmg = _stats?.CalculateWeaponDamage() ?? 10;
         int damage  = Mathf.RoundToInt(baseDmg * slamDamageMultiplier);

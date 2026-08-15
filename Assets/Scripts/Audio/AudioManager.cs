@@ -64,6 +64,8 @@ public class AudioManager : MonoBehaviour
         HitFlinch,    // flinch-tier hit
         HitStagger,   // stagger-tier hit
         HitDelayed,   // decal hyper-armor "delayed" reaction
+        BladeAir,     // blade jump (air) attack
+        HammerSlam,   // hammer jump slam (air attack)
         // Add more sound types as needed
     }
 

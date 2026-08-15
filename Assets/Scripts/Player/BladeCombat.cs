@@ -223,6 +223,7 @@ public class BladeCombat : MonoBehaviour
         }
 
         _lastJumpTime = Time.time;
+        AudioManager.Instance?.Play(AudioManager.SoundType.BladeAir);
 
         StartJumpSpin();
         HitScan(jumpAttackRadius, 360f);   // 360 = no angle filter — hits all around
