@@ -45,15 +45,66 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::AudioManager
   AllSounds:
+  - Type: 6
+    Clip: {fileID: 8300000, guid: c6f53e8e33dcfa348b99b8379aa6a272, type: 3}
+    Clips: []
+    Volume: 0.093
+    PitchRange: {x: 1, y: 1}
+    Source: {fileID: 0}
+  - Type: 7
+    Clip: {fileID: 8300000, guid: f5db06760c773cd4b9f3f28e0f260ef2, type: 3}
+    Clips: []
+    Volume: 0.093
+    PitchRange: {x: 1, y: 1}
+    Source: {fileID: 0}
   - Type: 2
     Clip: {fileID: 8300000, guid: e60119b225597c449ac64110389ce2f4, type: 3}
+    Clips: []
     Volume: 0.114
+    PitchRange: {x: 1, y: 1}
     Source: {fileID: 0}
   - Type: 5
     Clip: {fileID: 8300000, guid: d9cdda26e59b6004ab68f4450e037787, type: 3}
+    Clips: []
     Volume: 0.114
+    PitchRange: {x: 1, y: 1}
     Source: {fileID: 0}
-  - Type: 6
+  - Type: 11
+    Clip: {fileID: 0}
+    Clips:
+    - {fileID: 8300000, guid: f485f061e6687224796fabf94f487519, type: 3}
+    - {fileID: 8300000, guid: cc4f4eb8708e04d438b506c13f93e0f2, type: 3}
+    - {fileID: 8300000, guid: 03a81b0c9bd80884e8773468ad4868b6, type: 3}
+    Volume: 0.114
+    PitchRange: {x: 1, y: 1}
+    Source: {fileID: 0}
+  - Type: 10
+    Clip: {fileID: 0}
+    Clips: []
+    Volume: 0.114
+    PitchRange: {x: 1, y: 1}
+    Source: {fileID: 0}
+  - Type: 8
     Clip: {fileID: 8300000, guid: c6f53e8e33dcfa348b99b8379aa6a272, type: 3}
-    Volume: 0.093
+    Clips:
+    - {fileID: 8300000, guid: 1cd75e0c50e74684abb0c6297a73a1ac, type: 3}
+    - {fileID: 8300000, guid: de6d8507a2f97254a8aa4e07d1e70683, type: 3}
+    - {fileID: 8300000, guid: 3ae48638e5d56054f81f2f0f563a50ef, type: 3}
+    Volume: 0.114
+    PitchRange: {x: 1, y: 1}
+    Source: {fileID: 0}
+  - Type: 9
+    Clip: {fileID: 8300000, guid: c6f53e8e33dcfa348b99b8379aa6a272, type: 3}
+    Clips:
+    - {fileID: 8300000, guid: 352f7e23bb4e9cb4789c2bc9a9ff153f, type: 3}
+    - {fileID: 8300000, guid: bb2f99dd32ec9fb48aff08e82791319c, type: 3}
+    - {fileID: 8300000, guid: 2334e98c6d6cc9d4889b057847446a1f, type: 3}
+    Volume: 0.114
+    PitchRange: {x: 1, y: 1}
+    Source: {fileID: 0}
+  - Type: 4
+    Clip: {fileID: 8300000, guid: 854ab02d426985c4fb579a67b757cae4, type: 3}
+    Clips: []
+    Volume: 0.226
+    PitchRange: {x: 1, y: 1}
     Source: {fileID: 0}
