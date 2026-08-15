@@ -1,0 +1,56 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 151a50ef8daddc24dbb20ddb63dfedb5, type: 3}
+  m_Name: PlayerStats
+  m_EditorClassIdentifier: Assembly-CSharp::PlayerStatBlock
+  baseHealth: 100
+  baseStrength: 10
+  baseStamina: 50
+  baseSpeed: 5
+  healthPerPoint: 10
+  strengthPerPoint: 1
+  staminaPerPoint: 10
+  speedPerPoint: 1
+  floorOneCap: 5
+  floorTwoCap: 10
+  floorThreeCap: 15
+  bladeImpactBasic: 1
+  bladeImpactSpecial: 2
+  hammerImpactBasic: 3
+  hammerImpactSpecial: 4
+  bowImpactBasic: 1
+  bowImpactSpecial: 2
+  bladeAttackCooldown: 0.55
+  bladeCooldownFloor: 0.3
+  hammerAttackCooldown: 1.1
+  hammerCooldownFloor: 0.65
+  bowAttackCooldown: 0.75
+  bowCooldownFloor: 0.45
+  bladeBaseDamage: 5
+  bladeStrengthMultiplier: 1
+  hammerBaseDamage: 25
+  hammerStrengthMultiplier: 2
+  hammerMoveSpeedFraction: 0.8
+  hammerAttackSpeedFraction: 0.5
+  bowBaseDamage: 6
+  bowStrengthMultiplier: 1
+  bowChargedMultiplier: 1.6
+  bowAimMoveSpeedFraction: 0.667
+  sprintStaminaPerSecond: 5
+  rollStaminaCost: 15
+  jumpStaminaCost: 5
+  bladeJumpStaminaCost: 10
+  hammerSwingStaminaCost: 10
+  hammerSlamStaminaCost: 20
+  bowChargedStaminaCost: 10
+  staminaRegenRate: 15
+  staminaRegenDelay: 1

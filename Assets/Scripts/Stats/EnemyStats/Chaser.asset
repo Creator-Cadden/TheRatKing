@@ -1,0 +1,58 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: cddbe9ff30055fe44ac23a486a3194ae, type: 3}
+  m_Name: Chaser
+  m_EditorClassIdentifier: Assembly-CSharp::EnemyStatBlock
+  baseHealth: 50
+  baseStrength: 15
+  baseToughness: 3
+  displayName: Chaser
+  xpReward: 5
+  moveSpeed: 8
+  aggroRange: 8
+  stopRange: 2
+  damagedAggroDuration: 60
+  hasBasicAttack: 1
+  basicAttack:
+    damageMin: 0
+    damageMax: 0
+    reach: 2.2
+    windupTime: 0.5
+    cooldown: 1.8
+  hasDecalAttack: 1
+  decalCycleMode: 0
+  decalAttacks:
+  - name: Charge
+    shape: 2
+    damageMin: 15
+    damageMax: 15
+    coneRadius: 0
+    coneAngle: 0
+    circleRadius: 0
+    rectWidth: 2
+    rectLength: 8
+    height: 0
+    windupTime: 0
+    cooldown: 0
+    recoverTime: 0
+  basicAttacksBetweenDecals: 1
+  attackStrengthBonus: 1
+  ignoreFloorScaling: 0
+  healthScalePerFloor: 1.3
+  strengthScalePerFloor: 1.25
+  staminaScalePerFloor: 1
+  toughnessReductionPerPoint: 1
+  knockbackDuration: 0.2
+  bladeKnockbackForce: 5
+  hammerKnockbackForce: 12
+  bowKnockbackForce: 2
+  attackAnimTimeout: 2.5
