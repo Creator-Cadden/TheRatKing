@@ -60,6 +60,10 @@ public class AudioManager : MonoBehaviour
         BowFullDraw,
         HammerSwing,
         BladeSwing,
+        HitShrug,     // powered-through hit (no reaction)
+        HitFlinch,    // flinch-tier hit
+        HitStagger,   // stagger-tier hit
+        HitDelayed,   // decal hyper-armor "delayed" reaction
         // Add more sound types as needed
     }
 
