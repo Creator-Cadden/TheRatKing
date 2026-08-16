@@ -1,3 +1,4 @@
+using System.Collections;
 using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
@@ -56,6 +57,17 @@ public class MainMenuUI : MonoBehaviour
     public Button         confirmButton;
     public Button         nameBackButton;
 
+    [Header("Intro Sequence")]
+    [Tooltip("Play the opening 'presents' → title reveal on load. Turn off for quick testing.")]
+    public bool     playIntro       = true;
+    [Tooltip("The game's title text (e.g. 'The Rat King'). It shrinks into place on reveal.")]
+    public TMP_Text titleText;
+    public string   presentsLine    = "The Rat King Team presents";
+    [Tooltip("Seconds the 'presents' line stays on screen before fading out.")]
+    public float    presentsHold    = 1.3f;
+    [Tooltip("Title starts this many times its final size, then shrinks into place.")]
+    public float    titleStartScale = 2.2f;
+
     [Header("Colors")]
     public Color activeSlotColor   = new Color(0.28f, 0.28f, 0.28f, 1f);
     public Color inactiveSlotColor = new Color(0.12f, 0.12f, 0.12f, 1f);
@@ -93,7 +105,7 @@ public class MainMenuUI : MonoBehaviour
             int slot = i;
             deleteXButtons[i]?.onClick.AddListener(() => OnDeleteXClicked(slot));
         }
-        slotBackButton  ?.onClick.AddListener(ShowMainPanel);
+        slotBackButton  ?.onClick.AddListener(() => MenuFX.Wipe(ShowMainPanel));
         confirmYesButton?.onClick.AddListener(OnConfirmDeleteYes);
         confirmNoButton ?.onClick.AddListener(OnConfirmDeleteNo);
 
@@ -103,12 +115,55 @@ public class MainMenuUI : MonoBehaviour
 
         // Name panel
         confirmButton ?.onClick.AddListener(OnNameConfirmed);
-        nameBackButton?.onClick.AddListener(ShowSlotPanel);
+        nameBackButton?.onClick.AddListener(() => MenuFX.Wipe(ShowSlotPanel));
 
-        ShowMainPanel();
+        if (playIntro)
+        {
+            // Hold black, show "presents", then reveal the menu + animate the title.
+            SetPanels(main: false, slot: false, name: false);
+            MenuFX.PlayIntro(presentsLine, presentsHold, RevealMenu);
+        }
+        else
+        {
+            ShowMainPanel();
+            MenuFX.FadeIn();   // menu lerps in from black on load
+        }
     }
 
     void OnDestroy() => CursorManager.Release("mainmenu");
+
+    // ── Opening reveal ──
+
+    private void RevealMenu()
+    {
+        ShowMainPanel();   // activates the main panel → buttons slide in
+
+        if (titleText != null)
+        {
+            Vector3 baseScale = titleText.rectTransform.localScale;
+            titleText.rectTransform.localScale = baseScale * titleStartScale;  // start big
+            titleText.alpha = 0f;
+            StartCoroutine(AnimateTitleIn(baseScale));
+        }
+    }
+
+    private IEnumerator AnimateTitleIn(Vector3 baseScale)
+    {
+        var rt = titleText.rectTransform;
+        float t = 0f; const float dur = 0.7f;
+        while (t < dur)
+        {
+            t += Time.unscaledDeltaTime;
+            float p = Mathf.Clamp01(t / dur);
+            rt.localScale   = Vector3.Lerp(baseScale * titleStartScale, baseScale, EaseOutCubic(p));
+            titleText.alpha = Mathf.Clamp01(p * 1.5f);
+            yield return null;
+        }
+        rt.localScale   = baseScale;
+        titleText.alpha = 1f;
+    }
+
+    private static float EaseOutCubic(float x) => 1f - Mathf.Pow(1f - x, 3f);
 
     // ── Save scanning ──
 
@@ -255,14 +310,14 @@ public class MainMenuUI : MonoBehaviour
 
         if (SaveSystem.SlotHasData(slot))
         {
-            // Existing save — load it directly
-            GameManager.Instance?.ContinueGame(slot);
+            // Existing save — fade to black, then load
+            MenuFX.FadeOutThen(() => GameManager.Instance?.ContinueGame(slot));
         }
         else
         {
-            // Empty slot — go to name input
+            // Empty slot — wipe to the name input
             _selectedSlot = slot;
-            ShowNamePanel();
+            MenuFX.Wipe(ShowNamePanel);
         }
     }
 
@@ -325,7 +380,8 @@ public class MainMenuUI : MonoBehaviour
         // Tell GameManager to prepare a new game in this slot with this name.
         // WeaponSelect will call GameManager.StartNewGame() after the player
         // picks a weapon so the weapon choice is baked into the first save.
-        GameManager.Instance?.PrepareNewGame(_selectedSlot, enteredName, weaponSelectScene);
+        MenuFX.FadeOutThen(() =>
+            GameManager.Instance?.PrepareNewGame(_selectedSlot, enteredName, weaponSelectScene));
     }
 
     // ── Main panel callbacks ──
@@ -333,18 +389,18 @@ public class MainMenuUI : MonoBehaviour
     private void OnPlayContinue()
     {
         if (_anySaveExists)
-            GameManager.Instance?.ContinueGame(_mostRecentSlot);
+            MenuFX.FadeOutThen(() => GameManager.Instance?.ContinueGame(_mostRecentSlot));
         else
-            ShowSlotPanel();
+            MenuFX.Wipe(ShowSlotPanel);
     }
 
-    private void OnLoadGame() => ShowSlotPanel();
+    private void OnLoadGame() => MenuFX.Wipe(ShowSlotPanel);
 
     private void OnTestWorld()
     {
         // Routes through WeaponSelect first so the player can pick a weapon.
         // GameManager handles the no-save plumbing.
-        GameManager.Instance?.EnterTestWorld();
+        MenuFX.FadeOutThen(() => GameManager.Instance?.EnterTestWorld());
     }
 
     private void OnSettings()
@@ -359,7 +415,8 @@ public class MainMenuUI : MonoBehaviour
             Debug.LogWarning("[MainMenuUI] Credits Scene field is empty.");
             return;
         }
-        UnityEngine.SceneManagement.SceneManager.LoadScene(creditsScene);
+        MenuFX.FadeOutThen(() =>
+            UnityEngine.SceneManagement.SceneManager.LoadScene(creditsScene));
     }
 
     private void OnExit()

@@ -503,25 +503,23 @@ public class EnemyAI : MonoBehaviour
     {
         if (!showReactionDebug) return;
 
-        var go = new GameObject("ReactionDebugText");
+        var go = new GameObject("ReactionText");
+        // HIGHER than the damage numbers (which sit ~1.6 up) so they don't overlap.
         go.transform.position = transform.position
-                              + Vector3.up * 2.6f
-                              + Random.insideUnitSphere * 0.2f;
+                              + Vector3.up * 3.6f
+                              + Random.insideUnitSphere * 0.15f;
 
         var tmp = go.AddComponent<TMPro.TextMeshPro>();
-        tmp.text      = text;
-        tmp.fontSize  = 3.5f;
-        tmp.color     = color;
-        tmp.alignment = TMPro.TextAlignmentOptions.Center;
-        tmp.fontStyle = TMPro.FontStyles.Bold;
+        tmp.text         = text;
+        tmp.fontSize     = 3.8f;
+        tmp.color        = color;
+        tmp.alignment    = TMPro.TextAlignmentOptions.Center;
+        tmp.fontStyle    = TMPro.FontStyles.Bold;
+        tmp.outlineWidth = 0.2f;
+        tmp.outlineColor = Color.black;
 
-        // Billboard toward the camera at spawn (debug — no per-frame tracking).
-        Camera cam = Camera.main;
-        if (cam != null)
-            go.transform.rotation =
-                Quaternion.LookRotation(go.transform.position - cam.transform.position);
-
-        Destroy(go, 0.8f);
+        // Pop-in + gentle float + fade (self-contained animator, below).
+        go.AddComponent<ReactionPopText>().Init(tmp, 0.9f);
     }
 
     // ── Legacy adapters (old staggerForce-based callers) ────────────────
@@ -572,5 +570,73 @@ public class EnemyAI : MonoBehaviour
             Gizmos.color = new Color(1f, 0.1f, 0.1f, 0.9f);
             Gizmos.DrawWireSphere(hitOrigin, sb.basicAttack.reach);
         }
+    }
+}
+
+/// <summary>
+/// One-shot animator for the SHRUG / FLINCH / STAGGER / DELAYED reaction label.
+/// Pop-in scale overshoot, gentle float up, fade out, camera billboard, then
+/// self-destruct. Kept in this file so EnemyAI has no external dependency.
+/// </summary>
+public class ReactionPopText : MonoBehaviour
+{
+    private TMPro.TMP_Text _tmp;
+    private float          _lifetime;
+    private float          _elapsed;
+    private Color          _baseColor;
+    private Vector3        _baseScale;
+
+    // Tuning.
+    private const float FloatSpeed  = 1.2f;   // gentle upward drift
+    private const float PopScale    = 1.35f;  // overshoot on spawn
+    private const float PopDuration = 0.12f;
+
+    public void Init(TMPro.TMP_Text tmp, float lifetime)
+    {
+        _tmp       = tmp;
+        _lifetime  = lifetime;
+        _baseColor = tmp.color;
+        _baseScale = transform.localScale;
+        transform.localScale = _baseScale * 0.4f;   // start small for the pop
+    }
+
+    void Update()
+    {
+        _elapsed += Time.deltaTime;
+        float t = _elapsed / Mathf.Max(0.0001f, _lifetime);
+
+        // Gentle float.
+        transform.position += Vector3.up * FloatSpeed * Time.deltaTime;
+
+        // Pop-in overshoot, then settle to 1.
+        float s;
+        if (_elapsed < PopDuration)
+        {
+            float p = _elapsed / PopDuration;
+            s = Mathf.Lerp(0.4f, PopScale, 1f - (1f - p) * (1f - p));
+        }
+        else
+        {
+            float p = Mathf.Clamp01((_elapsed - PopDuration) / 0.1f);
+            s = Mathf.Lerp(PopScale, 1f, p);
+        }
+        transform.localScale = _baseScale * s;
+
+        // Fade over the last 40%.
+        if (_tmp != null)
+        {
+            Color c = _baseColor;
+            c.a = _baseColor.a * (1f - Mathf.Clamp01(Mathf.InverseLerp(0.6f, 1f, t)));
+            _tmp.color = c;
+        }
+
+        // Billboard.
+        Camera cam = Camera.main;
+        if (cam != null)
+            transform.rotation = Quaternion.LookRotation(
+                cam.transform.rotation * Vector3.forward,
+                cam.transform.rotation * Vector3.up);
+
+        if (t >= 1f) Destroy(gameObject);
     }
 }

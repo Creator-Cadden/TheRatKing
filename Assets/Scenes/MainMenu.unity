@@ -1123,6 +1123,8 @@ GameObject:
   - component: {fileID: 334001375}
   - component: {fileID: 334001374}
   - component: {fileID: 334001373}
+  - component: {fileID: 334001376}
+  - component: {fileID: 334001377}
   m_Layer: 5
   m_Name: Exit
   m_TagString: Untagged
@@ -1232,6 +1234,52 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 334001371}
   m_CullTransparentMesh: 1
+--- !u!114 &334001376
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 334001371}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ec0d049cbde678f4889686400a2a7e62, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::UIButtonJuice
+  hoverScale: 1.12
+  responsiveness: 14
+  pressScale: 0.94
+  bobWhileHovered: 1
+  bobAmount: 0.03
+  bobSpeed: 6
+  tintOnHover: 0
+  hoverTint: {r: 1, g: 0.96, b: 0.75, a: 1}
+  flashOnClick: 1
+  flashColor: {r: 1, g: 1, b: 1, a: 1}
+--- !u!114 &334001377
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 334001371}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a50c780241d8e0b4790ffa457354873d, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::UISelectionFX
+  showBorder: 1
+  borderColor: {r: 1, g: 0.9, b: 0.55, a: 1}
+  borderSpacing: 10
+  borderThickness: 3
+  showDiamonds: 1
+  diamondCount: 8
+  diamondSize: 13
+  diamondColor: {r: 1, g: 0.95, b: 0.7, a: 1}
+  diamondOrbit: 14
+  shimmerSpeed: 3.2
+  ringDriftSpeed: 18
+  fadeSpeed: 12
 --- !u!1 &350188311
 GameObject:
   m_ObjectHideFlags: 0
@@ -1324,6 +1372,11 @@ MonoBehaviour:
   nameInputField: {fileID: 769814275}
   confirmButton: {fileID: 815555560}
   nameBackButton: {fileID: 235382387}
+  playIntro: 1
+  titleText: {fileID: 0}
+  presentsLine: The Rat King Team presents
+  presentsHold: 1.3
+  titleStartScale: 2.2
   activeSlotColor: {r: 0.4008989, g: 0.6987116, b: 0.7264151, a: 1}
   inactiveSlotColor: {r: 0.5283019, g: 0.5283019, b: 0.5283019, a: 1}
   disabledTextColor: {r: 0.509434, g: 0.509434, b: 0.509434, a: 1}
@@ -1888,6 +1941,7 @@ GameObject:
   - component: {fileID: 681958906}
   - component: {fileID: 681958905}
   - component: {fileID: 681958904}
+  - component: {fileID: 681958907}
   m_Layer: 5
   m_Name: BackButton
   m_TagString: Untagged
@@ -1997,6 +2051,28 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 681958902}
   m_CullTransparentMesh: 1
+--- !u!114 &681958907
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 681958902}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ec0d049cbde678f4889686400a2a7e62, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::UIButtonJuice
+  hoverScale: 1.12
+  responsiveness: 14
+  pressScale: 0.94
+  bobWhileHovered: 1
+  bobAmount: 0.03
+  bobSpeed: 6
+  tintOnHover: 0
+  hoverTint: {r: 1, g: 0.96, b: 0.75, a: 1}
+  flashOnClick: 1
+  flashColor: {r: 1, g: 1, b: 1, a: 1}
 --- !u!1 &744169728
 GameObject:
   m_ObjectHideFlags: 0
@@ -2566,6 +2642,7 @@ GameObject:
   - component: {fileID: 818027497}
   - component: {fileID: 818027496}
   - component: {fileID: 818027495}
+  - component: {fileID: 818027498}
   m_Layer: 5
   m_Name: TestingArena
   m_TagString: Untagged
@@ -2675,6 +2752,28 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 818027493}
   m_CullTransparentMesh: 1
+--- !u!114 &818027498
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 818027493}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ec0d049cbde678f4889686400a2a7e62, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::UIButtonJuice
+  hoverScale: 1.12
+  responsiveness: 14
+  pressScale: 0.94
+  bobWhileHovered: 1
+  bobAmount: 0.03
+  bobSpeed: 6
+  tintOnHover: 0
+  hoverTint: {r: 1, g: 0.96, b: 0.75, a: 1}
+  flashOnClick: 1
+  flashColor: {r: 1, g: 1, b: 1, a: 1}
 --- !u!1 &872584570
 GameObject:
   m_ObjectHideFlags: 0
@@ -3185,6 +3284,8 @@ GameObject:
   - component: {fileID: 996338547}
   - component: {fileID: 996338546}
   - component: {fileID: 996338545}
+  - component: {fileID: 996338548}
+  - component: {fileID: 996338549}
   m_Layer: 5
   m_Name: Settings
   m_TagString: Untagged
@@ -3294,6 +3395,52 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 996338543}
   m_CullTransparentMesh: 1
+--- !u!114 &996338548
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 996338543}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ec0d049cbde678f4889686400a2a7e62, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::UIButtonJuice
+  hoverScale: 1.12
+  responsiveness: 14
+  pressScale: 0.94
+  bobWhileHovered: 1
+  bobAmount: 0.03
+  bobSpeed: 6
+  tintOnHover: 0
+  hoverTint: {r: 1, g: 0.96, b: 0.75, a: 1}
+  flashOnClick: 1
+  flashColor: {r: 1, g: 1, b: 1, a: 1}
+--- !u!114 &996338549
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 996338543}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a50c780241d8e0b4790ffa457354873d, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::UISelectionFX
+  showBorder: 1
+  borderColor: {r: 1, g: 0.9, b: 0.55, a: 1}
+  borderSpacing: 10
+  borderThickness: 3
+  showDiamonds: 1
+  diamondCount: 8
+  diamondSize: 13
+  diamondColor: {r: 1, g: 0.95, b: 0.7, a: 1}
+  diamondOrbit: 14
+  shimmerSpeed: 3.2
+  ringDriftSpeed: 18
+  fadeSpeed: 12
 --- !u!1 &1042873010
 GameObject:
   m_ObjectHideFlags: 0
@@ -4010,6 +4157,8 @@ GameObject:
   - component: {fileID: 1298918858}
   - component: {fileID: 1298918857}
   - component: {fileID: 1298918856}
+  - component: {fileID: 1298918859}
+  - component: {fileID: 1298918860}
   m_Layer: 5
   m_Name: Credits
   m_TagString: Untagged
@@ -4119,6 +4268,52 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1298918854}
   m_CullTransparentMesh: 1
+--- !u!114 &1298918859
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1298918854}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ec0d049cbde678f4889686400a2a7e62, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::UIButtonJuice
+  hoverScale: 1.12
+  responsiveness: 14
+  pressScale: 0.94
+  bobWhileHovered: 1
+  bobAmount: 0.03
+  bobSpeed: 6
+  tintOnHover: 0
+  hoverTint: {r: 1, g: 0.96, b: 0.75, a: 1}
+  flashOnClick: 1
+  flashColor: {r: 1, g: 1, b: 1, a: 1}
+--- !u!114 &1298918860
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1298918854}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a50c780241d8e0b4790ffa457354873d, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::UISelectionFX
+  showBorder: 1
+  borderColor: {r: 1, g: 0.9, b: 0.55, a: 1}
+  borderSpacing: 10
+  borderThickness: 3
+  showDiamonds: 1
+  diamondCount: 8
+  diamondSize: 13
+  diamondColor: {r: 1, g: 0.95, b: 0.7, a: 1}
+  diamondOrbit: 14
+  shimmerSpeed: 3.2
+  ringDriftSpeed: 18
+  fadeSpeed: 12
 --- !u!1 &1348586824
 GameObject:
   m_ObjectHideFlags: 0
@@ -4409,6 +4604,8 @@ GameObject:
   - component: {fileID: 1409443458}
   - component: {fileID: 1409443457}
   - component: {fileID: 1409443456}
+  - component: {fileID: 1409443459}
+  - component: {fileID: 1409443460}
   m_Layer: 5
   m_Name: Load
   m_TagString: Untagged
@@ -4518,6 +4715,52 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1409443454}
   m_CullTransparentMesh: 1
+--- !u!114 &1409443459
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1409443454}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ec0d049cbde678f4889686400a2a7e62, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::UIButtonJuice
+  hoverScale: 1.12
+  responsiveness: 14
+  pressScale: 0.94
+  bobWhileHovered: 1
+  bobAmount: 0.03
+  bobSpeed: 6
+  tintOnHover: 0
+  hoverTint: {r: 1, g: 0.96, b: 0.75, a: 1}
+  flashOnClick: 1
+  flashColor: {r: 1, g: 1, b: 1, a: 1}
+--- !u!114 &1409443460
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1409443454}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a50c780241d8e0b4790ffa457354873d, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::UISelectionFX
+  showBorder: 1
+  borderColor: {r: 1, g: 0.9, b: 0.55, a: 1}
+  borderSpacing: 10
+  borderThickness: 3
+  showDiamonds: 1
+  diamondCount: 8
+  diamondSize: 13
+  diamondColor: {r: 1, g: 0.95, b: 0.7, a: 1}
+  diamondOrbit: 14
+  shimmerSpeed: 3.2
+  ringDriftSpeed: 18
+  fadeSpeed: 12
 --- !u!1 &1430197540
 GameObject:
   m_ObjectHideFlags: 0
@@ -4747,6 +4990,7 @@ GameObject:
   - component: {fileID: 1450200446}
   - component: {fileID: 1450200445}
   - component: {fileID: 1450200444}
+  - component: {fileID: 1450200447}
   m_Layer: 5
   m_Name: SlotButton_1
   m_TagString: Untagged
@@ -4858,6 +5102,28 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1450200442}
   m_CullTransparentMesh: 1
+--- !u!114 &1450200447
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1450200442}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ec0d049cbde678f4889686400a2a7e62, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::UIButtonJuice
+  hoverScale: 1.12
+  responsiveness: 14
+  pressScale: 0.94
+  bobWhileHovered: 1
+  bobAmount: 0.03
+  bobSpeed: 6
+  tintOnHover: 0
+  hoverTint: {r: 1, g: 0.96, b: 0.75, a: 1}
+  flashOnClick: 1
+  flashColor: {r: 1, g: 1, b: 1, a: 1}
 --- !u!1 &1519611545
 GameObject:
   m_ObjectHideFlags: 0
@@ -4870,6 +5136,7 @@ GameObject:
   - component: {fileID: 1519611549}
   - component: {fileID: 1519611548}
   - component: {fileID: 1519611547}
+  - component: {fileID: 1519611550}
   m_Layer: 5
   m_Name: SlotButton_0
   m_TagString: Untagged
@@ -4981,6 +5248,28 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1519611545}
   m_CullTransparentMesh: 1
+--- !u!114 &1519611550
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1519611545}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ec0d049cbde678f4889686400a2a7e62, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::UIButtonJuice
+  hoverScale: 1.12
+  responsiveness: 14
+  pressScale: 0.94
+  bobWhileHovered: 1
+  bobAmount: 0.03
+  bobSpeed: 6
+  tintOnHover: 0
+  hoverTint: {r: 1, g: 0.96, b: 0.75, a: 1}
+  flashOnClick: 1
+  flashColor: {r: 1, g: 1, b: 1, a: 1}
 --- !u!1 &1531331982
 GameObject:
   m_ObjectHideFlags: 0
@@ -4993,6 +5282,8 @@ GameObject:
   - component: {fileID: 1531331986}
   - component: {fileID: 1531331985}
   - component: {fileID: 1531331984}
+  - component: {fileID: 1531331987}
+  - component: {fileID: 1531331988}
   m_Layer: 5
   m_Name: Play
   m_TagString: Untagged
@@ -5102,6 +5393,52 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1531331982}
   m_CullTransparentMesh: 1
+--- !u!114 &1531331987
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1531331982}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ec0d049cbde678f4889686400a2a7e62, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::UIButtonJuice
+  hoverScale: 1.12
+  responsiveness: 14
+  pressScale: 0.94
+  bobWhileHovered: 1
+  bobAmount: 0.03
+  bobSpeed: 6
+  tintOnHover: 0
+  hoverTint: {r: 1, g: 0.96, b: 0.75, a: 1}
+  flashOnClick: 1
+  flashColor: {r: 1, g: 1, b: 1, a: 1}
+--- !u!114 &1531331988
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1531331982}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a50c780241d8e0b4790ffa457354873d, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::UISelectionFX
+  showBorder: 1
+  borderColor: {r: 1, g: 0.9, b: 0.55, a: 1}
+  borderSpacing: 10
+  borderThickness: 3
+  showDiamonds: 1
+  diamondCount: 8
+  diamondSize: 13
+  diamondColor: {r: 1, g: 0.95, b: 0.7, a: 1}
+  diamondOrbit: 14
+  shimmerSpeed: 3.2
+  ringDriftSpeed: 18
+  fadeSpeed: 12
 --- !u!1 &1531590305
 GameObject:
   m_ObjectHideFlags: 0
@@ -5251,6 +5588,7 @@ GameObject:
   - component: {fileID: 1545075487}
   - component: {fileID: 1545075486}
   - component: {fileID: 1545075485}
+  - component: {fileID: 1545075488}
   m_Layer: 5
   m_Name: SlotButton_2
   m_TagString: Untagged
@@ -5362,6 +5700,28 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1545075483}
   m_CullTransparentMesh: 1
+--- !u!114 &1545075488
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1545075483}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ec0d049cbde678f4889686400a2a7e62, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::UIButtonJuice
+  hoverScale: 1.12
+  responsiveness: 14
+  pressScale: 0.94
+  bobWhileHovered: 1
+  bobAmount: 0.03
+  bobSpeed: 6
+  tintOnHover: 0
+  hoverTint: {r: 1, g: 0.96, b: 0.75, a: 1}
+  flashOnClick: 1
+  flashColor: {r: 1, g: 1, b: 1, a: 1}
 --- !u!1 &1586248096
 GameObject:
   m_ObjectHideFlags: 0
