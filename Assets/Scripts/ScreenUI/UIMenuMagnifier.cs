@@ -41,9 +41,11 @@ public class UIMenuMagnifier : MonoBehaviour
     public bool bringFocusedToFront = true;
 
     [Header("Dim the others")]
+    [Tooltip("Fade non-focused buttons by distance (opacity) so focus lands on the " +
+             "hovered one. Furthest = dimmest.")]
     public bool  dimNonFocused = true;
-    [Tooltip("Alpha of the furthest button while another is focused.")]
-    public float dimMinAlpha   = 0.5f;
+    [Tooltip("Alpha of the furthest button while another is focused (lower = dimmer).")]
+    public float dimMinAlpha   = 0.35f;
 
     private RectTransform[] _items;
     private Vector3[]       _baseScales;

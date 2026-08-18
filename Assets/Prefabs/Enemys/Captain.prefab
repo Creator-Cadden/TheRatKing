@@ -2110,6 +2110,9 @@ GameObject:
   - component: {fileID: 2468626106829317605}
   - component: {fileID: 2450698315223244741}
   - component: {fileID: 3981245705369780244}
+  - component: {fileID: 4805360964095806696}
+  - component: {fileID: 2324043930174700870}
+  - component: {fileID: 7356552185979300826}
   m_Layer: 6
   m_Name: Captain
   m_TagString: Untagged
@@ -2315,15 +2318,98 @@ MonoBehaviour:
   spawnOffset: {x: 0, y: 1.6, z: 0}
   scatterRadius: 0.35
   lifetime: 1.2
-  floatSpeed: 1.5
-  horizontalDrift: 0.25
-  fontSize: 5
-  lowColor: {r: 1, g: 1, b: 1, a: 1}
-  highColor: {r: 1, g: 0.35, b: 0.1, a: 1}
+  arcUpSpeed: 3.2
+  arcSideSpeed: 1.6
+  gravity: -9
+  popScale: 1.3
+  popDuration: 0.12
+  minFontSize: 4
+  maxFontSize: 9
   lowDamage: 5
   highDamage: 40
+  lowColor: {r: 1, g: 1, b: 1, a: 1}
+  highColor: {r: 1, g: 0.35, b: 0.1, a: 1}
   billboardToCamera: 1
-  verbose: 0
+--- !u!114 &4805360964095806696
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7551827925079598176}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 730a9967fe3d4144abd28066067c0103, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::CaptainCombat
+  playerLayer:
+    serializedVersion: 2
+    m_Bits: 0
+  attackOrigin: {fileID: 3002551657486608964}
+  groundLayers:
+    serializedVersion: 2
+    m_Bits: 4294967295
+  verboseAttackLog: 1
+  maxWindupDelay: 1
+  windupTurnSpeed: 240
+  windupLockFraction: 0.6
+  attackPoint: {fileID: 4575006677094668414}
+  hitRadius: 2.1
+  fallbackHitDelay: 0.2
+  fallbackEndDelay: 0.7
+  decalStrikeDuration: 0.4
+  decalHitDelay: 0.1
+  swipeWindupTrigger: Windup
+  swipeTrigger: Attk
+  decalWindupTrigger: DecalWindup
+  decalTrigger: DecalAttk
+  windupColor: {r: 1, g: 0.15, b: 0.1, a: 0.55}
+  executeColor: {r: 1, g: 0.6, b: 0, a: 0.75}
+  indicatorYOffset: 0.03
+--- !u!114 &2324043930174700870
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7551827925079598176}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 59c54ec2430d61540a5cb648b4b5df14, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::EnemyStateDebugBalls
+  showBasicBall: 1
+  showDecalBall: 1
+  height: 2.2
+  sideOffset: 0.35
+  ballSize: 0.25
+  windupColor: {r: 1, g: 0.92156863, b: 0.015686275, a: 1}
+  strikeColor: {r: 1, g: 0, b: 0, a: 1}
+  recoverColor: {r: 0, g: 1, b: 1, a: 1}
+  cooldownColor: {r: 0, g: 1, b: 0, a: 1}
+--- !u!136 &7356552185979300826
+CapsuleCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7551827925079598176}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 0
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 2
+  m_Radius: 0.5
+  m_Height: 1
+  m_Direction: 2
+  m_Center: {x: -0.03, y: -0.24, z: 0}
 --- !u!1 &7565456505965895939
 GameObject:
   m_ObjectHideFlags: 0

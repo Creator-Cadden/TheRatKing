@@ -1295,6 +1295,8 @@ GameObject:
   - component: {fileID: 3062107265328238775}
   - component: {fileID: 7483736729632221198}
   - component: {fileID: 7977546685947353336}
+  - component: {fileID: 7730141120920877421}
+  - component: {fileID: 767569261179100499}
   m_Layer: 6
   m_Name: Grunt
   m_TagString: Untagged
@@ -1354,7 +1356,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: 31321ba15b8f8eb4c954353edc038b1d, type: 2}
+  - {fileID: 2100000, guid: 3dd055c38116c2943b24cf9cc399356e, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -1409,6 +1411,10 @@ MonoBehaviour:
   bounciness: 0.45
   maxBounces: 2
   bounceHorizontalKeep: 0.6
+  shrugHitStop: 0.02
+  flinchHitStop: 0.05
+  staggerHitStop: 0.1
+  hitStopPerMargin: 0.03
   flinchWindupDelay: 0.3
   decalWindupDelay: 0.35
   staggerDuration: 0.7
@@ -1497,15 +1503,18 @@ MonoBehaviour:
   spawnOffset: {x: 0, y: 1.6, z: 0}
   scatterRadius: 0.35
   lifetime: 1.2
-  floatSpeed: 1.5
-  horizontalDrift: 0.25
-  fontSize: 5
-  lowColor: {r: 1, g: 1, b: 1, a: 1}
-  highColor: {r: 1, g: 0.35, b: 0.1, a: 1}
+  arcUpSpeed: 3.2
+  arcSideSpeed: 1.6
+  gravity: -9
+  popScale: 1.3
+  popDuration: 0.12
+  minFontSize: 4
+  maxFontSize: 9
   lowDamage: 5
   highDamage: 40
+  lowColor: {r: 1, g: 1, b: 1, a: 1}
+  highColor: {r: 1, g: 0.35, b: 0.1, a: 1}
   billboardToCamera: 1
-  verbose: 0
 --- !u!114 &7977546685947353336
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1527,13 +1536,59 @@ MonoBehaviour:
     m_Bits: 4294967295
   verboseAttackLog: 1
   maxWindupDelay: 1
+  windupTurnSpeed: 240
+  windupLockFraction: 0.6
   attackPoint: {fileID: 6922605186104503378}
-  hitRadius: 0.9
+  hitRadius: 1.25
   windupTrigger: Windup
   attackTrigger: Attk
   fallbackHitDelay: 0.2
   fallbackEndDelay: 0.6
   showHitGizmo: 1
+--- !u!114 &7730141120920877421
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4178919419001685010}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 59c54ec2430d61540a5cb648b4b5df14, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::EnemyStateDebugBalls
+  showBasicBall: 1
+  showDecalBall: 1
+  height: 2.2
+  sideOffset: 0.35
+  ballSize: 0.25
+  windupColor: {r: 1, g: 0.92156863, b: 0.015686275, a: 1}
+  strikeColor: {r: 1, g: 0, b: 0, a: 1}
+  recoverColor: {r: 0, g: 1, b: 1, a: 1}
+  cooldownColor: {r: 0, g: 1, b: 0, a: 1}
+--- !u!136 &767569261179100499
+CapsuleCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4178919419001685010}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 0
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 2
+  m_Radius: 0.49
+  m_Height: 0.88
+  m_Direction: 2
+  m_Center: {x: -0.06, y: -0.24, z: 0.03}
 --- !u!1 &4205925195261276112
 GameObject:
   m_ObjectHideFlags: 0

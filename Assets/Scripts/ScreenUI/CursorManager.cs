@@ -11,6 +11,14 @@ public class CursorManager : MonoBehaviour
     // Which systems are currently requesting the cursor be visible
     private readonly HashSet<string> _requests = new HashSet<string>();
 
+    [Header("Custom Cursor")]
+    [Tooltip("Cursor image (import as Texture Type = Cursor, or Default with " +
+             "Read/Write on). Leave empty to use the system cursor.")]
+    public Texture2D cursorTexture;
+    [Tooltip("Pixel offset of the actual click point from the image's top-left. " +
+             "For the mouse icon, top-centre (~24, 5) reads best.")]
+    public Vector2 cursorHotspot = new Vector2(24f, 5f);
+
     [Header("Debug — read only")]
     [SerializeField] private string _activeRequests = "none";
 
@@ -24,8 +32,16 @@ public class CursorManager : MonoBehaviour
         Instance = this;
         DontDestroyOnLoad(gameObject);
 
+        ApplyCursorTexture();
         // Game starts locked
         ApplyCursorState();
+    }
+
+    /// <summary>Sets the custom cursor image (persists until changed).</summary>
+    public void ApplyCursorTexture()
+    {
+        if (cursorTexture != null)
+            Cursor.SetCursor(cursorTexture, cursorHotspot, CursorMode.Auto);
     }
 
     // ── Public API ────────────────────────────────────────────────────────────

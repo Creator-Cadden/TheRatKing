@@ -588,7 +588,7 @@ MonoBehaviour:
   safeGroundInterval: 0.4
   enemyLayers:
     serializedVersion: 2
-    m_Bits: 0
+    m_Bits: 192
   enemyHeadSlideSpeed: 6
   basicHitKnockbackForce: 4
   basicHitInvulnDuration: 0.3
@@ -728,6 +728,8 @@ MonoBehaviour:
   aimDirectionSource: {fileID: 0}
   useMainCameraIfUnset: 1
   maxChargeTime: 1.4
+  minDrawTime: 0.2
+  maxDrawZoom: 12
   minChargeMultiplier: 1
   maxChargeMultiplier: 3
   maxChargedSpeedMultiplier: 2
@@ -747,6 +749,11 @@ MonoBehaviour:
   trajectoryMaxPoints: 40
   trajectoryColor: {r: 1, g: 1, b: 1, a: 0.55}
   trajectoryWidth: 0.06
+  aimAtScreenCenter: 1
+  aimMaxDistance: 60
+  aimMask:
+    serializedVersion: 2
+    m_Bits: 4294967295
 --- !u!114 &2083038227591294027
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -762,15 +769,18 @@ MonoBehaviour:
   spawnOffset: {x: 0, y: 1.6, z: 0}
   scatterRadius: 0.35
   lifetime: 1.2
-  floatSpeed: 1.5
-  horizontalDrift: 0.25
-  fontSize: 5
-  lowColor: {r: 1, g: 1, b: 1, a: 1}
-  highColor: {r: 1, g: 0.35, b: 0.1, a: 1}
+  arcUpSpeed: 3.2
+  arcSideSpeed: 1.6
+  gravity: -9
+  popScale: 1.3
+  popDuration: 0.12
+  minFontSize: 4
+  maxFontSize: 9
   lowDamage: 5
   highDamage: 40
+  lowColor: {r: 1, g: 1, b: 1, a: 1}
+  highColor: {r: 1, g: 0.35, b: 0.1, a: 1}
   billboardToCamera: 1
-  verbose: 0
 --- !u!114 &8473197194234044476
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -824,18 +834,22 @@ MonoBehaviour:
   surfaceSets:
   - surface: 0
     clips:
-    - {fileID: 8300000, guid: e60119b225597c449ac64110389ce2f4, type: 3}
+    - {fileID: 8300000, guid: 7a7b4c0129a8a9b44a9a3a69c17f6194, type: 3}
+    - {fileID: 8300000, guid: 92f1ab211d9eb7e408ee0bf110c658e9, type: 3}
+    - {fileID: 8300000, guid: c110d403db50a8a4ba6106b2635955f5, type: 3}
+    - {fileID: 8300000, guid: bbae10a7c8b48124b88a22f0d7f3876e, type: 3}
+    - {fileID: 8300000, guid: 1013f12901055784baa67345da7118ec, type: 3}
   defaultSurface: 0
   strideLength: 3
-  frontThenBack: 1
+  frontThenBack: 0
   backFootDelayFraction: 0.172
   rayDistance: 1.5
   groundMask:
     serializedVersion: 2
     m_Bits: 4294967295
-  pitchJitter: 0.08
-  volume: 0.12
-  spatialBlend: 0
+  pitchJitter: 0.066
+  volume: 0.1
+  spatialBlend: 0.682
   outputGroup: {fileID: 0}
   minSpeed: 0.3
   minStepInterval: 0.18

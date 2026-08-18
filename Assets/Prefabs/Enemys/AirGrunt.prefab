@@ -2179,6 +2179,7 @@ GameObject:
   - component: {fileID: 4111395803738836551}
   - component: {fileID: 2509745044757724440}
   - component: {fileID: 6931698559498223082}
+  - component: {fileID: 3261730839079381769}
   m_Layer: 6
   m_Name: AirGrunt
   m_TagString: Enemy
@@ -2292,6 +2293,10 @@ MonoBehaviour:
   bounciness: 0.45
   maxBounces: 2
   bounceHorizontalKeep: 0.6
+  shrugHitStop: 0.02
+  flinchHitStop: 0.05
+  staggerHitStop: 0.1
+  hitStopPerMargin: 0.03
   flinchWindupDelay: 0.3
   decalWindupDelay: 0.35
   staggerDuration: 0.7
@@ -2415,15 +2420,39 @@ MonoBehaviour:
   spawnOffset: {x: 0, y: 1.6, z: 0}
   scatterRadius: 0.35
   lifetime: 1.2
-  floatSpeed: 1.5
-  horizontalDrift: 0.25
-  fontSize: 5
-  lowColor: {r: 1, g: 1, b: 1, a: 1}
-  highColor: {r: 1, g: 0.35, b: 0.1, a: 1}
+  arcUpSpeed: 3.2
+  arcSideSpeed: 1.6
+  gravity: -9
+  popScale: 1.3
+  popDuration: 0.12
+  minFontSize: 4
+  maxFontSize: 9
   lowDamage: 5
   highDamage: 40
+  lowColor: {r: 1, g: 1, b: 1, a: 1}
+  highColor: {r: 1, g: 0.35, b: 0.1, a: 1}
   billboardToCamera: 1
-  verbose: 0
+--- !u!114 &3261730839079381769
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6995378065054885359}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 59c54ec2430d61540a5cb648b4b5df14, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::EnemyStateDebugBalls
+  showBasicBall: 1
+  showDecalBall: 1
+  height: 2.2
+  sideOffset: 0.35
+  ballSize: 0.25
+  windupColor: {r: 1, g: 0.92156863, b: 0.015686275, a: 1}
+  strikeColor: {r: 1, g: 0, b: 0, a: 1}
+  recoverColor: {r: 0, g: 1, b: 1, a: 1}
+  cooldownColor: {r: 0, g: 1, b: 0, a: 1}
 --- !u!1 &7559868727200259174
 GameObject:
   m_ObjectHideFlags: 0

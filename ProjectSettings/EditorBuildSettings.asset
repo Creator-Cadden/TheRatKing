@@ -15,6 +15,9 @@ EditorBuildSettings:
     path: Assets/Scenes/PlayerCustom.unity
     guid: a1eecfcd8ecb9bd47a9bae5cc15f77d7
   - enabled: 1
+    path: Assets/Scenes/Tutorial.unity
+    guid: 519cbf7b78e1c7c4798cf31a14f9a957
+  - enabled: 1
     path: Assets/Scenes/TestingArena.unity
     guid: 54766adbf4cc9de4cb331400b5b14a75
   - enabled: 1

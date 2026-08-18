@@ -15,6 +15,11 @@ public class GameManager : MonoBehaviour
     public string mainMenuScene     = "MainMenu";
     public string weaponSelectScene = "PlayerCustom";
     public string firstGameScene    = "1_1 Engagement";
+    [Tooltip("Weapon-specific tutorial scene shown before the first level on a new " +
+             "game. Add it to Build Settings. Leave empty to skip tutorials.")]
+    public string tutorialScene     = "Tutorial";
+    [Tooltip("If true, new games play the tutorial first; off = straight to level 1.")]
+    public bool   useTutorialOnNewGame = true;
     [Tooltip("Scene loaded when the player enters the enemy test arena. " +
              "Goes through WeaponSelect first. Never writes to a save slot.")]
     public string testWorldScene    = "TestingArena";
@@ -41,6 +46,12 @@ public class GameManager : MonoBehaviour
     public bool IsTestMode        { get; private set; } = false;
     public bool IsPendingTestMode => _pendingTestMode;
     private bool _pendingTestMode = false;
+
+    // ── Tutorial ──────────────────────────────────────────────────
+    /// <summary>True while the player is in the tutorial scene (no save writes).</summary>
+    public bool IsInTutorial { get; private set; } = false;
+    /// <summary>Weapon chosen on WeaponSelect — used by the tutorial to tailor drills.</summary>
+    public EntityStats.WeaponType ChosenWeapon => _pendingWeapon;
 
     // ── Runtime player references (re-cached on each scene load) ──
     private Transform           _playerTransform;
@@ -101,6 +112,22 @@ public class GameManager : MonoBehaviour
         // Always start the player AT the spawn point, not wherever the prefab
         // happened to be placed in the scene.
         MovePlayerToSpawn();
+
+        // Tutorial scene — practice mode. Equip the chosen weapon at full stats,
+        // but write NO save and set NO checkpoint. TutorialManager drives the flow
+        // and calls FinishTutorial() to move on to the real first level.
+        if (scene.name == tutorialScene)
+        {
+            IsInTutorial = true;
+            if (_playerStats != null)
+            {
+                _playerStats.ResetToFull();
+                _playerStats.EquipWeapon(_pendingWeapon);
+            }
+            Debug.Log("[GameManager] Tutorial loaded — practice mode (no save).");
+            return;
+        }
+        IsInTutorial = false;
 
         if (_playerStats != null)
         {
@@ -168,7 +195,32 @@ public class GameManager : MonoBehaviour
         };
 
         SaveSystem.Delete(slot);
-        LoadScene(ActiveSave.currentSceneName);
+
+        // New games play the weapon tutorial first (if enabled + built + at least
+        // one tutorial part is on in Settings). The save still points at the first
+        // real level; the tutorial writes nothing.
+        if (useTutorialOnNewGame && !string.IsNullOrEmpty(tutorialScene)
+            && Application.CanStreamedLevelBeLoaded(tutorialScene)
+            && TutorialSettings.AnyEnabled)
+        {
+            IsInTutorial = true;
+            LoadScene(tutorialScene);
+        }
+        else
+        {
+            IsInTutorial = false;
+            LoadScene(ActiveSave.currentSceneName);
+        }
+    }
+
+    /// <summary>Called by the TutorialManager when the tutorial finishes or is
+    /// skipped. Loads the first real level; save/checkpoint resumes there.</summary>
+    public void FinishTutorial()
+    {
+        IsInTutorial = false;
+        string dest = (ActiveSave != null && !string.IsNullOrEmpty(ActiveSave.currentSceneName))
+            ? ActiveSave.currentSceneName : firstGameScene;
+        LoadScene(dest);
     }
 
     // ── Pending new game state (set before WeaponSelect, consumed after) ──
