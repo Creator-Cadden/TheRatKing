@@ -86,14 +86,18 @@ public class TutorialManager : MonoBehaviour
         if (skipHint != null) skipHint.text = $"Hold [{skipKey}] to skip";
         if (skipFill != null) skipFill.fillAmount = 0f;
 
-        // Build the flow from the player's settings.
+        // Build the flow from the player's settings. The movement part needs a
+        // player to complete its drills — if the scene has none yet, skip it so a
+        // half-built scene can't soft-lock (the skip key still works regardless).
         _sections.Clear();
-        if (TutorialSettings.ShowBasics)
+        if (TutorialSettings.ShowBasics && _move != null)
             _sections.Add(new Section { name = "Movement", steps = movementSteps });
+        else if (TutorialSettings.ShowBasics)
+            Debug.LogWarning("[TutorialManager] Basics on but no PlayerMovement in scene — skipping movement part.");
         if (TutorialSettings.ShowCombat)
             _sections.Add(new Section { name = "Combat", steps = CombatStepsForWeapon() });
 
-        if (_sections.Count == 0) { Finish(); return; }   // nothing enabled
+        if (_sections.Count == 0) { Finish(); return; }   // nothing to show → straight to game
         BeginSection(0);
     }
 

@@ -5,6 +5,11 @@ using UnityEngine;
 /// grants BOTH XP and currency to the player. Amounts come from the
 /// EnemyStatBlock (xpReward / currencyReward per enemy TYPE); the local fields
 /// below are only fallbacks for enemies without a stat block value.
+///
+/// XP is delivered as a burst of flying "XP orbs" (see <see cref="XPOrb"/>) that
+/// arc out of the corpse and home in on the player, granting XP as each one
+/// lands — so the XP bar ticks up in satisfying chunks. Currency is granted
+/// immediately, which drives the rolling Rat Coin counter.
 /// </summary>
 public class EnemyXPDrop : MonoBehaviour
 {
@@ -21,6 +26,18 @@ public class EnemyXPDrop : MonoBehaviour
 
     [Tooltip("Tag used to find the player. Must match your Player GameObject's tag.")]
     public string playerTag = "Player";
+
+    [Header("XP Orbs")]
+    [Tooltip("ON = XP flies out as vibrant orbs that home to the player and grant " +
+             "on arrival. OFF = XP is granted instantly on death (old behaviour).")]
+    public bool xpAsOrbs = true;
+
+    [Tooltip("Colour of this enemy's XP orbs. Leave as the default green unless a " +
+             "special enemy wants its own flavour.")]
+    public Color xpOrbColor = new Color(0.35f, 1f, 0.55f, 1f);
+
+    [Tooltip("Orb count. 0 = auto (scales with the XP reward).")]
+    public int xpOrbCount = 0;
 
     private EntityStats _myStats;
 
@@ -60,22 +77,35 @@ public class EnemyXPDrop : MonoBehaviour
             !string.IsNullOrEmpty(displayName)                    ? displayName :
             gameObject.name.Replace("(Clone)", "").Trim();
 
-        // ── XP ──
+        // ── XP ── (as flying orbs by default, so the bar ticks up as they land)
         XPSystem xpSystem = player.GetComponent<XPSystem>();
         if (xpSystem != null)
         {
             int xpAmount = (sb != null && sb.xpReward > 0) ? sb.xpReward : xpValue;
-            xpSystem.AddXP(xpAmount, sourceName);
-            Debug.Log($"[EnemyXPDrop] '{sourceName}' dropped {xpAmount} XP.");
+
+            if (xpAsOrbs)
+            {
+                XPOrb.SpawnBurst(transform.position, xpAmount, player.transform,
+                                 xpSystem, xpOrbCount, xpOrbColor);
+                // One informative "+N XP from {enemy}" popup at the kill; the orbs
+                // themselves grant silently so the feed isn't spammed per-orb.
+                xpSystem.AnnounceXPSource(xpAmount, sourceName);
+                Debug.Log($"[EnemyXPDrop] '{sourceName}' dropped {xpAmount} XP as orbs.");
+            }
+            else
+            {
+                xpSystem.AddXP(xpAmount, sourceName);
+                Debug.Log($"[EnemyXPDrop] '{sourceName}' granted {xpAmount} XP instantly.");
+            }
         }
 
-        // ── Currency ──
+        // ── Currency ── (immediate; drives the rolling Rat Coin counter)
         CurrencySystem wallet = player.GetComponent<CurrencySystem>();
         if (wallet != null)
         {
             int coinAmount = (sb != null && sb.currencyReward > 0) ? sb.currencyReward : currencyValue;
             wallet.AddCurrency(coinAmount, sourceName);
-            Debug.Log($"[EnemyXPDrop] '{sourceName}' dropped {coinAmount} currency.");
+            Debug.Log($"[EnemyXPDrop] '{sourceName}' dropped {coinAmount} Rat Coins.");
         }
     }
 }

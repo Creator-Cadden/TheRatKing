@@ -340,6 +340,8 @@ GameObject:
   - component: {fileID: 1412472041087739303}
   - component: {fileID: 8069409828454816147}
   - component: {fileID: 4316435711585326761}
+  - component: {fileID: 4616540225748158130}
+  - component: {fileID: 6701721248536290732}
   m_Layer: 3
   m_Name: Player
   m_TagString: Player
@@ -880,6 +882,36 @@ MonoBehaviour:
   landBurstMin: 8
   landBurstMax: 30
   landHardSpeed: 18
+--- !u!114 &4616540225748158130
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 360696225992726641}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 60df75ed049980b45967feb6e8ec9206, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::PlayerRegistrar
+--- !u!114 &6701721248536290732
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 360696225992726641}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 49211bf7911244948935129ada133a8b, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::CurrencySystem
+  onCurrencyChanged:
+    m_PersistentCalls:
+      m_Calls: []
+  onCurrencyGainedFromSource:
+    m_PersistentCalls:
+      m_Calls: []
 --- !u!1 &371287099995731602
 GameObject:
   m_ObjectHideFlags: 0

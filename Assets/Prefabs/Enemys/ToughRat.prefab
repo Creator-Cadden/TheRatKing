@@ -2159,6 +2159,7 @@ GameObject:
   - component: {fileID: 3449157046533952581}
   - component: {fileID: 2866312508421576751}
   - component: {fileID: 9139655710135039186}
+  - component: {fileID: 8198953987797047458}
   m_Layer: 6
   m_Name: ToughRat
   m_TagString: Untagged
@@ -2174,7 +2175,7 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 9165212720366802584}
   serializedVersion: 2
-  m_LocalRotation: {x: -0, y: 1, z: -0, w: 0}
+  m_LocalRotation: {x: 0, y: 1, z: 0, w: 0}
   m_LocalPosition: {x: -277.3, y: 2.4, z: 64.58}
   m_LocalScale: {x: 1.6831399, y: 1.4657999, z: 3.7937}
   m_ConstrainProportionsScale: 0
@@ -2460,3 +2461,22 @@ CapsuleCollider:
   m_Height: 0.91
   m_Direction: 2
   m_Center: {x: -0.06, y: -0.36, z: 0.06}
+--- !u!114 &8198953987797047458
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 9165212720366802584}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 60a60569048604041b6609a13f1b595e, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::EnemyXPDrop
+  xpValue: 10
+  currencyValue: 5
+  displayName: 
+  playerTag: Player
+  xpAsOrbs: 1
+  xpOrbColor: {r: 0.3372549, g: 1, b: 0.9254902, a: 1}
+  xpOrbCount: 0

@@ -54,15 +54,25 @@ public class XPSystem : MonoBehaviour
 
     /// <summary>
     /// Same as AddXP(amount) but also fires onXPGainedFromSource so the
-    /// floating "+X XP from {source}" indicator can show what killed the player got it from.
+    /// floating "+X XP from {source}" indicator can show what the player got it from.
     /// </summary>
-    public void AddXP(int amount, string sourceName)
+    public void AddXP(int amount, string sourceName) => AddXP(amount, sourceName, true);
+
+    /// <summary>
+    /// Full form. When <paramref name="announceSource"/> is false, XP is granted
+    /// and onXPGained still fires (so the XP bar animates), but the "+X XP from
+    /// {source}" feed is NOT triggered. XP orbs use this so a burst of orbs
+    /// doesn't spam the feed with one line per orb — EnemyXPDrop fires a single
+    /// informative popup at the kill via <see cref="AnnounceXPSource"/> instead.
+    /// </summary>
+    public void AddXP(int amount, string sourceName, bool announceSource)
     {
         if (amount <= 0) return;
 
         CurrentXP += amount;
         onXPGained?.Invoke(amount);
-        onXPGainedFromSource?.Invoke(amount, sourceName ?? "");
+        if (announceSource)
+            onXPGainedFromSource?.Invoke(amount, sourceName ?? "");
 
         Debug.Log($"[XPSystem] +{amount} XP from '{sourceName}' — total {CurrentXP}/{XPToNextLevel} (Lv{CurrentLevel})");
 
@@ -71,6 +81,17 @@ public class XPSystem : MonoBehaviour
         {
             LevelUp();
         }
+    }
+
+    /// <summary>
+    /// Fire the "+X XP from {source}" feed WITHOUT granting any XP. Used when the
+    /// XP itself is delivered gradually (by flying XP orbs) but you still want one
+    /// informative popup at the moment of the kill.
+    /// </summary>
+    public void AnnounceXPSource(int amount, string sourceName)
+    {
+        if (amount <= 0) return;
+        onXPGainedFromSource?.Invoke(amount, sourceName ?? "");
     }
 
     /// <summary>

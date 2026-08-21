@@ -195,8 +195,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::EnemyHealthBar
   fillImage: {fileID: 1146912080207112054}
   hpLabel: {fileID: 4835228504388555829}
-  followTarget: {fileID: 0}
-  followOffset: {x: 0, y: 0.8, z: 0}
+  followTarget: {fileID: 5875750748889180116}
+  followOffset: {x: 0, y: 2.51, z: 0}
   followHeightOnly: 1
   heightOffset: 2.2
   lerpSpeed: 8
@@ -620,7 +620,7 @@ Transform:
   m_GameObject: {fileID: 1587046028248823144}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0.0074440753, z: -0, w: 0.99997234}
-  m_LocalPosition: {x: -0.036934, y: -0.343, z: -0.082152}
+  m_LocalPosition: {x: -0.034, y: -0.343, z: -0.167}
   m_LocalScale: {x: 0.6609153, y: 0.75912184, z: 0.29334325}
   m_ConstrainProportionsScale: 0
   m_Children:
@@ -2113,6 +2113,7 @@ GameObject:
   - component: {fileID: 4805360964095806696}
   - component: {fileID: 2324043930174700870}
   - component: {fileID: 7356552185979300826}
+  - component: {fileID: 6620471808233585982}
   m_Layer: 6
   m_Name: Captain
   m_TagString: Untagged
@@ -2128,7 +2129,7 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 7551827925079598176}
   serializedVersion: 2
-  m_LocalRotation: {x: -0, y: 1, z: -0, w: 0}
+  m_LocalRotation: {x: 0, y: 1, z: 0, w: 0}
   m_LocalPosition: {x: -166.1, y: 2.3999975, z: 64.8}
   m_LocalScale: {x: 2.4864986, y: 2.1654248, z: 5.6044383}
   m_ConstrainProportionsScale: 0
@@ -2410,6 +2411,25 @@ CapsuleCollider:
   m_Height: 1
   m_Direction: 2
   m_Center: {x: -0.03, y: -0.24, z: 0}
+--- !u!114 &6620471808233585982
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7551827925079598176}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 60a60569048604041b6609a13f1b595e, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::EnemyXPDrop
+  xpValue: 10
+  currencyValue: 5
+  displayName: 
+  playerTag: Player
+  xpAsOrbs: 1
+  xpOrbColor: {r: 0.3372549, g: 1, b: 0.9254902, a: 1}
+  xpOrbCount: 0
 --- !u!1 &7565456505965895939
 GameObject:
   m_ObjectHideFlags: 0
@@ -2737,7 +2757,7 @@ Transform:
   m_GameObject: {fileID: 8894298128644253709}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: -0.329, z: -0.049}
+  m_LocalPosition: {x: 0, y: -0.329, z: -0.016}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []

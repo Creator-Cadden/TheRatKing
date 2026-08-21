@@ -28,8 +28,8 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1989615395643021632}
   serializedVersion: 2
-  m_LocalRotation: {x: 0.0000000018440196, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 1.94713, y: 3.94, z: -2.09287}
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: -321.94, y: 2.27, z: 24.210001}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -68,7 +68,7 @@ Camera:
     height: 1
   near clip plane: 0.3
   far clip plane: 1000
-  field of view: 90
+  field of view: 62
   orthographic: 0
   orthographic size: 5
   m_Depth: -1
@@ -179,7 +179,7 @@ MonoBehaviour:
       m_PreInfinity: 2
       m_PostInfinity: 2
       m_RotationOrder: 4
-  CustomBlends: {fileID: 0}
+  CustomBlends: {fileID: 11400000, guid: e683eadbd62ed4f4c8ad507d2a04bb78, type: 2}
 --- !u!81 &7889147047697588305
 AudioListener:
   m_ObjectHideFlags: 0
@@ -250,7 +250,7 @@ Transform:
   m_GameObject: {fileID: 6869064499880145287}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 1.94713, y: 3.94, z: -2.09287}
+  m_LocalPosition: {x: -321.94, y: 2.27, z: 24.210001}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -280,7 +280,7 @@ MonoBehaviour:
     LookAtTarget: {fileID: 0}
     CustomLookAtTarget: 0
   Lens:
-    FieldOfView: 75
+    FieldOfView: 62
     OrthographicSize: 5
     NearClipPlane: 0.3
     FarClipPlane: 1000
@@ -365,8 +365,8 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 8674255747537795023}
   serializedVersion: 2
-  m_LocalRotation: {x: 0.28179914, y: 0.000000025850369, z: -0.000000007592302, w: 0.9594735}
-  m_LocalPosition: {x: 0.70713, y: 5.7799997, z: -2.79287}
+  m_LocalRotation: {x: 0.23227748, y: 0.000000032408693, z: -0.000000007739488, w: 0.9726496}
+  m_LocalPosition: {x: -323.18, y: 4.1393223, z: 22.509892}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -396,7 +396,7 @@ MonoBehaviour:
     LookAtTarget: {fileID: 0}
     CustomLookAtTarget: 0
   Lens:
-    FieldOfView: 90
+    FieldOfView: 60
     OrthographicSize: 5
     NearClipPlane: 0.3
     FarClipPlane: 1000
@@ -438,13 +438,13 @@ MonoBehaviour:
   Radius: 5
   Orbits:
     Top:
-      Radius: 4
+      Radius: 5
       Height: 5
     Center:
-      Radius: 3.5
+      Radius: 4.5
       Height: 2.25
     Bottom:
-      Radius: 4
+      Radius: 5
       Height: -0.91
     SplineCurvature: 0.335
   RecenteringTarget: 2
@@ -461,7 +461,7 @@ MonoBehaviour:
   VerticalAxis:
     Value: 17.5
     Center: 17.5
-    Range: {x: -10, y: 45}
+    Range: {x: -10.44, y: 45}
     Wrap: 0
     Recentering:
       Enabled: 0
