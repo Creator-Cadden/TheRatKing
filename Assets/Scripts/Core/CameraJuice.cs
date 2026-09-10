@@ -44,6 +44,13 @@ public class CameraJuice : MonoBehaviour
     public static void Shake(float trauma)
     {
         Ensure();
+
+        // Accessibility: the Screen Shake slider in Settings scales every shake in
+        // the game, and 0 disables it outright. Motion sensitivity is common enough
+        // that this needs to be honoured at the source, not per call site.
+        trauma *= GameSettings.ScreenShake;
+        if (trauma <= 0f) return;
+
         _inst._trauma = Mathf.Clamp01(_inst._trauma + trauma);
     }
 

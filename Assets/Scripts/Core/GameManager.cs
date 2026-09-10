@@ -79,6 +79,10 @@ public class GameManager : MonoBehaviour
         Instance = this;
         DontDestroyOnLoad(gameObject);
 
+        // Pull the player's saved settings off disk and push them to the engine
+        // (resolution, fullscreen, vsync, volume) before anything else runs.
+        GameSettings.LoadAndApply();
+
         SceneManager.sceneLoaded += OnSceneLoaded;
     }
 

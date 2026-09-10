@@ -131,8 +131,7 @@ public class DeathScreen : MonoBehaviour
 
     private void OnSettingsClicked()
     {
-        // Wire to your settings panel when ready
-        Debug.Log("[DeathScreen] Settings clicked — wire to your settings panel.");
+        SettingsMenu.Open();
     }
 
     private void OnMenuClicked()

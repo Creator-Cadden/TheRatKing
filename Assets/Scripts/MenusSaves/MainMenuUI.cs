@@ -405,7 +405,7 @@ public class MainMenuUI : MonoBehaviour
 
     private void OnSettings()
     {
-        Debug.Log("[MainMenuUI] Settings — wire to your settings panel.");
+        SettingsMenu.Open();
     }
 
     private void OnCredits()

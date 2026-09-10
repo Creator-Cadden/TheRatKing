@@ -59,6 +59,7 @@ public class DamageNumberSpawner : MonoBehaviour
     private void OnDamage(int amount)
     {
         if (amount <= 0) return;
+        if (!GameSettings.ShowDamageNumbers) return;   // player turned them off in Settings
 
         var go = new GameObject($"DamageNumber_{amount}");
         Vector3 jitter = Random.insideUnitSphere * scatterRadius; jitter.y = 0f;

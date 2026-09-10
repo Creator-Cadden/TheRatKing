@@ -156,8 +156,8 @@ public class PauseMenu : MonoBehaviour
 
     private void OnSettings()
     {
-        // Stub — wire to your settings panel when ready
-        Debug.Log("[PauseMenu] Settings clicked — wire to your settings panel.");
+        // The game is already paused here, so SettingsMenu must NOT pause again.
+        SettingsMenu.Open();
     }
 
     private void OnMainMenu()
