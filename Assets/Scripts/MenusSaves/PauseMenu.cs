@@ -125,8 +125,8 @@ public class PauseMenu : MonoBehaviour
 
     public void Pause()
     {
-        IsPaused       = true;
-        Time.timeScale = 0f;
+        IsPaused = true;
+        GameFreeze.Request(CURSOR_OWNER);   // ref-counted freeze — stacks with the stats panel
 
         SetVisible(true);
 
@@ -140,8 +140,8 @@ public class PauseMenu : MonoBehaviour
 
     public void Resume()
     {
-        IsPaused       = false;
-        Time.timeScale = 1f;
+        IsPaused = false;
+        GameFreeze.Release(CURSOR_OWNER);   // only actually resumes if no other menu (stats) is open
         SetVisible(false);
         CursorManager.Release(CURSOR_OWNER);
     }

@@ -182,7 +182,12 @@ public class CursorManager : MonoBehaviour
     {
         if (Instance == null)
         {
-            Debug.LogWarning("[CursorManager] No CursorManager in scene!");
+            // No manager in this scene (e.g. a menu scene opened directly). Still
+            // make the cursor usable so panels/buttons aren't dead — the request
+            // system just isn't tracking owners here.
+            Debug.LogWarning("[CursorManager] No CursorManager in scene — showing cursor directly.");
+            Cursor.lockState = CursorLockMode.None;
+            Cursor.visible   = true;
             return;
         }
         Instance._requests.Add(owner);

@@ -63,8 +63,10 @@ public class StatMenuUI : MonoBehaviour
 
     private bool _menuOpen    = false;
     private bool _initialized = false;
+    private int  _lastToggleFrame = -1;   // guards a double-toggle in one frame
 
     private const string CURSOR_OWNER = "statmenu";
+    private const string FREEZE_OWNER = "statmenu";
 
     // ── LIFECYCLE ──
 
@@ -146,6 +148,21 @@ public class StatMenuUI : MonoBehaviour
         if (speedPlusButton    != null) speedPlusButton   .onClick.RemoveListener(OnSpendSpeed);
 
         CursorManager.Release(CURSOR_OWNER);
+        GameFreeze.Release(FREEZE_OWNER);
+    }
+
+    // Safety net: if this menu is hidden/disabled by ANY means (scene unload,
+    // a parent deactivating, someone calling SetActive on the root directly)
+    // while it was open, make sure we never leak the cursor-visible / frozen
+    // state into gameplay — the classic "cursor showing when it shouldn't" bug.
+    void OnDisable()
+    {
+        if (_menuOpen)
+        {
+            _menuOpen = false;
+            CursorManager.Release(CURSOR_OWNER);
+            GameFreeze.Release(FREEZE_OWNER);
+        }
     }
 
     // ── INPUT ──
@@ -164,8 +181,14 @@ public class StatMenuUI : MonoBehaviour
 
     private void ToggleMenu()
     {
-        _menuOpen = !_menuOpen;
-        SetMenuVisible(_menuOpen);
+        // Guard against Tab firing twice in one frame (action.performed AND the
+        // PlayerInput 'Send Messages' OnStatMenu can both land) — same guard the
+        // pause menu uses. Without it the menu opens+closes instantly and the
+        // cursor flickers.
+        if (Time.frameCount == _lastToggleFrame) return;
+        _lastToggleFrame = Time.frameCount;
+
+        SetMenuVisible(!_menuOpen);
     }
 
     private void SetMenuVisible(bool visible)
@@ -177,8 +200,17 @@ public class StatMenuUI : MonoBehaviour
         else
             Debug.LogWarning("[StatMenuUI] statMenuRoot is null.");
 
-        if (visible) CursorManager.Request(CURSOR_OWNER);
-        else         CursorManager.Release(CURSOR_OWNER);
+        // Cursor + freeze both ref-counted, so this stacks cleanly with the pause menu.
+        if (visible)
+        {
+            CursorManager.Request(CURSOR_OWNER);
+            GameFreeze.Request(FREEZE_OWNER);      // freeze the game while allocating points
+        }
+        else
+        {
+            CursorManager.Release(CURSOR_OWNER);
+            GameFreeze.Release(FREEZE_OWNER);
+        }
 
         if (visible && _initialized) RefreshAll();
     }

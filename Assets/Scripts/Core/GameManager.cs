@@ -437,7 +437,7 @@ public class GameManager : MonoBehaviour
 
     public void ReturnToMainMenu()
     {
-        Time.timeScale = 1f;
+        GameFreeze.ReleaseAll();
         CursorManager.ForceReset();
 
         // Clear test-mode flags so the main menu starts clean.
@@ -478,7 +478,7 @@ public class GameManager : MonoBehaviour
 
     private void LoadScene(string sceneName)
     {
-        Time.timeScale = 1f;
+        GameFreeze.ReleaseAll();   // never carry a pause/stats freeze into the next scene
 
         // Scene-rename safety: old saves may point at scenes that no longer
         // exist (e.g. "lvl2 New" after the 1_x restructure). Fall back to the
