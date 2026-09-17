@@ -58,6 +58,34 @@ public class BladeCombat : MonoBehaviour
     /// this to the animator's ComboStep int so clips can branch per hit.</summary>
     public int LastComboStep { get; private set; }
 
+    // ── Chain state, for UI ───────────────────────────────────────────────────
+    // _comboStep is the NEXT index to fire, and it wraps to 0 after the
+    // finisher, so it doubles as "hits landed so far in this chain".
+
+    /// <summary>Hits in a full chain (3 for the blade).</summary>
+    public int ComboLength => comboLength;
+
+    /// <summary>True while the chain is still alive — swing now and it continues.</summary>
+    public bool ChainAlive =>
+        _comboStep > 0 && Time.time <= _lastSwingTime + _currentCooldown + comboWindow;
+
+    /// <summary>Hits landed so far in the current chain (0 when it has lapsed).</summary>
+    public int ComboProgress => ChainAlive ? _comboStep : 0;
+
+    /// <summary>True when the NEXT hit is the heavy finisher.</summary>
+    public bool NextIsFinisher => ComboProgress >= comboLength - 1;
+
+    /// <summary>Seconds left to keep the chain, 0–1 normalised.</summary>
+    public float ChainWindow01
+    {
+        get
+        {
+            if (!ChainAlive) return 0f;
+            float endsAt = _lastSwingTime + _currentCooldown + comboWindow;
+            return Mathf.Clamp01((endsAt - Time.time) / Mathf.Max(0.0001f, comboWindow));
+        }
+    }
+
     [Tooltip("Duration of the visual spin (seconds).")]
     public float jumpSpinDuration   = 0.35f;
 

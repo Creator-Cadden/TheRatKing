@@ -77,6 +77,25 @@ public class EnemyAI : MonoBehaviour
              "normal-speed enemies.")]
     public float speedMultiplier = 1f;
 
+    [Header("Training overrides (set at runtime by the tutorial)")]
+    [Tooltip("Never chase, backpedal or orbit — the enemy stays where it landed. " +
+             "It still turns to face you, still reacts to hits, still plays its " +
+             "stagger and flinch. Used for the tutorial's training dummy and the " +
+             "toughness demo pair, where movement would just get in the way.")]
+    public bool holdPosition = false;
+
+    [Tooltip("Never start an attack. This is what makes a dummy harmless — " +
+             "disabling the combat component isn't enough, because EnemyAI calls " +
+             "into it directly rather than relying on its Update.")]
+    public bool doNotAttack = false;
+
+    [Tooltip("Bolted to the floor: knockback and launch move it ZERO distance. " +
+             "Hit-stop, hit animations, flinch/stagger triggers and the reaction " +
+             "text all still play — it just doesn't travel. holdPosition alone " +
+             "isn't enough, because a hard hit shoves an enemy through the AI and " +
+             "can walk a training dummy out of the room.")]
+    public bool immovable = false;
+
     // Tracks whether we were locked last frame so we can detect the
     // exact frame the lock releases and start the post-attack pause.
     private bool _wasRotationLocked;
@@ -217,7 +236,7 @@ public class EnemyAI : MonoBehaviour
         // combat script decides if this distance suits any of its attacks
         // (Tough dashes from 3-6m; grunt only bites within ~1.7m). Gating this
         // behind stopRange made ranged attacks like the dash unreachable.
-        if (dist <= attackThreshold)
+        if (dist <= attackThreshold && !doNotAttack)
         {
             _combat.TryStartAttack(dist);
             if (_combat.IsBusy)
@@ -225,6 +244,15 @@ public class EnemyAI : MonoBehaviour
                 _agent.ResetPath();
                 return;
             }
+        }
+
+        // Rooted in place (tutorial dummy / toughness demo): face the player so
+        // it doesn't read as dead, but never take a step.
+        if (holdPosition)
+        {
+            if (_agent.enabled && _agent.isOnNavMesh) _agent.ResetPath();
+            SmoothFacePlayer();
+            return;
         }
 
         // No attack started — keep chasing until inside stopRange.
@@ -300,6 +328,24 @@ public class EnemyAI : MonoBehaviour
     [Tooltip("Horizontal speed kept after each bounce.")]
     public float bounceHorizontalKeep = 0.6f;
 
+    [Header("Knockback collision")]
+    [Tooltip("Layers a knocked-back enemy bounces off. Set this to your level " +
+             "geometry — do NOT include the enemy or player layers, or they'll " +
+             "ricochet off each other.")]
+    public LayerMask knockbackObstacleMask = ~0;
+
+    [Tooltip("Radius of the sweep that looks ahead for walls. Roughly the rat's " +
+             "body width.")]
+    public float knockbackProbeRadius = 0.35f;
+
+    [Tooltip("Height off the floor the sweep is cast from, so it tests the body " +
+             "rather than scraping the ground.")]
+    public float knockbackProbeHeight = 0.5f;
+
+    [Tooltip("How much speed survives a wall bounce. 0 = dead stop, 1 = perfect " +
+             "ricochet.")]
+    [Range(0f, 1f)] public float wallBounciness = 0.45f;
+
     [Header("Hitstop (impact freeze — scales with the reaction)")]
     [Tooltip("Freeze seconds when the hit does nothing (powers through). Keep tiny.")]
     public float shrugHitStop = 0.02f;
@@ -320,11 +366,71 @@ public class EnemyAI : MonoBehaviour
 
     private void HandleKnockback()
     {
+        // Bolted down: swallow the whole flight. The hit already played its
+        // stop, shake, sound and reaction text before we got here, so it still
+        // FEELS like a hit — the body just doesn't go anywhere.
+        if (immovable)
+        {
+            _knockbackVelocity = Vector3.zero;
+            _isKnockedBack     = false;
+            if (!_stats.IsDead && !_agent.enabled) _agent.enabled = true;
+            return;
+        }
+
         _agent.enabled = false;
 
-        // Ballistic step.
+        // Ballistic step — but SWEPT, not teleported. The old version wrote
+        // straight to transform.position with no collision check at all, which is
+        // how a hard hit buried a rat in a wall or punched it out of the room.
         _knockbackVelocity.y += KnockbackGravity * Time.deltaTime;
-        transform.position   += _knockbackVelocity * Time.deltaTime;
+
+        Vector3 step = _knockbackVelocity * Time.deltaTime;
+        float    dist = step.magnitude;
+
+        if (dist > 0.0001f)
+        {
+            Vector3 dir    = step / dist;
+            Vector3 origin = transform.position + Vector3.up * knockbackProbeHeight;
+
+            if (Physics.SphereCast(origin, knockbackProbeRadius, dir, out RaycastHit hit,
+                                   dist, knockbackObstacleMask, QueryTriggerInteraction.Ignore))
+            {
+                // Stop just short of the surface, then bounce off it. Flattening
+                // the normal keeps a wall hit reading as a wall hit even on a
+                // slightly sloped collider.
+                float travel = Mathf.Max(0f, hit.distance - 0.02f);
+                transform.position += dir * travel;
+
+                Vector3 n = hit.normal;
+                n.y = 0f;
+                if (n.sqrMagnitude > 0.0001f)
+                {
+                    n.Normalize();
+                    Vector3 flat = new Vector3(_knockbackVelocity.x, 0f, _knockbackVelocity.z);
+                    flat = Vector3.Reflect(flat, n) * wallBounciness;
+                    _knockbackVelocity.x = flat.x;
+                    _knockbackVelocity.z = flat.z;
+
+                    // Shove clear so the next sweep doesn't start inside the wall.
+                    transform.position += n * 0.05f;
+                }
+                else
+                {
+                    // Hit a ceiling or a near-flat face — just kill the push.
+                    _knockbackVelocity.x *= 0.2f;
+                    _knockbackVelocity.z *= 0.2f;
+                }
+            }
+            else transform.position += step;
+        }
+
+        // Never below the floor it was standing on, whatever the maths said.
+        if (transform.position.y < _knockbackGroundY)
+        {
+            Vector3 p = transform.position;
+            p.y = _knockbackGroundY;
+            transform.position = p;
+        }
 
         // Ground contact → bounce or settle.
         if (transform.position.y <= _knockbackGroundY && _knockbackVelocity.y < 0f)

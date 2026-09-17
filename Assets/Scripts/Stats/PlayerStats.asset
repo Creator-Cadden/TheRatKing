@@ -31,19 +31,19 @@ MonoBehaviour:
   bowImpactSpecial: 2
   bladeAttackCooldown: 0.55
   bladeCooldownFloor: 0.3
-  hammerAttackCooldown: 1.1
-  hammerCooldownFloor: 0.65
+  hammerAttackCooldown: 1.65
+  hammerCooldownFloor: 0.9
   bowAttackCooldown: 0.75
   bowCooldownFloor: 0.45
   bladeBaseDamage: 5
   bladeStrengthMultiplier: 1
   hammerBaseDamage: 25
-  hammerStrengthMultiplier: 2
-  hammerMoveSpeedFraction: 0.8
+  hammerStrengthMultiplier: 1.5
+  hammerMoveSpeedFraction: 1
   hammerAttackSpeedFraction: 0.5
   bowBaseDamage: 6
   bowStrengthMultiplier: 1
-  bowChargedMultiplier: 1.6
+  bowChargedMultiplier: 3
   bowAimMoveSpeedFraction: 0.667
   sprintStaminaPerSecond: 5
   rollStaminaCost: 15

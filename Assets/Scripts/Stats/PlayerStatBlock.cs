@@ -77,20 +77,24 @@ public class PlayerStatBlock : BaseStatBlock
     public int bladeBaseDamage = 5;
 
     [Tooltip("Blade damage gained per point of Strength.")]
-    public int bladeStrengthMultiplier = 1;
+    public float bladeStrengthMultiplier = 1f;
 
     [Header("Hammer")]
     [Tooltip("Flat base damage added before Strength scaling. Hammer dmg = this + Strength × multiplier.")]
     public int hammerBaseDamage = 30;
 
-    [Tooltip("Hammer damage gained per point of Strength.")]
-    public int hammerStrengthMultiplier = 2;
+    [Tooltip("Hammer damage gained per point of Strength. Fractional on purpose: " +
+             "at 2 the hammer's lead over the other weapons GREW with every point " +
+             "spent, which is why it ran away with the game.")]
+    public float hammerStrengthMultiplier = 1.5f;
 
-    [Tooltip("Fraction of normal move speed while hammer is equipped. 0.667 = one third reduction.")]
-    public float hammerMoveSpeedFraction = 0.667f;
+    [Tooltip("Fraction of normal move speed while hammer is equipped. 1 = no " +
+             "penalty, which is the current design: the hammer already pays with " +
+             "its swing speed, so stacking a movement tax on top was double-dipping.")]
+    public float hammerMoveSpeedFraction = 1f;
 
-    [Tooltip("UNUSED — replaced by the per-weapon Attack Speed section above " +
-             "(hammerAttackCooldown 0.80s). Kept so asset data isn't lost.")]
+    [Tooltip("DEAD FIELD — nothing reads it. hammerAttackCooldown is the real " +
+             "swing-speed control. Kept only so existing asset data isn't lost.")]
     public float hammerAttackSpeedFraction = 0.5f;
 
     [Header("Bow")]
@@ -98,7 +102,7 @@ public class PlayerStatBlock : BaseStatBlock
     public int bowBaseDamage = 0;
 
     [Tooltip("Bow damage gained per point of Strength.")]
-    public int bowStrengthMultiplier = 1;
+    public float bowStrengthMultiplier = 1f;
 
     [Tooltip("Charged aimed shot multiplies damage by this. Default 3 = triple damage.")]
     public float bowChargedMultiplier = 3f;

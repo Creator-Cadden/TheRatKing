@@ -17,7 +17,7 @@ public class GameManager : MonoBehaviour
     public string firstGameScene    = "1_1 Engagement";
     [Tooltip("Weapon-specific tutorial scene shown before the first level on a new " +
              "game. Add it to Build Settings. Leave empty to skip tutorials.")]
-    public string tutorialScene     = "Tutorial";
+    public string tutorialScene     = "1_T Tutorial";
     [Tooltip("If true, new games play the tutorial first; off = straight to level 1.")]
     public bool   useTutorialOnNewGame = true;
     [Tooltip("Scene loaded when the player enters the enemy test arena. " +

@@ -178,6 +178,33 @@ public class PlayerCombat : MonoBehaviour
         _hammer?.RecalculateCooldown();
     }
 
+    // ── Attack events ──
+    // Fired only when an attack ACTUALLY starts (cooldown passed, stamina paid),
+    // never on the raw click. The tutorial counts these; anything else that wants
+    // to react to a swing can hang off them too.
+
+    /// <summary>A grounded attack started. Bow: one arrow left the string.</summary>
+    public System.Action OnBasicAttack;
+
+    /// <summary>An air attack started — blade spin, hammer slam, bow triple.</summary>
+    public System.Action OnJumpAttack;
+
+    // Air attacks deal their damage INSIDE the weapon call (BladeCombat.HitScan
+    // runs before TryJumpAttack even returns), so anything that waits for the
+    // OnJumpAttack event to classify a hit is already too late — the enemy took
+    // the damage a few lines earlier. This window opens BEFORE the weapon is
+    // asked, so a listener can tell "this damage came from an air attack".
+    private float _jumpAttackWindowUntil = -999f;
+
+    [Tooltip("How long after an air attack begins that damage still counts as " +
+             "coming from it. Long enough for an arrow to land.")]
+    public float jumpAttackWindow = 1.2f;
+
+    /// <summary>True while damage should be attributed to an air attack.</summary>
+    public bool InJumpAttackWindow => Time.time < _jumpAttackWindowUntil;
+
+    private void OpenJumpAttackWindow() => _jumpAttackWindowUntil = Time.time + jumpAttackWindow;
+
     // ── Input — OnAttack routes per equipped weapon ──
 
     public void OnAttack(InputValue value)
@@ -198,8 +225,10 @@ public class PlayerCombat : MonoBehaviour
             {
                 _hasJumpAttacked    = true;
                 _lastJumpAttackTime = Time.time;
+                OpenJumpAttackWindow();
                 FireAttackAnims("AirAttk");
                 _bow.JumpTripleShot();
+                OnJumpAttack?.Invoke();
                 return;
             }
 
@@ -218,11 +247,13 @@ public class PlayerCombat : MonoBehaviour
 
             if (!isGrounded && !_hasJumpAttacked)
             {
+                OpenJumpAttackWindow();
                 if (_hammer.TryJumpSlam())
                 {
                     _hasJumpAttacked    = true;
                     _lastJumpAttackTime = Time.time;
                     FireAttackAnims("AirAttk");
+                    OnJumpAttack?.Invoke();
                 }
                 return;
             }
@@ -232,6 +263,7 @@ public class PlayerCombat : MonoBehaviour
                 PushComboStepAnim(_hammer.LastComboStep);
                 FireAttackAnims("Attk");
                 DoMeleeLungeAndFace(lunge: false);   // hammer: face-lock only, no scoot
+                OnBasicAttack?.Invoke();
             }
 
             return;
@@ -244,11 +276,13 @@ public class PlayerCombat : MonoBehaviour
 
             if (!isGrounded && !_hasJumpAttacked)
             {
+                OpenJumpAttackWindow();
                 if (_blade.TryJumpAttack())
                 {
                     _hasJumpAttacked    = true;
                     _lastJumpAttackTime = Time.time;
                     FireAttackAnims("AirAttk");
+                    OnJumpAttack?.Invoke();
                 }
                 return;
             }
@@ -258,6 +292,7 @@ public class PlayerCombat : MonoBehaviour
                 PushComboStepAnim(_blade.LastComboStep);
                 FireAttackAnims("Attk");
                 DoMeleeLungeAndFace(lunge: true);
+                OnBasicAttack?.Invoke();
             }
         }
     }
@@ -279,6 +314,7 @@ public class PlayerCombat : MonoBehaviour
         _lastAttackTime = Time.time;
         _swapper?.ActiveWeaponAnimator?.ResetTrigger("BowAttk");
         FireAttackAnims("Attk", "BowAttk");
+        OnBasicAttack?.Invoke();
     }
 
     // ── Weapon swap shortcut helpers (still useful for menus / pickups) ──

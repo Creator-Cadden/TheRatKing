@@ -90,6 +90,7 @@ public class PlayerMovement : MonoBehaviour
     private bool    _prevGrounded;                // for landing detection (shake)
     private float   _lastGroundedTime = -999f;   // for coyote-time jumping
     private bool    _sprintHeld;
+    private bool    _isSprinting;      // sprint actually in effect this frame
     private bool    _isAiming;
     private float   _aimYaw;
     private float   _aimPitch;
@@ -455,6 +456,18 @@ public class PlayerMovement : MonoBehaviour
     [Tooltip("Horizontal push kept after each bounce (the slide shortens per bump).")]
     public float staggerBounceHorizontalKeep = 0.55f;
 
+    [Tooltip("How much speed survives bouncing off a WALL mid-stagger. The " +
+             "CharacterController already stops you clipping through, but without " +
+             "this you just grind along the surface with the push still shoving " +
+             "you into it. 0 = dead stop, 1 = perfect ricochet.")]
+    [Range(0f, 1f)] public float staggerWallBounciness = 0.5f;
+
+    [Tooltip("Minimum gap between wall bounces, so a corner doesn't rattle you " +
+             "back and forth every frame.")]
+    public float staggerWallBounceCooldown = 0.08f;
+
+    private float _lastWallBounceTime = -999f;
+
     private float   _staggerUntil = -999f;
     private bool    _inStaggerFlight;
     private int     _staggerBouncesLeft;
@@ -481,6 +494,15 @@ public class PlayerMovement : MonoBehaviour
     public bool  IsGrounded      => _isGrounded;
     public bool  IsRolling       => _isRolling;
     public float HorizontalSpeed => new Vector3(_currentMoveVelocity.x, 0f, _currentMoveVelocity.z).magnitude;
+
+    /// <summary>Raw stick/WASD input this frame, camera-relative (x = strafe,
+    /// y = forward). The tutorial's direction drill reads this instead of raw
+    /// keys so it still works after a rebind or on a gamepad.</summary>
+    public Vector2 MoveInput => _moveInput;
+
+    /// <summary>True only while ACTUALLY sprinting — held sprint, moving, not
+    /// aiming, and stamina paid for. Watching the key alone would lie.</summary>
+    public bool IsSprinting => _isSprinting;
 
     /// <summary>True while staggered — the ENTIRE hit → fly → bounce → bounce →
     /// settle → recover sequence. Movement, roll, jump, and attacks all blocked
@@ -626,6 +648,7 @@ public class PlayerMovement : MonoBehaviour
 
         // Sprint FOV widen — speed sensation + shows a bit more ahead.
         CameraJuice.SetSprint(canSprint);
+        _isSprinting = canSprint;
 
         // Bow aim penalty — reduce move speed by bowAimMoveSpeedFraction while aiming
         float weaponAimFraction = 1f;
@@ -777,6 +800,35 @@ public class PlayerMovement : MonoBehaviour
         }
 
         _controller.Move((_velocity + flightVelocity) * Time.deltaTime);
+    }
+
+    /// <summary>
+    /// Wall bounce during a stagger. CharacterController.Move stops the player
+    /// passing through geometry, but the stagger push keeps pointing into the
+    /// wall, so you scrape along it until the timer runs out. Reflecting the
+    /// horizontal momentum off the surface normal reads as being thrown off the
+    /// wall instead.
+    /// </summary>
+    void OnControllerColliderHit(ControllerColliderHit hit)
+    {
+        if (!_inStaggerFlight) return;
+        if (Time.time - _lastWallBounceTime < staggerWallBounceCooldown) return;
+
+        // Only walls. A mostly-vertical normal is the floor or a ceiling, and
+        // those are already handled by the ground-bounce path.
+        Vector3 n = hit.normal;
+        if (Mathf.Abs(n.y) > 0.5f) return;
+
+        n.y = 0f;
+        if (n.sqrMagnitude < 0.0001f) return;
+        n.Normalize();
+
+        // Ignore a surface we're already moving away from.
+        Vector3 flat = new Vector3(_staggerHorizVelocity.x, 0f, _staggerHorizVelocity.z);
+        if (flat.sqrMagnitude < 0.01f || Vector3.Dot(flat.normalized, n) > 0f) return;
+
+        _staggerHorizVelocity = Vector3.Reflect(flat, n) * staggerWallBounciness;
+        _lastWallBounceTime   = Time.time;
     }
 
     // ── Roll ──

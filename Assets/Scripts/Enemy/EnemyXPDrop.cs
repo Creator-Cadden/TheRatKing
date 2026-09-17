@@ -39,6 +39,14 @@ public class EnemyXPDrop : MonoBehaviour
     [Tooltip("Orb count. 0 = auto (scales with the XP reward).")]
     public int xpOrbCount = 0;
 
+    /// <summary>
+    /// Runtime overrides that beat even the stat block. Set by TutorialManager so
+    /// the tutorial's first kill can pay out exactly one level's worth of XP
+    /// without editing the shared Grunt asset. 0 = use the normal values.
+    /// </summary>
+    [HideInInspector] public int xpOverride;
+    [HideInInspector] public int currencyOverride;
+
     private EntityStats _myStats;
 
     void Start()
@@ -81,7 +89,9 @@ public class EnemyXPDrop : MonoBehaviour
         XPSystem xpSystem = player.GetComponent<XPSystem>();
         if (xpSystem != null)
         {
-            int xpAmount = (sb != null && sb.xpReward > 0) ? sb.xpReward : xpValue;
+            int xpAmount = xpOverride > 0
+                ? xpOverride
+                : (sb != null && sb.xpReward > 0) ? sb.xpReward : xpValue;
 
             if (xpAsOrbs)
             {
@@ -103,7 +113,9 @@ public class EnemyXPDrop : MonoBehaviour
         CurrencySystem wallet = player.GetComponent<CurrencySystem>();
         if (wallet != null)
         {
-            int coinAmount = (sb != null && sb.currencyReward > 0) ? sb.currencyReward : currencyValue;
+            int coinAmount = currencyOverride > 0
+                ? currencyOverride
+                : (sb != null && sb.currencyReward > 0) ? sb.currencyReward : currencyValue;
             wallet.AddCurrency(coinAmount, sourceName);
             Debug.Log($"[EnemyXPDrop] '{sourceName}' dropped {coinAmount} Rat Coins.");
         }

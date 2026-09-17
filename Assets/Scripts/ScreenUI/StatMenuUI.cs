@@ -325,13 +325,13 @@ public class StatMenuUI : MonoBehaviour
         switch (playerStats.EquippedWeapon)
         {
             case EntityStats.WeaponType.Blade:
-                text = (str * sb.bladeStrengthMultiplier).ToString();
+                text = Mathf.RoundToInt(str * sb.bladeStrengthMultiplier).ToString();
                 break;
             case EntityStats.WeaponType.Hammer:
-                text = (str * sb.hammerStrengthMultiplier).ToString();
+                text = Mathf.RoundToInt(str * sb.hammerStrengthMultiplier).ToString();
                 break;
             case EntityStats.WeaponType.Bow:
-                int normal  = str * sb.bowStrengthMultiplier;
+                int normal  = Mathf.RoundToInt(str * sb.bowStrengthMultiplier);
                 int charged = Mathf.RoundToInt(normal * sb.bowChargedMultiplier);
                 text = normal + "  /  " + charged;
                 break;

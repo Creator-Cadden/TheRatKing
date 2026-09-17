@@ -253,13 +253,16 @@ public class EntityStats : MonoBehaviour
     {
         if (playerStatBlock == null) return 0;
 
-        return EquippedWeapon switch
+        // Multipliers are fractional now, so round at the end rather than
+        // letting integer maths silently truncate a point of Strength away.
+        float raw = EquippedWeapon switch
         {
             WeaponType.Blade  => playerStatBlock.bladeBaseDamage  + Strength * playerStatBlock.bladeStrengthMultiplier,
             WeaponType.Hammer => playerStatBlock.hammerBaseDamage + Strength * playerStatBlock.hammerStrengthMultiplier,
             WeaponType.Bow    => playerStatBlock.bowBaseDamage    + Strength * playerStatBlock.bowStrengthMultiplier,
-            _                 => 0
+            _                 => 0f
         };
+        return Mathf.RoundToInt(raw);
     }
 
     /// <summary>
@@ -317,6 +320,20 @@ public class EntityStats : MonoBehaviour
         return true;
     }
 
+    /// <summary>
+    /// Give stamina back. Pass nothing for a full refill. The tutorial uses this
+    /// between steps: a jump attack costs stamina and fails silently at zero, so
+    /// a player who sprinted through the movement lesson could otherwise get
+    /// stuck on "attack in the air" with no idea why.
+    /// </summary>
+    public void RestoreStamina(int amount = int.MaxValue)
+    {
+        if (IsDead) return;
+        CurrentStamina = amount >= MaxStamina
+            ? MaxStamina
+            : Mathf.Min(MaxStamina, CurrentStamina + Mathf.Max(0, amount));
+    }
+
     public bool UseStaminaPerSecond(float amountPerSecond)
     {
         if (CurrentStamina <= 0) return false;
@@ -365,12 +382,41 @@ public class EntityStats : MonoBehaviour
         _invulnerableUntil = Mathf.Max(_invulnerableUntil, Time.time + seconds);
     }
 
+    /// <summary>
+    /// Damage can never take health below this. 0 = normal, death allowed.
+    /// The tutorial sets it to 1 on the player (you can be hurt but never die
+    /// during a lesson) and on teaching dummies (hit them forever), then clears
+    /// it. Runtime-only on purpose — not a serialized field, so it can't leak
+    /// into a real level by being left ticked on a prefab.
+    /// </summary>
+    public int HealthFloor { get; set; } = 0;
+
+    /// <summary>
+    /// Global "nothing takes damage right now" switch. The tutorial raises it
+    /// while an explanation is on screen, so the player can read about staggers
+    /// without a rat chewing on them and without their own idle clicking killing
+    /// the thing being explained. Also useful for cutscenes and menus.
+    ///
+    /// Static, so it survives nothing: reset on load below, and always clear it
+    /// in a finally / OnDestroy rather than trusting a scene change.
+    /// </summary>
+    public static bool SuppressAllDamage { get; set; } = false;
+
+    [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+    private static void ResetStaticState() => SuppressAllDamage = false;
+
     public void TakeDamage(int damage)
     {
         if (IsDead) return;
+        if (SuppressAllDamage) return; // scripted pause — nobody is hurting anybody
         if (IsInvulnerable) return;   // hit-reaction i-frames
         int finalDamage = Mathf.Max(1, damage);
-        CurrentHealth   = Mathf.Max(0, CurrentHealth - finalDamage);
+        int floor       = Mathf.Clamp(HealthFloor, 0, MaxHealth);
+        CurrentHealth   = Mathf.Max(floor, CurrentHealth - finalDamage);
+
+        // Fire with the attempted damage even when the floor swallowed it —
+        // damage numbers and hit reactions should still read as a hit landing,
+        // and the tutorial counts these to know a target was struck.
         onDamageTaken?.Invoke(finalDamage);
         if (CurrentHealth <= 0) Die();
     }
