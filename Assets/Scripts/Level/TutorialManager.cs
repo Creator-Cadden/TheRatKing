@@ -109,13 +109,37 @@ public class TutorialManager : MonoBehaviour
         [Tooltip("Rat Coin this wave's kills pay out. 0 = normal.")]
         public int coinOverride = 0;
 
-        [Tooltip("Add the over-head armour chevrons to this wave's enemies if their " +
-                 "prefab doesn't already have them.")]
-        public bool showToughnessChevrons = true;
-
         [System.NonSerialized] public readonly List<EntityStats> live = new List<EntityStats>();
         [System.NonSerialized] public bool spawned;
         [System.NonSerialized] public int  initialCount;   // how many actually spawned
+        /// <summary>Total max HP the wave had on arrival. Held as the denominator
+        /// for the health bar, because the dead leave 'live' and the survivors'
+        /// sum alone would make the bar jump BACKWARDS on every kill.</summary>
+        [System.NonSerialized] public int  openingMaxHealth;
+    }
+
+    /// <summary>What a step does to the screen while its text is up.</summary>
+    public enum FocusMode
+    {
+        /// <summary>Nothing — the game carries on underneath the words.</summary>
+        None,
+        /// <summary>Freeze, darken, and leave a lit window on the focus wave.</summary>
+        Spotlight,
+        /// <summary>Freeze and darken the lot — a beat with nothing to point at.</summary>
+        FullScreen
+    }
+
+    /// <summary>What the player may still do while a step's text is up.</summary>
+    public enum StepInputLock
+    {
+        /// <summary>Whatever the phase says.</summary>
+        Inherit,
+        /// <summary>Full control.</summary>
+        None,
+        /// <summary>Walk and look, but no swinging at the lesson.</summary>
+        NoAttacking,
+        /// <summary>Hands off.</summary>
+        Everything
     }
 
     [System.Serializable]
@@ -125,8 +149,9 @@ public class TutorialManager : MonoBehaviour
         public string text = "";
         public Gate gate = Gate.Jump;
 
-        [Tooltip("Icon library ids, left to right — \"W\",\"S\",\"A\",\"D\" for the " +
-                 "move drill (that order: forward, back, left, right).")]
+        [Tooltip("Icon library ids, left to right as the player reads them. For the " +
+                 "move drill use \"W\",\"A\",\"S\",\"D\" — the manager maps each slot " +
+                 "to the right direction itself.")]
         public List<string> iconIds = new List<string>();
 
         [Header("Gate tuning")]
@@ -134,6 +159,18 @@ public class TutorialManager : MonoBehaviour
         public int requiredCount = 1;
         [Tooltip("Timed gates: MoveHold, Sprint, Aim.")]
         public float holdTime = 0.6f;
+
+        [Tooltip("Show the bar across the bottom of the card. On a timed gate it " +
+                 "fills while you hold, so you can see how much longer to keep " +
+                 "holding instead of guessing. Counting and wave gates can use it " +
+                 "too; read steps never do.")]
+        public bool showProgressBar = true;
+        [Tooltip("Wave Cleared only: fill the bar from the enemies' REMAINING " +
+                 "HEALTH instead of the body count. On a single-enemy fight a kill " +
+                 "counter only ever reads 0 or 1, so the bar would sit empty for " +
+                 "the whole fight and then vanish. Health turns it into a damage " +
+                 "meter, which is what you want while teaching combat.")]
+        public bool progressFromHealth = true;
         [Tooltip("Wave gates: WaveCleared, HitEachTarget, JumpHitEachTarget.")]
         public int waveIndex = -1;
         [Tooltip("Objective gate only.")]
@@ -203,6 +240,29 @@ public class TutorialManager : MonoBehaviour
         [Tooltip("Kill everything in this wave so XP and gold drop. -1 = none.")]
         public int killWaveIndex = -1;
 
+        [Header("Freeze and show")]
+        [Tooltip("Spotlight stops time, darkens the screen and leaves a lit window " +
+                 "around the focus wave's first living enemy — so the word STAGGER " +
+                 "and the label floating over the rat that just took the hit are on " +
+                 "screen together, with nothing else moving. Full Screen freezes " +
+                 "and darkens everything. Either one always waits for the key.")]
+        public FocusMode focus = FocusMode.None;
+        [Tooltip("Which wave to light up. -1 = the most recently spawned one.")]
+        public int   focusWaveIndex = -1;
+        [Tooltip("Realtime beat before the freeze bites, so the reaction label has " +
+                 "finished popping in rather than being frozen mid-pop.")]
+        public float focusDelay = 0.35f;
+
+        [Header("Flow")]
+        [Tooltip("Hold the LAST page until the continue key. Automatic on a " +
+                 "freeze-and-show. Leave it off everywhere else: the panel pages " +
+                 "and closes itself, so the key only ever means 'hurry up' and the " +
+                 "player is never made to press it.")]
+        public bool holdForKey = false;
+        [Tooltip("What the player can do while this step is up. Inherit reads the " +
+                 "phase, and treats any step that is pure text as no-attacking.")]
+        public StepInputLock inputLock = StepInputLock.Inherit;
+
         [Header("Hooks")]
         public UnityEvent onBegin;
         public UnityEvent onComplete;
@@ -215,6 +275,11 @@ public class TutorialManager : MonoBehaviour
         [Tooltip("Can the player hold the skip key to jump past this phase?")]
         public bool skippable = true;
         public SettingsGate settingsGate = SettingsGate.ShowBasics;
+        [Tooltip("Attacking hasn't been taught yet in this phase — hold the attack " +
+                 "and aim buttons for the whole phase, so a player mashing buttons " +
+                 "during the movement drills can't start a fight the tutorial " +
+                 "hasn't introduced yet.")]
+        public bool lockAttacks = false;
         public List<Step> steps = new List<Step>();
     }
 
@@ -225,6 +290,15 @@ public class TutorialManager : MonoBehaviour
     public TMP_Text    promptText;
     public TMP_Text    sectionLabel;
     public TMP_Text    continueHint;
+
+    [Tooltip("The paged prompt panel. Assign it and it takes the prompt over " +
+             "completely — plate, paging, read timing and the continue hint. The " +
+             "four fields above are only a fallback for when it's empty.")]
+    public TutorialPromptUI promptUI;
+
+    [Tooltip("Freeze-and-show overlay. Found in the scene if empty, and built " +
+             "from nothing if there isn't one.")]
+    public TutorialFocus focusOverlay;
 
     [Header("Objective list (right side)")]
     public ObjectiveListUI objectiveList;
@@ -281,6 +355,10 @@ public class TutorialManager : MonoBehaviour
              "won't clear and you need to see whether the gate is firing.")]
     public bool verboseGates = false;
 
+    [Tooltip("Master switch for the green bar on objective cards. Off hides it " +
+             "everywhere regardless of each objective's own Show Progress Bar.")]
+    public bool showProgressBars = true;
+
     [Tooltip("While an explanation is on screen waiting for the continue key, " +
              "nothing takes damage — not the player, not the enemies. The player " +
              "can read without being chewed on, and their idle clicking can't kill " +
@@ -313,6 +391,7 @@ public class TutorialManager : MonoBehaviour
     private readonly List<Wave> _phaseWaves = new List<Wave>();
     private int _cardSerial;
     private Coroutine _spawnRoutine;
+    private Wave _lastSpawnedWave;
 
     // ── Lifecycle ─────────────────────────────────────────────────────────────
 
@@ -334,6 +413,32 @@ public class TutorialManager : MonoBehaviour
         if (skipHint != null) skipHint.text = $"Hold [{skipKey}] to skip";
         if (skipFill != null) skipFill.fillAmount = 0f;
         if (endPromptPanel != null) endPromptPanel.SetActive(false);
+
+        if (promptUI == null) promptUI = FindFirstObjectByType<TutorialPromptUI>();
+        if (promptUI == null && promptPanel != null)
+        {
+            // Upgrade the old one-page panel where it stands: same GameObject,
+            // same text objects, now with a plate behind it, paging and read
+            // timing. An existing scene needs no rewiring at all.
+            promptUI              = promptPanel.gameObject.AddComponent<TutorialPromptUI>();
+            promptUI.group        = promptPanel;
+            promptUI.panel        = promptPanel.GetComponent<RectTransform>();
+            promptUI.body         = promptText;
+            promptUI.continueHint = continueHint;
+        }
+        if (promptUI != null) promptUI.continueKey = continueKey;
+
+        if (focusOverlay == null) focusOverlay = FindFirstObjectByType<TutorialFocus>();
+        if (focusOverlay == null)
+        {
+            // TutorialFocus builds its own canvas and quads, so a scene saved
+            // before the freeze-and-show beats existed still gets them without a
+            // trip through the setup tool.
+            var focusGO = new GameObject("TutorialFocus");
+            focusGO.transform.SetParent(transform, false);
+            focusOverlay = focusGO.AddComponent<TutorialFocus>();
+        }
+
         HidePrompt();
 
         if (objectiveList == null) objectiveList = FindFirstObjectByType<ObjectiveListUI>();
@@ -349,6 +454,8 @@ public class TutorialManager : MonoBehaviour
         UnhookPlayer();
         ApplyPlayerSafety(false);   // never let the floor survive the scene
         SetDamageFrozen(false);     // nor a freeze — it's static
+        PlayerInputLock.ClearAll(); // nor a lock, or the next scene has dead controls
+        CloseFocus();
         if (Instance == this) Instance = null;
     }
 
@@ -530,10 +637,15 @@ public class TutorialManager : MonoBehaviour
 
         bool   readStep = _liveObjectives.Count == 0;
         string body     = step.PromptFor(weapon);
-        if (!string.IsNullOrWhiteSpace(body))
-        {
-            ShowPrompt(body, showContinueHint: readStep && step.autoAdvanceAfter <= 0f);
-        }
+
+        // A freeze-and-show always waits for the key: the whole point is that the
+        // player looks at the thing before the game starts moving again.
+        bool wantsFocus = step.focus != FocusMode.None && readStep;
+        bool holdForKey = step.holdForKey || wantsFocus;
+
+        ApplyInputLock(step, readStep);
+
+        if (!string.IsNullOrWhiteSpace(body)) ShowPrompt(body, holdForKey);
         else HidePrompt();
 
         _awaitingRead = readStep;
@@ -546,6 +658,102 @@ public class TutorialManager : MonoBehaviour
 
         step.onBegin?.Invoke();
         _busy = false;
+
+        if (step.focus != FocusMode.None && !readStep)
+            Debug.LogWarning($"[TutorialManager] Step \"{Trim(step.prompt)}\" asks for " +
+                             "a freeze-and-show but also has objective cards. Freezing " +
+                             "would stop the player completing them, so the focus is " +
+                             "being skipped — split it into a text step and a task step.");
+
+        if (wantsFocus) StartCoroutine(OpenFocusAfterDelay(step));
+    }
+
+    private static string Trim(string s)
+        => string.IsNullOrEmpty(s) ? "(no prompt)"
+         : (s.Length <= 40 ? s : s.Substring(0, 40) + "…");
+
+    /// <summary>
+    /// Decides what the player may do during a step. The phase sets the floor —
+    /// during the movement drills, attacking isn't a thing yet — and a step can
+    /// tighten it further. This is what stops someone mashing the attack button
+    /// through an explanation and killing the dummy the next three steps are about.
+    /// </summary>
+    private void ApplyInputLock(Step step, bool readStep)
+    {
+        StepInputLock want = step != null ? step.inputLock : StepInputLock.Inherit;
+
+        if (want == StepInputLock.Inherit)
+        {
+            bool phaseLocks = _currentPhase != null && _currentPhase.lockAttacks;
+            bool reading    = readStep && step != null
+                           && !string.IsNullOrWhiteSpace(step.PromptFor(ChosenWeapon()));
+
+            // Reading is a hands-off moment too, just a gentler one: you can still
+            // walk about while the words are up, you just can't swing.
+            want = (phaseLocks || reading) ? StepInputLock.NoAttacking
+                                           : StepInputLock.None;
+        }
+
+        switch (want)
+        {
+            case StepInputLock.Everything:
+                PlayerInputLock.SetAll(true);
+                break;
+            case StepInputLock.NoAttacking:
+                PlayerInputLock.ClearAll();
+                PlayerInputLock.LockCombat(true);
+                break;
+            default:
+                RestorePhaseLock();
+                break;
+        }
+    }
+
+    /// <summary>
+    /// Back to whatever the current phase allows. Used between steps, so the
+    /// 0.35s gap doesn't hand back a button the phase is meant to be holding.
+    /// </summary>
+    private void RestorePhaseLock()
+    {
+        PlayerInputLock.ClearAll();
+        if (_currentPhase != null && _currentPhase.lockAttacks)
+            PlayerInputLock.LockCombat(true);
+    }
+
+    private IEnumerator OpenFocusAfterDelay(Step step)
+    {
+        // Realtime: the reaction label's pop runs on scaled time and we want it
+        // finished, not frozen halfway through.
+        if (step.focusDelay > 0f) yield return new WaitForSecondsRealtime(step.focusDelay);
+
+        if (_currentStep != step || focusOverlay == null) yield break;   // moved on
+
+        // Hands completely off while time is stopped. Input still fires at
+        // timeScale 0, so without this the player can stand there swinging at a
+        // frozen rat while the explanation is on screen.
+        PlayerInputLock.SetAll(true);
+
+        if (step.focus == FocusMode.FullScreen) { focusOverlay.OpenFullScreen(); yield break; }
+
+        Transform target = FocusTarget(step);
+        if (target != null) focusOverlay.Open(target);
+        else                focusOverlay.OpenFullScreen();
+    }
+
+    /// <summary>The first living enemy of the wave a step points at.</summary>
+    private Transform FocusTarget(Step step)
+    {
+        Wave w = step.focusWaveIndex >= 0 ? WaveAt(step.focusWaveIndex) : _lastSpawnedWave;
+        if (w == null) return null;
+        PruneWave(w);
+        foreach (EntityStats st in w.live)
+            if (st != null && !st.IsDead) return st.transform;
+        return null;
+    }
+
+    private void CloseFocus()
+    {
+        if (focusOverlay != null && focusOverlay.IsOpen) focusOverlay.Close();
     }
 
     private void PrepareObjective(Objective o)
@@ -583,6 +791,8 @@ public class TutorialManager : MonoBehaviour
         Step done = _currentStep;
         _currentStep  = null;
         _awaitingRead = false;
+        CloseFocus();
+        RestorePhaseLock();
         HidePrompt();
         done?.onComplete?.Invoke();
         StartCoroutine(GapThenAdvance());
@@ -591,7 +801,10 @@ public class TutorialManager : MonoBehaviour
     private IEnumerator GapThenAdvance()
     {
         _busy = true;
-        if (stepGapSeconds > 0f) yield return new WaitForSeconds(stepGapSeconds);
+        // Realtime: a step can end while something still holds a freeze (the
+        // stat-menu lesson ends the moment the menu opens, and the menu freezes
+        // the game), and a scaled wait there would sit at zero indefinitely.
+        if (stepGapSeconds > 0f) yield return new WaitForSecondsRealtime(stepGapSeconds);
         _busy = false;
         AdvanceStep();
     }
@@ -609,6 +822,9 @@ public class TutorialManager : MonoBehaviour
         if (_currentPhase != null && !_currentPhase.skippable) return;
         _currentStep = null;
         _awaitingRead = false;
+        CloseFocus();
+        PlayerInputLock.ClearAll();
+        promptUI?.FinishNow();
         objectiveList?.CompleteAll();
         HidePrompt();
         NextPhase();
@@ -628,7 +844,7 @@ public class TutorialManager : MonoBehaviour
 
         if (canSkip && kb != null && kb[skipKey].isPressed)
         {
-            _skipTimer += Time.deltaTime;
+            _skipTimer += Time.unscaledDeltaTime;   // works while frozen too
             if (skipFill != null) skipFill.fillAmount = Mathf.Clamp01(_skipTimer / Mathf.Max(0.01f, skipHold));
             if (_skipTimer >= skipHold)
             {
@@ -645,7 +861,10 @@ public class TutorialManager : MonoBehaviour
         }
 
         if (_busy || _currentStep == null) return;
-        _stepClock += Time.deltaTime;
+
+        // Unscaled: a freeze-and-show sets Time.timeScale to 0, and a stalled
+        // clock here would leave the step waiting forever.
+        _stepClock += Time.unscaledDeltaTime;
 
         // Read step — prompt panel only.
         if (_awaitingRead)
@@ -654,6 +873,18 @@ public class TutorialManager : MonoBehaviour
             // sit there waiting for a key on a blank screen.
             if (string.IsNullOrWhiteSpace(_currentStep.PromptFor(ChosenWeapon())))
             { CompleteStep(); return; }
+
+            // The panel owns the pacing: it pages itself, auto-advances on a read
+            // time taken from each page's word count, and only waits for the key
+            // on a beat that asked to be acknowledged. Auto Advance After still
+            // applies on top, as a hard ceiling on the whole step.
+            if (promptUI != null)
+            {
+                bool capped = _currentStep.autoAdvanceAfter > 0f
+                           && _stepClock >= _currentStep.autoAdvanceAfter;
+                if (promptUI.IsFinished || capped) CompleteStep();
+                return;
+            }
 
             bool timedOut = _currentStep.autoAdvanceAfter > 0f
                          && _stepClock >= _currentStep.autoAdvanceAfter;
@@ -755,6 +986,54 @@ public class TutorialManager : MonoBehaviour
         return false;
     }
 
+    /// <summary>
+    /// 0–1 completion of an objective, for the card's bottom bar. Timed gates are
+    /// the point of this — a sprint or aim hold otherwise gives the player no idea
+    /// how much longer to keep the key down.
+    /// </summary>
+    private float GateProgress01(Objective o)
+    {
+        switch (o.gate)
+        {
+            case Gate.MoveHold:
+            case Gate.Sprint:
+            case Gate.Aim:
+                return Mathf.Clamp01(o.holdTimer / Mathf.Max(0.0001f, o.holdTime));
+
+            case Gate.MoveDirections:
+            {
+                int n = 0;
+                if (o.dirHit != null)
+                    for (int i = 0; i < o.dirHit.Length; i++) if (o.dirHit[i]) n++;
+                return n / 4f;
+            }
+
+            case Gate.WaveCleared:
+            {
+                // Health, not the body count: "kill the rat" is a gate with
+                // exactly two states, so a kill counter leaves the bar empty for
+                // the entire fight and then throws it away. Draining it as the
+                // enemy loses HP turns the card into a damage meter, which is
+                // the actual feedback while combat is being taught.
+                if (o.progressFromHealth)
+                {
+                    float standing = WaveHealth01(o.waveIndex);
+                    if (standing >= 0f) return 1f - standing;
+                }
+
+                int total = RequiredTotal(o);
+                return total <= 0 ? 0f : Mathf.Clamp01(o.count / (float)total);
+            }
+
+            default:
+            {
+                int total = RequiredTotal(o);
+                if (total <= 0) return 0f;
+                return Mathf.Clamp01(o.count / (float)total);
+            }
+        }
+    }
+
     /// <summary>How many "units" this objective needs — used for the card counter.</summary>
     private int RequiredTotal(Objective o)
     {
@@ -770,6 +1049,35 @@ public class TutorialManager : MonoBehaviour
             case Gate.JumpHitEachTarget: return TargetCount(o);
             default: return 1;
         }
+    }
+
+    /// <summary>Icon slot (W,A,S,D) → dirHit index (fwd,back,left,right).</summary>
+    private static readonly int[] WasdIconToDir = { 0, 2, 1, 3 };
+
+    /// <summary>
+    /// Fraction of a wave's health still standing, or -1 when there's nothing
+    /// sensible to measure (wave missing, not spawned yet, no health at all).
+    /// </summary>
+    private float WaveHealth01(int index)
+    {
+        Wave w = index >= 0 ? WaveAt(index) : _lastSpawnedWave;
+        if (w == null || !w.spawned) return -1f;
+
+        int current = 0, max = 0;
+        foreach (EntityStats st in w.live)
+        {
+            if (st == null) continue;
+            max     += Mathf.Max(1, st.MaxHealth);
+            current += st.IsDead ? 0 : Mathf.Max(0, st.CurrentHealth);
+        }
+
+        // The dead are pruned out of 'live', so summing the survivors would
+        // shrink the denominator on every kill and walk the bar BACKWARDS. The
+        // wave's opening total is the only stable thing to divide by.
+        if (w.openingMaxHealth > 0) max = w.openingMaxHealth;
+        if (max <= 0) return -1f;
+
+        return Mathf.Clamp01(current / (float)max);
     }
 
     private int TargetCount(Objective o)
@@ -792,9 +1100,17 @@ public class TutorialManager : MonoBehaviour
     {
         if (objectiveList == null) return;
 
+        objectiveList.SetProgress(o.cardId,
+            (showProgressBars && o.showProgressBar) ? GateProgress01(o) : -1f);
+
         if (o.gate == Gate.MoveDirections)
         {
-            for (int i = 0; i < 4; i++) objectiveList.MarkIcon(o.cardId, i, o.dirHit[i]);
+            // Icons read W A S D left-to-right, but dirHit is stored in movement
+            // order (forward, back, left, right). Map between them rather than
+            // ordering the icons to match the array, which is what made the card
+            // read "W S A D".
+            for (int i = 0; i < 4; i++)
+                objectiveList.MarkIcon(o.cardId, i, o.dirHit[WasdIconToDir[i]]);
             int n = 0;
             for (int i = 0; i < 4; i++) if (o.dirHit[i]) n++;
             if (n != o.lastShownProgress)
@@ -841,8 +1157,10 @@ public class TutorialManager : MonoBehaviour
         }
 
         w.live.Clear();
-        w.spawned      = false;   // wave gates must not fire mid-arrival
-        w.initialCount = 0;
+        w.spawned          = false;   // wave gates must not fire mid-arrival
+        w.initialCount     = 0;
+        w.openingMaxHealth = 0;
+        _lastSpawnedWave   = w;
         if (!_phaseWaves.Contains(w)) _phaseWaves.Add(w);
 
         if (_spawnRoutine != null) StopCoroutine(_spawnRoutine);
@@ -875,9 +1193,6 @@ public class TutorialManager : MonoBehaviour
 
             if (w.invulnerableWhileTeaching) go.AddComponent<TutorialDummyGuard>();
 
-            if (w.showToughnessChevrons && go.GetComponent<ToughnessChevrons>() == null)
-                go.AddComponent<ToughnessChevrons>();
-
             if (w.xpOverride > 0 || w.coinOverride > 0)
             {
                 var drop = go.GetComponent<EnemyXPDrop>();
@@ -895,6 +1210,13 @@ public class TutorialManager : MonoBehaviour
 
         // Only now may a WaveCleared / HitEachTarget gate start counting.
         w.initialCount = w.live.Count;
+
+        // Banked before anything can die, so the health bar has a fixed
+        // denominator for the rest of the fight.
+        w.openingMaxHealth = 0;
+        foreach (EntityStats st in w.live)
+            if (st != null) w.openingMaxHealth += Mathf.Max(1, st.MaxHealth);
+
         w.spawned      = true;
         _spawnRoutine  = null;
     }
@@ -969,6 +1291,61 @@ public class TutorialManager : MonoBehaviour
         }
     }
 
+    /// <summary>
+    /// Every wave back to "never spawned", and everything it dropped in
+    /// destroyed. The old restart cleared the live list WITHOUT destroying what
+    /// was in it, which is how a second run began with the first run's rats
+    /// still standing in the room.
+    /// </summary>
+    private void ResetAllWaves()
+    {
+        foreach (Wave w in waves)
+        {
+            if (w == null) continue;
+            foreach (EntityStats st in w.live)
+                if (st != null) Destroy(st.gameObject);
+            w.live.Clear();
+            w.spawned          = false;
+            w.initialCount     = 0;
+            w.openingMaxHealth = 0;
+        }
+
+        _phaseWaves.Clear();
+        _lastSpawnedWave = null;
+        _hitBasic.Clear();
+        _hitJump.Clear();
+    }
+
+    /// <summary>
+    /// Wipes the per-objective counters. Objectives live on the Phase assets, so
+    /// their runtime fields survive a restart — without this, a gate the player
+    /// finished on the first run can read as already done the instant its card
+    /// appears on the second.
+    /// </summary>
+    private void ResetAllObjectiveState()
+    {
+        _jumpCount = _dashCount = _basicCount = _airCount = 0;
+        _objectiveSeen = "";
+        _stepClock     = 0f;
+
+        foreach (Phase ph in phases)
+        {
+            if (ph == null || ph.steps == null) continue;
+            foreach (Step st in ph.steps)
+            {
+                if (st == null || st.objectives == null) continue;
+                foreach (Objective o in st.objectives)
+                {
+                    if (o == null) continue;
+                    o.done              = false;
+                    o.count             = 0;
+                    o.holdTimer         = 0f;
+                    o.lastShownProgress = -1;
+                }
+            }
+        }
+    }
+
     private void PlacePlayerAtStart()
     {
         if (_move != null)
@@ -989,6 +1366,9 @@ public class TutorialManager : MonoBehaviour
         _currentStep  = null;
         _awaitingRead = false;
 
+        CloseFocus();
+        PlayerInputLock.ClearAll();
+        promptUI?.FinishNow();
         EndPhaseCleanup();
         objectiveList?.Clear();
         HidePrompt();
@@ -1012,12 +1392,23 @@ public class TutorialManager : MonoBehaviour
 
         StopAllCoroutines();
         _busy = false;
+
+        // A restart has to undo everything the run switched on, not just move
+        // the player back. Anything left set here carries straight into the
+        // second run and looks like a brand new bug.
+        CloseFocus();
+        PlayerInputLock.ClearAll();
+        SetDamageFrozen(false);
+        promptUI?.FinishNow();
+        HidePrompt();
         objectiveList?.Clear();
+        _spawnRoutine = null;   // StopAllCoroutines already killed it
 
         System.Action reset = () =>
         {
             EndPhaseCleanup();
-            foreach (Wave w in waves) { w.live.Clear(); w.spawned = false; }
+            ResetAllWaves();
+            ResetAllObjectiveState();
             PlacePlayerAtStart();
         };
 
@@ -1034,6 +1425,19 @@ public class TutorialManager : MonoBehaviour
         Cursor.lockState = CursorLockMode.Locked;
         Cursor.visible   = false;
 
+        // Everything the tutorial switched on is a static or a global, so any
+        // one of them left set would follow the player into the first real
+        // level. An unkillable rat king is a far worse bug than a rough tutorial,
+        // so the room is emptied and every global is put back by hand here.
+        CloseFocus();
+        promptUI?.FinishNow();
+        HidePrompt();
+        objectiveList?.Clear();
+        EndPhaseCleanup();
+        ResetAllWaves();
+        PlayerInputLock.ClearAll();
+        GameFreeze.ReleaseAll();
+
         ApplyPlayerSafety(false);   // the real game can kill you
         SetDamageFrozen(false);
 
@@ -1043,19 +1447,37 @@ public class TutorialManager : MonoBehaviour
 
     // ── Prompt panel ──────────────────────────────────────────────────────────
 
-    private void ShowPrompt(string text, bool showContinueHint)
+    /// <summary>
+    /// Put an explanation up. With a TutorialPromptUI assigned this hands the
+    /// text over whole and the panel does the paging and the read timing;
+    /// otherwise it falls back to the old one-page-forever behaviour.
+    /// </summary>
+    /// <param name="holdForKey">
+    /// True makes the LAST page wait for the continue key. Everything else pages
+    /// itself, so pressing the key is an optional "hurry up" rather than the way
+    /// the tutorial moves.
+    /// </param>
+    private void ShowPrompt(string text, bool holdForKey)
     {
+        if (promptUI != null)
+        {
+            promptUI.continueKey = continueKey;
+            promptUI.Show(text, holdForKey);
+            return;
+        }
+
         if (promptPanel != null) promptPanel.alpha = 1f;
         if (promptText  != null) promptText.text   = text;
         if (continueHint != null)
         {
-            continueHint.gameObject.SetActive(showContinueHint);
-            if (showContinueHint) continueHint.text = $"Press [{continueKey}] to continue";
+            continueHint.gameObject.SetActive(holdForKey);
+            if (holdForKey) continueHint.text = $"Press [{continueKey}] to continue";
         }
     }
 
     private void HidePrompt()
     {
+        if (promptUI != null) promptUI.Hide();
         if (promptPanel  != null) promptPanel.alpha = 0f;
         if (continueHint != null) continueHint.gameObject.SetActive(false);
     }
@@ -1082,7 +1504,12 @@ public class TutorialManager : MonoBehaviour
     private void BuildDefaultFlow()
     {
         // 1 ── MOVEMENT: one step, four cards, any order.
-        var movement = new Phase { name = "Movement", skippable = true, settingsGate = SettingsGate.ShowBasics };
+        var movement = new Phase { name = "Movement", skippable = true,
+                                   settingsGate = SettingsGate.ShowBasics,
+                                   // Nothing to swing at yet, and a player
+                                   // mashing buttons through the movement drills
+                                   // shouldn't be starting fights.
+                                   lockAttacks = true };
         movement.steps.Add(new Step { prompt = "Welcome to the sewers. Let's start with your feet." });
         movement.steps.Add(new Step
         {
@@ -1090,7 +1517,7 @@ public class TutorialManager : MonoBehaviour
             objectives =
             {
                 new Objective { text = "Press the keys to move", gate = Gate.MoveDirections,
-                                iconIds = { "W", "S", "A", "D" } },
+                                iconIds = { "W", "A", "S", "D" } },
                 new Objective { text = "Jump",  gate = Gate.Jump, requiredCount = 1,
                                 iconIds = { "SPACE" } },
                 new Objective { text = "Hold to sprint", gate = Gate.Sprint, holdTime = 1.2f,
@@ -1142,11 +1569,22 @@ public class TutorialManager : MonoBehaviour
                             iconIds = { "LMB" } },
         }});
 
-        combat.steps.Add(new Step { prompt =
-            "Every weapon carries an IMPACT value, and every enemy has TOUGHNESS. " +
-            "Impact under their toughness and they shrug it off; match it and they " +
-            "flinch; beat it and they stagger — wide open. Heavier weapons and " +
-            "chain finishers carry more impact than a quick jab." });
+        // Freeze on the hit the player just landed, with the light on the dummy
+        // and the reaction label still floating above it. The words IMPACT and
+        // STAGGER land while the thing they describe is on screen, which is the
+        // one moment they mean anything.
+        combat.steps.Add(new Step
+        {
+            prompt =
+                "Look at the word above its head.\n\n" +
+                "Every weapon carries an IMPACT value, and every enemy has TOUGHNESS. " +
+                "Impact under their toughness and they SHRUG it off. Match it and they " +
+                "FLINCH. Beat it and they STAGGER — wide open, and yours.\n\n" +
+                "Heavier weapons and chain finishers carry more impact than a quick jab.",
+            focus          = FocusMode.Spotlight,
+            focusWaveIndex = 0,
+            holdForKey     = true
+        });
 
         // ── The weapon's own drill ──
         combat.steps.Add(new Step { objectives = {
@@ -1289,9 +1727,11 @@ public class TutorialManager : MonoBehaviour
 
         // ── Armour classes ──
         enemies.steps.Add(new Step { prompt =
-            "Two more coming, and these won't fight back. Look above their heads: " +
-            "each CHEVRON is a point of armour. No chevrons means no armour at all; " +
-            "a stack of them means your hits are going to bounce." });
+            "Two more coming, and these won't fight back.\n\n" +
+            "Armour doesn't show on a rat — you read it off how it TAKES a hit. " +
+            "A rat that staggers had nothing to spare. One that only flinches is " +
+            "holding armour. One that shrugs a hit off entirely outranks your " +
+            "weapon, and you'll need a heavier one, a finisher, or a jump attack." });
         enemies.steps.Add(new Step
         {
             prompt = "One lightly armoured, one heavily. Same weapon, same swing — " +
@@ -1309,10 +1749,17 @@ public class TutorialManager : MonoBehaviour
             new Objective { text = "Hit each one once and watch how differently they take it",
                             gate = Gate.HitEachTarget, waveIndex = 3 },
         }});
-        enemies.steps.Add(new Step { prompt =
-            "The unarmoured one buckled. The armoured one barely noticed — its " +
-            "toughness outranks your impact, so the hit landed but nothing else did. " +
-            "Bring a heavier weapon, finish a combo, or come down on it from the air." });
+        enemies.steps.Add(new Step
+        {
+            prompt =
+                "The unarmoured one buckled. The armoured one barely noticed.\n\n" +
+                "Its toughness outranks your impact, so the hit landed and nothing " +
+                "else did. Bring a heavier weapon, finish a combo, or come down on " +
+                "it from the air.",
+            focus          = FocusMode.Spotlight,
+            focusWaveIndex = 3,
+            holdForKey     = true
+        });
         enemies.steps.Add(new Step { objectives = {
             new Objective { text = "Now jump-attack each one — more impact, more knockback",
                             gate = Gate.JumpHitEachTarget, waveIndex = 3,

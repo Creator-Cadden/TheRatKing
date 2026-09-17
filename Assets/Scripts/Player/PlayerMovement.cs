@@ -227,6 +227,11 @@ public class PlayerMovement : MonoBehaviour
 
     void Update()
     {
+        // A key already held down sends no new input event, so a lock taken out
+        // mid-hold has to be enforced here as well as in the callbacks.
+        if (PlayerInputLock.MoveLocked)   _moveInput  = Vector2.zero;
+        if (PlayerInputLock.SprintLocked) _sprintHeld = false;
+
         _isGrounded = _controller.isGrounded;
 
         // Real landing (airborne → grounded THIS frame): shake scaled by fall
@@ -940,9 +945,12 @@ public class PlayerMovement : MonoBehaviour
 
     // ── Input Callbacks ──
 
-    public void OnMove(InputValue value)   => _moveInput  = value.Get<Vector2>();
+    public void OnMove(InputValue value)
+        => _moveInput = PlayerInputLock.MoveLocked ? Vector2.zero : value.Get<Vector2>();
     public void OnJump(InputValue value)
     {
+        if (PlayerInputLock.JumpLocked && value.isPressed) return;
+
         if (value.isPressed)
         {
             _jumpBufferedUntil = Time.time + jumpBufferTime;   // buffer the press
@@ -957,15 +965,22 @@ public class PlayerMovement : MonoBehaviour
         }
     }
     public void OnLook(InputValue value)   => _lookDelta  = value.Get<Vector2>();
-    public void OnSprint(InputValue value) => _sprintHeld = value.isPressed;
+    public void OnSprint(InputValue value)
+        => _sprintHeld = value.isPressed && !PlayerInputLock.SprintLocked;
 
     public void OnRoll(InputValue value)
     {
-        if (value.isPressed) TryRoll();
+        if (value.isPressed && !PlayerInputLock.DashLocked) TryRoll();
     }
 
     public void OnAim(InputValue value)
     {
+        if (PlayerInputLock.AimLocked)
+        {
+            if (value.isPressed) return;   // never enter aim while locked
+            if (!_isAiming)      return;   // and nothing to exit out of
+        }
+
         _isAiming = value.isPressed;
 
         if (_isAiming)

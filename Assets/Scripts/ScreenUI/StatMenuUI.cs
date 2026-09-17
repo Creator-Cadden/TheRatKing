@@ -59,11 +59,22 @@ public class StatMenuUI : MonoBehaviour
     [Header("Input")]
     public InputActionReference toggleAction;
 
+    [Header("Open animation")]
+    [Tooltip("Faded and scaled up as the menu opens. Added to Stat Menu Root " +
+             "automatically if left empty.")]
+    public CanvasGroup menuGroup;
+    [Tooltip("Higher = snappier. Runs on UNSCALED time, because opening this " +
+             "menu freezes the game and Time.deltaTime is then zero.")]
+    public float openFadeSpeed = 18f;
+    [Tooltip("Scale the panel rises from as it fades in. 1 = no scale.")]
+    public float openFromScale = 0.94f;
+
     // ── PRIVATE STATE ──
 
     private bool _menuOpen    = false;
     private bool _initialized = false;
     private int  _lastToggleFrame = -1;   // guards a double-toggle in one frame
+    private Coroutine _openAnim;
 
     private const string CURSOR_OWNER = "statmenu";
     private const string FREEZE_OWNER = "statmenu";
@@ -196,7 +207,10 @@ public class StatMenuUI : MonoBehaviour
         _menuOpen = visible;
 
         if (statMenuRoot != null)
+        {
             statMenuRoot.SetActive(visible);
+            if (visible) PlayOpenAnimation();
+        }
         else
             Debug.LogWarning("[StatMenuUI] statMenuRoot is null.");
 
@@ -213,6 +227,55 @@ public class StatMenuUI : MonoBehaviour
         }
 
         if (visible && _initialized) RefreshAll();
+    }
+
+    /// <summary>
+    /// Quick fade + scale rise so the panel arrives instead of appearing. Kept
+    /// to the OPEN direction only: the close is instant, because a panel fading
+    /// out while it still holds the cursor and the game freeze is a good way to
+    /// let a second Tab press land on a menu that only looks shut.
+    /// </summary>
+    private void PlayOpenAnimation()
+    {
+        if (statMenuRoot == null) return;
+
+        if (menuGroup == null)
+        {
+            menuGroup = statMenuRoot.GetComponent<CanvasGroup>();
+            if (menuGroup == null) menuGroup = statMenuRoot.AddComponent<CanvasGroup>();
+        }
+
+        if (_openAnim != null) StopCoroutine(_openAnim);
+        _openAnim = StartCoroutine(OpenAnimation());
+    }
+
+    private System.Collections.IEnumerator OpenAnimation()
+    {
+        Transform t     = statMenuRoot.transform;
+        float     from  = Mathf.Clamp(openFromScale, 0.5f, 1f);
+        float     a     = 0f;
+        float     guard = 0f;
+
+        menuGroup.alpha = 0f;
+        t.localScale    = Vector3.one * from;
+
+        // Unscaled time throughout — see the tooltip on Open Fade Speed. The
+        // guard is there so a pathological speed value can't leave the menu
+        // hanging invisible forever.
+        while (a < 0.999f && guard < 2f)
+        {
+            float dt = Time.unscaledDeltaTime;
+            guard   += dt;
+            a        = Mathf.Lerp(a, 1f, 1f - Mathf.Exp(-Mathf.Max(0.01f, openFadeSpeed) * dt));
+
+            menuGroup.alpha = a;
+            t.localScale    = Vector3.one * Mathf.Lerp(from, 1f, a);
+            yield return null;
+        }
+
+        menuGroup.alpha = 1f;
+        t.localScale    = Vector3.one;
+        _openAnim       = null;
     }
 
     private void RefreshIfOpen()

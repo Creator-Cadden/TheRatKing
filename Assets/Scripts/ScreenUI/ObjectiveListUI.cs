@@ -44,8 +44,14 @@ public class ObjectiveListUI : MonoBehaviour
     public List<KeyIcon> iconLibrary = new List<KeyIcon>();
 
     [Header("Layout")]
+    [Tooltip("Ignored while Auto Row Height is on.")]
     public float rowHeight = 64f;
     public float spacing   = 8f;
+
+    [Tooltip("Take the row height from the card prefab's own height. Leave this " +
+             "ON — a hand-set row height smaller than the card is exactly how " +
+             "cards end up overlapping the one below.")]
+    public bool autoRowHeight = true;
 
     [Header("Motion")]
     [Tooltip("How far right of its slot a card starts before sliding in.")]
@@ -63,6 +69,20 @@ public class ObjectiveListUI : MonoBehaviour
     void Awake()
     {
         if (container == null) container = GetComponent<RectTransform>();
+        RefreshRowHeight();
+    }
+
+    /// <summary>
+    /// Row pitch = the card's real height. Without this, changing the card prefab's
+    /// height silently breaks the spacing, because the list was still stepping by
+    /// whatever number was typed here months ago.
+    /// </summary>
+    private void RefreshRowHeight()
+    {
+        if (!autoRowHeight || cardPrefab == null) return;
+
+        var r = cardPrefab.GetComponent<RectTransform>();
+        if (r != null && r.rect.height > 1f) rowHeight = r.rect.height;
     }
 
     void Update()
@@ -130,6 +150,12 @@ public class ObjectiveListUI : MonoBehaviour
         c.SetCounter(need > 1 ? $"{Mathf.Min(have, need)} / {need}" : "");
     }
 
+    /// <summary>
+    /// Push 0–1 onto a card's bottom bar; negative hides it. Hold objectives call
+    /// this every frame so the bar drains toward the release point.
+    /// </summary>
+    public void SetProgress(string id, float t) => Find(id)?.SetProgress(t);
+
     /// <summary>Light every icon, then slide the card away. Others move up.</summary>
     public void Complete(string id)
     {
@@ -137,6 +163,7 @@ public class ObjectiveListUI : MonoBehaviour
         if (c == null) return;
         c.MarkAllIcons();
         c.SetCounter("");
+        c.SetProgress(1f);
         c.Exit(exitOffsetX);
         Relayout();
     }
@@ -178,6 +205,9 @@ public class ObjectiveListUI : MonoBehaviour
     }
 
     private Vector2 SlotFor(int row) => new Vector2(0f, -row * (rowHeight + spacing));
+
+    /// <summary>Row pitch in use, including the gap. Handy for sizing the panel.</summary>
+    public float RowPitch => rowHeight + spacing;
 
     /// <summary>
     /// Re-number the rows. Cards on their way out are skipped, so the moment one

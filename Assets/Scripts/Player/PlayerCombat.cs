@@ -209,6 +209,11 @@ public class PlayerCombat : MonoBehaviour
 
     public void OnAttack(InputValue value)
     {
+        // Scripted moments take the controls away. Only PRESSES are blocked —
+        // a release still gets through so a half-drawn bow can finish its shot
+        // instead of sticking at full charge.
+        if (PlayerInputLock.AttackLocked && value.isPressed) return;
+
         bool isPressed  = value.isPressed;
         bool isGrounded = _controller.isGrounded;
 
@@ -301,7 +306,8 @@ public class PlayerCombat : MonoBehaviour
     /// PlayerInput sends OnAim to ALL MonoBehaviours on this GameObject. This
     /// is our copy so we can route bow press -> BeginAimedShot vs FreeLookShot.
     /// </summary>
-    public void OnAim(InputValue value) => _isAiming = value.isPressed;
+    public void OnAim(InputValue value)
+        => _isAiming = value.isPressed && !PlayerInputLock.AimLocked;
 
     /// <summary>Current aim state — BowController reads this at release to pick
     /// camera-aimed vs free-look firing.</summary>

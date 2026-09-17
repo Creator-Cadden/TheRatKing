@@ -245,10 +245,80 @@ everything else: if the number of icons happens to equal the number of things to
 do, they light one per unit (three `LMB` icons for a three-hit combo). Otherwise
 the icons just say *which key* and the "2 / 3" counter carries the progress.
 
+**The card progress bar.** A translucent track spans the bottom of the card with a
+green fill that eases left-to-right. Two toggles: `TutorialManager ▸ Show Progress
+Bars` is the master switch, and each objective has its own **Show Progress Bar**.
+Hold gates (`MoveHold`, `Sprint`, `Aim`) fill continuously; `MoveDirections` fills
+in quarters as W/A/S/D are pressed; counting gates fill per unit. A `WaveCleared`
+objective with **Progress From Health** on (the default) drains the bar as the
+enemies lose HP instead — "kill the rat" is a gate with two states, so a kill
+counter leaves the bar empty for the whole fight and then throws it away, while
+health makes the card a damage meter. An
+objective with the bar off, or a read-only step, shows no track at all.
+
+> **Do not drive this with `Image.fillAmount`.** `Image.OnPopulateMesh` bails out to
+> a plain full-rect quad the moment `activeSprite` is null, so a Filled image with
+> an empty Sprite field draws 100% wide forever and ignores `fillAmount` — a static
+> green bar however correct Type / Fill Method / Origin look in the inspector.
+> `ObjectiveCardUI` therefore animates the fill's `RectTransform.anchorMax.x`
+> instead, which needs no sprite, and `EnsureBar()` re-normalises that rect on every
+> card so a hand-wired prefab can't reintroduce the bug.
+
 **How jump hits are told apart.** Damage events don't say which attack dealt them,
 so the manager times it: a hit landing within `jumpHitWindow` (1.0s) of an air
 attack counts as a jump hit, anything else is ordinary. No hooks needed inside the
 weapon scripts. Raise the window if bow arrows are in flight too long.
+
+### Prompt flow, freezing and input
+
+**The prompt panel pages itself.** `TutorialPromptUI` takes a step's whole prompt
+and splits it: a blank line starts a new page, and any paragraph over **Words Per
+Page** (34) is cut again at sentence ends. Each page gets a read time worked out
+from its own word count (`baseSeconds + words × secondsPerWord`, clamped to
+2.2–10s) and turns itself over. The continue key skips ahead early — it is never
+required to make progress. So a player who reads presses nothing, and a player who
+doesn't presses E as fast as they like. `Auto Advance After` still applies on top
+as a hard ceiling on the whole step.
+
+Everything in the panel runs on **unscaled** time, because the freeze beats below
+set `Time.timeScale` to 0.
+
+**Freeze and show.** A step with `Focus = Spotlight` stops the game, darkens the
+screen and leaves a lit window around the first living enemy of `Focus Wave Index`
+— so the word STAGGER is on screen at the same time as the STAGGER label floating
+over the rat that just took the hit. `Focus Delay` (0.35s realtime) lets the
+label finish popping before time stops, or it would freeze mid-pop. A focus step
+always waits for the key: that's the one place E is load-bearing.
+
+> The shade is **four quads** around the lit rectangle, not one full-screen quad
+> with a hole. The thing being shown is world-space 3D text (`EnemyAI` spawns a
+> `TextMeshPro` object above the enemy), and any screen-space overlay would cover
+> it whatever the draw order. An actual gap is the only way the 3D scene shows
+> through, and it needs no shader, so it behaves the same under any pipeline.
+
+A focus step must have **no objective cards** — freezing would stop the player
+completing them. The manager logs a warning and skips the focus if you add both.
+
+**Input locks.** `PlayerInputLock` is a static gate the input callbacks consult;
+nothing is disabled, so the camera, animator and controller keep their state.
+A phase can set `Lock Attacks` (the Movement phase does — there is nothing to
+swing at yet), and a step can override with `Input Lock`. Left on `Inherit`, any
+pure-text step becomes no-attacking: you can still walk around while reading, you
+just can't kill the dummy the next three steps are about. A freeze beat locks
+everything, because input still fires at `timeScale` 0.
+
+### Resetting
+
+`RestartTutorial()` destroys every spawned enemy (the old version cleared the live
+list without destroying what was in it, which left the previous run's rats standing
+in the room), resets every objective's runtime counters, and drops the focus,
+the input locks and the damage freeze.
+
+`ContinueToGame()` does all of that **and** clears the globals before the first
+real level loads: `EntityStats.SuppressAllDamage`, the player's `HealthFloor`,
+`GameFreeze` and `PlayerInputLock`. Each of those is a static or a global, so one
+left set would follow the player out of the tutorial — an unkillable rat king is a
+worse bug than a rough tutorial.
 
 ### Step fields
 

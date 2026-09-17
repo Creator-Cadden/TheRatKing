@@ -2268,6 +2268,9 @@ MonoBehaviour:
   verboseAttackLog: 0
   permanentlyAggroed: 0
   speedMultiplier: 1
+  holdPosition: 0
+  doNotAttack: 0
+  immovable: 0
   launchUpFactor: 0.55
   launchPerMargin: 0.2
   bounciness: 0.45
@@ -2453,7 +2456,7 @@ CapsuleCollider:
     serializedVersion: 2
     m_Bits: 0
   m_LayerOverridePriority: 0
-  m_IsTrigger: 0
+  m_IsTrigger: 1
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 2
@@ -2480,3 +2483,5 @@ MonoBehaviour:
   xpAsOrbs: 1
   xpOrbColor: {r: 0.3372549, g: 1, b: 0.9254902, a: 1}
   xpOrbCount: 0
+  xpOverride: 0
+  currencyOverride: 0

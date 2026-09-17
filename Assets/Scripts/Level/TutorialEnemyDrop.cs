@@ -61,9 +61,38 @@ public class TutorialEnemyDrop : MonoBehaviour
         if (_combat != null) _combat.enabled = false;
         SetCollidersEnabled(false);
 
+        // SNAP THE LANDING TO THE ACTUAL FLOOR.
+        // Landing at the spawn point's exact Y is what made rats hover: a spawn
+        // marker nudged even slightly above the ground left the enemy parked in
+        // mid-air, and `immovable` then pinned it there for good.
+        groundPoint = SnapToGround(groundPoint);
+        _anchor     = groundPoint;
+
         transform.position = groundPoint + Vector3.up * Mathf.Max(0.1f, height);
 
         StartCoroutine(Fall(groundPoint, Mathf.Max(0.5f, speed), passive, stationary, landFx));
+    }
+
+    /// <summary>
+    /// Finds the real floor under a point. Colliders are already disabled when
+    /// this runs, so the enemy can't hit itself. Falls back to the navmesh, then
+    /// to the point as given.
+    /// </summary>
+    private Vector3 SnapToGround(Vector3 point)
+    {
+        Vector3 from = point + Vector3.up * 3f;
+
+        if (Physics.Raycast(from, Vector3.down, out RaycastHit hit, 30f,
+                            ~0, QueryTriggerInteraction.Ignore))
+            return hit.point;
+
+        if (NavMesh.SamplePosition(point, out NavMeshHit nav, 3f, NavMesh.AllAreas))
+            return nav.position;
+
+        Debug.LogWarning($"[TutorialEnemyDrop] No floor found under {point} — " +
+                         "landing at the spawn point as given, which may leave " +
+                         "the enemy in the air.");
+        return point;
     }
 
     private IEnumerator Fall(Vector3 groundPoint, float speed, bool passive, bool stationary,

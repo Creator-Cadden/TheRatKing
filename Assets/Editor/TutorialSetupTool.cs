@@ -27,8 +27,6 @@ public static class TutorialSetupTool
 {
     private const string CardPrefabPath = "Assets/Prefabs/UI/ObjectiveCard.prefab";
 
-    private const string ChevronPath = "Assets/Resources/UI/Chevron.png";
-
     private static readonly string[] SpawnPointNames =
     {
         "Spawn_Dummy", "Spawn_Grunt", "Spawn_Balloon", "Spawn_Low", "Spawn_High"
@@ -176,6 +174,22 @@ public static class TutorialSetupTool
 
         int cards = RelayoutCardPrefab();
 
+        // The card got taller, so the list has to step further per row or cards
+        // overlap the one below.
+        var list = Object.FindFirstObjectByType<ObjectiveListUI>(FindObjectsInactive.Include);
+        if (list != null && list.cardPrefab != null)
+        {
+            var cr2 = list.cardPrefab.GetComponent<RectTransform>();
+            if (cr2 != null && cr2.rect.height > 1f)
+            {
+                Undo.RecordObject(list, "Row height");
+                list.autoRowHeight = true;
+                list.rowHeight     = cr2.rect.height;
+                list.spacing       = Mathf.Max(list.spacing, 10f);
+                EditorUtility.SetDirty(list);
+            }
+        }
+
         EditorSceneManager.MarkSceneDirty(m.gameObject.scene);
         Debug.Log("[TutorialSetup] Prompt panel re-laid out (section title now sits " +
                   "above the panel, prompt text grows downward from the top)" +
@@ -222,6 +236,55 @@ public static class TutorialSetupTool
                     cnr.sizeDelta        = new Vector2(80f, 26f);
                     cnr.anchoredPosition = new Vector2(16f, 14f);
                 }
+            }
+
+            // Cards built before the hold bar existed get one here, and cards
+            // built with the single gold bar get upgraded to track + green fill.
+            if (card != null)
+            {
+                Transform oldBar = root.transform.Find("ProgressBar");
+                if (oldBar != null) Object.DestroyImmediate(oldBar.gameObject);
+
+                Transform t = root.transform.Find("ProgressTrack");
+                GameObject trackGO = t != null ? t.gameObject
+                    : new GameObject("ProgressTrack", typeof(RectTransform));
+                if (t == null) trackGO.transform.SetParent(root.transform, false);
+
+                RectTransform trackR = trackGO.GetComponent<RectTransform>();
+                trackR.anchorMin = new Vector2(0f, 0f);
+                trackR.anchorMax = new Vector2(1f, 0f);
+                trackR.pivot     = new Vector2(0.5f, 0f);
+                trackR.offsetMin = new Vector2(10f, 6f);
+                trackR.offsetMax = new Vector2(-10f, 11f);
+
+                Image trackImg = trackGO.GetComponent<Image>();
+                if (trackImg == null) trackImg = trackGO.AddComponent<Image>();
+                trackImg.color         = new Color(1f, 1f, 1f, 0.10f);
+                trackImg.raycastTarget = false;
+                trackImg.type          = Image.Type.Simple;
+
+                Transform f = trackGO.transform.Find("Fill");
+                GameObject fillGO = f != null ? f.gameObject
+                    : new GameObject("Fill", typeof(RectTransform));
+                if (f == null) fillGO.transform.SetParent(trackGO.transform, false);
+
+                RectTransform fillR = fillGO.GetComponent<RectTransform>();
+                fillR.anchorMin = Vector2.zero;
+                fillR.anchorMax = Vector2.one;
+                fillR.offsetMin = Vector2.zero;
+                fillR.offsetMax = Vector2.zero;
+
+                Image fillImg = fillGO.GetComponent<Image>();
+                if (fillImg == null) fillImg = fillGO.AddComponent<Image>();
+                fillImg.color         = new Color(0.30f, 0.85f, 0.35f, 1f);
+                fillImg.raycastTarget = false;
+                fillImg.type          = Image.Type.Filled;
+                fillImg.fillMethod    = Image.FillMethod.Horizontal;
+                fillImg.fillOrigin    = (int)Image.OriginHorizontal.Left;
+                fillImg.fillAmount    = 0f;
+
+                card.progressTrack = trackImg;
+                card.progressBar   = fillImg;
             }
 
             Transform icons = root.transform.Find("Icons");
@@ -275,6 +338,7 @@ public static class TutorialSetupTool
         importer.SaveAndReimport();
         return true;
     }
+
 
     [MenuItem("Tools/Rat King/Setup Tutorial Scene", false, 1)]
     public static void Setup()
@@ -456,14 +520,6 @@ public static class TutorialSetupTool
         // prefabs you've already assigned.
         EnsureWaves(manager, spawnPoints);
 
-        // The over-head armour chevrons load their sprite from Resources, so it
-        // has to be imported as a Sprite or ToughnessChevrons finds nothing.
-        if (EnsureSpriteImport(ChevronPath))
-            Debug.Log("[TutorialSetup] Imported " + ChevronPath + " as a Sprite.");
-        if (AssetDatabase.LoadAssetAtPath<Sprite>(ChevronPath) == null)
-            Debug.LogWarning("[TutorialSetup] No chevron sprite at " + ChevronPath +
-                             " — armour chevrons won't appear over enemies.");
-
         EditorUtility.SetDirty(manager);
         EditorUtility.SetDirty(list);
         EditorSceneManager.MarkSceneDirty(root.scene);
@@ -592,7 +648,32 @@ public static class TutorialSetupTool
             icon.SetActive(false);
         }
 
+        // Hold bar across the bottom edge: a faint track with a green fill inside
+        // it, so an empty bar still reads as "nothing yet".
+        GameObject trackGO = UIChild(card, "ProgressTrack");
+        RectTransform trackR = trackGO.GetComponent<RectTransform>();
+        trackR.anchorMin = new Vector2(0f, 0f);
+        trackR.anchorMax = new Vector2(1f, 0f);
+        trackR.pivot     = new Vector2(0.5f, 0f);
+        trackR.offsetMin = new Vector2(10f, 6f);
+        trackR.offsetMax = new Vector2(-10f, 11f);
+        Image trackImg = trackGO.AddComponent<Image>();
+        trackImg.color         = new Color(1f, 1f, 1f, 0.10f);
+        trackImg.raycastTarget = false;
+
+        GameObject fillGO = UIChild(trackGO, "Fill");
+        Stretch(fillGO);
+        Image fillImg = fillGO.AddComponent<Image>();
+        fillImg.color         = new Color(0.30f, 0.85f, 0.35f, 1f);
+        fillImg.raycastTarget = false;
+        fillImg.type          = Image.Type.Filled;
+        fillImg.fillMethod    = Image.FillMethod.Horizontal;
+        fillImg.fillOrigin    = (int)Image.OriginHorizontal.Left;
+        fillImg.fillAmount    = 0f;
+
         var comp = card.AddComponent<ObjectiveCardUI>();
+        comp.progressTrack = trackImg;
+        comp.progressBar   = fillImg;
         comp.rect      = cr;
         comp.group     = card.GetComponent<CanvasGroup>();
         comp.label     = label;
